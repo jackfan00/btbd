@@ -1,0 +1,6 @@
+*.bak
+sim/*.fsdb
+sim/INCA_libs/*
+sim/verdiLog/*
+sim/ncverilog*
+sim/novas*

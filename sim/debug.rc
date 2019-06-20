@@ -1,0 +1,144 @@
+Magic 271485
+Revision Verdi3_2013.07
+
+; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
+viewPort 271 97 1442 823 252 65
+
+; File list:
+; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
+openDirFile -d / "" "/home/jack/work/btbd/sim/bt.fsdb"
+
+; file time scale:
+; fileTimeScale ### s|ms|us|ns|ps
+
+; signal spacing:
+signalSpacing 5
+
+; windowTimeUnit is used for zoom, cursor & marker
+windowTimeUnit 10us
+
+; waveform viewport range
+zoom 2518.733703 2775.389497 10u
+cursor 2687.428276
+marker 2562.448276
+
+; user define markers
+; userMarker time_pos marker_name color linestyle
+; visible top row signal index
+top 0
+; marker line index
+markerPos 26
+
+; event list
+; addEvent event_name event_expression
+; curEvent event_name
+
+
+
+COMPLEX_EVENT_BEGIN
+
+
+COMPLEX_EVENT_END
+
+
+
+; toolbar current search type
+; curSTATUS search_type
+curSTATUS ByChange
+
+
+aliasmapname linkctrler.cs
+nalias InquiryScan_STATE		5'b00010		NULL
+nalias CONNECTIONPark_STATE		5'b01000		NULL
+nalias Page_STATE		5'b00011		NULL
+nalias CONNECTIONHold_STATE		5'b00110		NULL
+nalias Pagetmp_STATE		5'b11000		NULL
+nalias PageMasterResp_rxackfhs_STATE		5'b01100		NULL
+nalias InquiryScantxFHS_STATE		5'b10010		NULL
+nalias CONNECTIONSniff_STATE		5'b00111		NULL
+nalias PageScan1more_STATE		5'b01101		NULL
+nalias PageSlaveResp_rxfhsdone_STATE		5'b11001		NULL
+nalias InquiryScantxExtIRP_STATE		5'b10011		NULL
+nalias InquiryEIR_STATE		5'b10110		NULL
+nalias Inquiryintern_STATE		5'b10111		NULL
+nalias STANDBY_STATE		5'b00000		NULL
+nalias Inquiry_STATE		5'b00001		NULL
+nalias PageScan_STATE		5'b00100		NULL
+nalias PageSlaveResp_ackfhs_STATE		5'b10000		NULL
+nalias CONNECTIONnewslave_STATE		5'b10100		NULL
+nalias CONNECTIONActive_STATE		5'b00101		NULL
+nalias InquiryScanRand_STATE		5'b10001		NULL
+nalias CONNECTIONnewmaster_STATE		5'b10101		NULL
+nalias PageMasterResp_txfhs_STATE		5'b01011		NULL
+nalias PageSlaveResp_txid_STATE		5'b01110		NULL
+nalias PageSlaveResp_rxfhs_STATE		5'b01111		NULL
+
+addGroup "G1"
+activeDirFile "" "/home/jack/work/btbd/sim/bt.fsdb"
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/rxallbit_u/CLK[27:0]
+aliasname linkctrler.cs
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/linkctrler_u/cs[4:0]
+addSignal -h 15 /testbench/bt_top_m/txallbit_u/txheaderbitp_u/header_en
+addSignal -h 15 -holdScope hec_en
+addSignal -h 15 -holdScope py_st_p
+addSignal -h 15 /testbench/bt_top_m/txallbit_u/txpybitp_u/py_period
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/txallbit_u/txpybitp_u/pypro_u/fec32rem[4:0]
+addSignal -h 15 /testbench/bt_top_m/txallbit_u/txpybitp_u/fec32bk_endp
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/txallbit_u/txheaderbitp_u/headerpro_u/whiten_u/whitening[6:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/txallbit_u/txheaderbitp_u/headerpro_u/hecrem[7:0]
+addSignal -h 15 /testbench/bt_top_m/txallbit_u/txpybitp_u/pypro_u/crc16_datin
+addSignal -h 15 -holdScope shiftcrc_in
+addSignal -h 15 -holdScope shiftcrc_out
+addSignal -h 15 -holdScope loadcrcini_p
+addSignal -h 15 -UNSIGNED -HEX -holdScope crc16rem[15:0]
+addSignal -h 15 /testbench/bt_top_m/linkctrler_u/tx_packet_st_p
+addSignal -h 15 /testbench/bt_top_m/txallbit_u/txbit
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/hopkernal_u/fk[6:0]
+addSignal -h 15 /testbench/bt_top_m/rxallbit_u/rxbit
+addGroup "G2"
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/CLKN[27:0]
+aliasname linkctrler.cs
+addSignal -h 15 -UNSIGNED -HEX -holdScope cs[4:0]
+addSignal -h 15 -holdScope ps_corr_halftslotdly_endp
+addSignal -h 15 /testbench/bt_top_s/linkctrler_u/correlator_u/corre_trgp
+addSignal -h 15 /testbench/bt_top_s/linkctrler_u/ps_corre_threshold
+addSignal -h 15 -holdScope corr_tslotdly_endp
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopkernal_u/fk[6:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/correlator_u/sync_in[63:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope ref_sync[63:0]
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxbit
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/hecrem[7:0]
+addSignal -h 15 -holdScope spr
+addSignal -h 15 -holdScope header_en
+addSignal -h 15 -holdScope hec_en
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/py_st_p
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/dec_py_st_p
+addSignal -h 15 -holdScope py_period
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/fec32rem[4:0]
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/fec32bk_endp
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/syndrome[4:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope fec32decodeBus[9:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope dec_bitcnt[3:0]
+addSignal -h 15 -holdScope fec32decodebit
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/dec_py_period
+addSignal -h 15 -UNSIGNED -HEX -holdScope fec32count[3:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/whiten_u/whitening[6:0]
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/rx_trailer_st_p
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/header_st_p
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/whiten_u/loadini_p
+addSignal -h 15 -holdScope datvalid_p
+addSignal -h 15 -UNSIGNED -HEX -holdScope whitening[6:0]
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/loadcrcini_p
+addSignal -h 15 -UNSIGNED -HEX -holdScope crc16rem[15:0]
+addSignal -h 15 -holdScope dec_crcgood
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pydecdatout
+addSignal -h 15 -UNSIGNED -HEX -holdScope processlen[12:0]
+addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/decode_latch_p
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxpybitp_u/bitcount[11:0]
+addSignal -h 15 -holdScope existpyheader
+addSignal -h 15 /testbench/bt_top_s/linkctrler_u/psrxfhs
+addGroup "G3"
+
+; getSignalForm Scope Hierarchy Status
+; active file of getSignalForm
+
