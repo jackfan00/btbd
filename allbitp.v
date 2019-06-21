@@ -1,6 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
-pagetxfhs, connsnewmaster,,
+pagetxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir, psrxfhs,
 rx_trailer_st_p,
 tx_packet_st_p,
@@ -45,7 +45,7 @@ fhs_PSM
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
-input pagetxfhs, connsnewmaster;
+input pagetxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs;
 input rx_trailer_st_p;
 input tx_packet_st_p;
@@ -116,6 +116,7 @@ headerbitp headerbitp_u(
 .p_1us                  (p_1us                  ),
 .pagetxfhs              (pagetxfhs              ), 
 .connsnewmaster         (connsnewmaster         ),
+.connsnewslave          (connsnewslave          ),
 .page                   (page                   ), 
 .inquiry                (inquiry                ), 
 .conns                  (conns                  ), 

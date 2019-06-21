@@ -41,7 +41,8 @@ regi_Inquiry_Length, regi_Extended_Inquiry_Length,
 rxbit,
 //
 txbit,
-fk
+fk,
+regi_fhsslave_offset
 );
 
 
@@ -90,6 +91,7 @@ input rxbit;
 //
 output txbit;
 output [6:0] fk;
+output [27:2] regi_fhsslave_offset;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -131,6 +133,7 @@ wire [6:0] fk;
 wire [63:0] syncinword;
 wire [6:0] whitening;
 wire py_period, daten, py_datvalid_p;
+wire pssyncCLK_p;
 
 bluetoothclk bluetoothclk_u(
 .clk_6M               (clk_6M               ), 
@@ -144,6 +147,8 @@ bluetoothclk bluetoothclk_u(
 .regi_s_uncerWinSize  (regi_s_uncerWinSize  ),
 .conns_corre_sync_p   (conns_corre_sync_p   ), 
 .ps_corre_sync_p      (ps_corre_sync_p      ),
+.pssyncCLK_p          (pssyncCLK_p          ),
+.fhs_CLK              (fhs_CLK              ),
 //
 .CLKN_master          (CLKN_master          ), 
 .CLK_master           (CLK_master           ), 
@@ -164,7 +169,8 @@ bluetoothclk bluetoothclk_u(
 .m_conns_uncerWindow  (m_conns_uncerWindow  ), 
 .m_page_uncerWindow   (m_page_uncerWindow   ),
 .spr_correWin         (spr_correWin         ), 
-.s_conns_uncerWindow  (s_conns_uncerWindow  )
+.s_conns_uncerWindow  (s_conns_uncerWindow  ),
+.regi_fhsslave_offset (regi_fhsslave_offset )
 
 );
 
@@ -262,6 +268,8 @@ linkctrler linkctrler_u(
 .Slave_TX_tslot_endp         (Slave_TX_tslot_endp         ),
 .Slave_RX_tslot_endp         (Slave_RX_tslot_endp         ),
 .m_page_uncerWindow          (m_page_uncerWindow          ),
+.m_conns_uncerWindow         (m_conns_uncerWindow         ),
+.s_conns_uncerWindow         (s_conns_uncerWindow         ),
 .spr_correWin                (spr_correWin                ), 
 .regi_extendedInquiryResponse(regi_extendedInquiryResponse),
 .Inquiry_Complete_status     (Inquiry_Complete_status     ),
@@ -318,7 +326,9 @@ linkctrler linkctrler_u(
 .rx_trailer_st_p           (rx_trailer_st_p           ),
 .pagetxfhs                 (pagetxfhs                 ), 
 .connsnewmaster            (connsnewmaster            ),
-.pk_encode                 (pk_encode                 )
+.connsnewslave             (connsnewslave             ),
+.pk_encode                 (pk_encode                 ),
+.pssyncCLK_p               (pssyncCLK_p               )
 );
 
 //for tmp
@@ -417,6 +427,7 @@ allbitp allbitp_u(
 .p_033us                (p_033us                ),
 .pagetxfhs              (pagetxfhs              ), 
 .connsnewmaster         (connsnewmaster         ),
+.connsnewslave          (connsnewslave          ),
 .page                   (page                   ), 
 .inquiry                (inquiry                ), 
 .conns                  (conns                  ), 

@@ -1,4 +1,7 @@
 *.bak
+*.v~
+sim/*.log
+sim/*.v~
 sim/*.fsdb
 sim/INCA_libs/*
 sim/verdiLog/*

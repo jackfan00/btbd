@@ -7,7 +7,8 @@ clk_6M, rstz,
 page, mpr,
 regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_m_uncerWinSize, regi_s_uncerWinSize,
-conns_corre_sync_p, ps_corre_sync_p,
+conns_corre_sync_p, ps_corre_sync_p, pssyncCLK_p,
+fhs_CLK,
 //
 CLKN_master, CLK_master, CLKE_master,
 CLKN_slave, CLK_slave,
@@ -16,7 +17,8 @@ Slave_TX_tslot_endp, Slave_RX_tslot_endp,
 m_tslot_p, s_tslot_p, p_1us, p_05us, p_033us,
 m_half_tslot_p, s_half_tslot_p,
 m_conns_uncerWindow, m_page_uncerWindow, spr_correWin, 
-s_conns_uncerWindow
+s_conns_uncerWindow,
+regi_fhsslave_offset
 
 );
 
@@ -25,8 +27,8 @@ input page, mpr;
 input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [8:0] regi_m_uncerWinSize;
 input [8:0] regi_s_uncerWinSize;
-input conns_corre_sync_p, ps_corre_sync_p;
-
+input conns_corre_sync_p, ps_corre_sync_p, pssyncCLK_p ;
+input [27:2] fhs_CLK;
 //
 output [27:0] CLKN_master, CLK_master, CLKE_master;
 output [27:0] CLKN_slave, CLK_slave;
@@ -36,6 +38,7 @@ output m_tslot_p, s_tslot_p, p_1us, p_05us, p_033us;
 output m_half_tslot_p, s_half_tslot_p;
 output m_conns_uncerWindow, m_page_uncerWindow, spr_correWin;
 output s_conns_uncerWindow;
+output [27:2] regi_fhsslave_offset;
 
 wire [27:0] CLKR_master, CLKR_slave;
 wire [9:0] m_counter_1us, s_counter_1us;
@@ -65,12 +68,20 @@ timeslot timeslot_m(
 .p_05us               (p_05us               ),
 .regi_time_base_offset(regi_time_base_offset),
 .corre_sync_p         (1'b0                 ),
+.pssyncCLK_p          (1'b0                 ),
 //                                         
 .BTCLK                (m_BTCLK              ),
 .tslot_p              (m_tslot_p            ), 
 .half_tslot_p         (m_half_tslot_p       ),
 .counter_1us          (m_counter_1us        )
 );
+
+assign CLKR_master = m_BTCLK;
+assign CLKN_master = CLKR_master + regi_time_base_offset;
+assign CLK_master  = CLKN_master;
+assign CLKE_master = CLKN_master+regi_esti_offset;
+
+
 //
 
 wire corre_sync_p = conns_corre_sync_p | ps_corre_sync_p; //we dont know 1st or 2nd half, but following packet sync will correct it.
@@ -82,6 +93,7 @@ timeslot timeslot_s(
 .p_05us               (p_05us               ),
 .regi_time_base_offset(regi_time_base_offset),
 .corre_sync_p         (corre_sync_p         ),
+.pssyncCLK_p          (pssyncCLK_p          ),
 //                                          
 .BTCLK                (s_BTCLK              ),
 .tslot_p              (s_tslot_p            ), 
@@ -89,16 +101,18 @@ timeslot timeslot_s(
 .counter_1us          (s_counter_1us        )
 
 );
-
-
-assign CLKR_master = m_BTCLK;
-assign CLKN_master = CLKR_master + regi_time_base_offset;
-assign CLK_master  = CLKN_master;
-assign CLKE_master = CLKN_master+regi_esti_offset;
+reg [27:2] regi_fhsslave_offset;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     regi_fhsslave_offset <= 0;
+  else if (pssyncCLK_p)  
+     regi_fhsslave_offset <= fhs_CLK[27:2]-CLKN_slave[27:2]+1'b1;
+end
 
 assign CLKR_slave = s_BTCLK;
 assign CLKN_slave = CLKR_slave + regi_time_base_offset;
-assign CLK_slave  = CLKN_slave + regi_slave_offset;
+assign CLK_slave  = CLKN_slave + {regi_slave_offset[27:2], 2'b0};
 
 assign Master_TX_tslot_endp = !CLK_master[1] & m_tslot_p;
 assign Master_RX_tslot_endp = CLK_master[1]  & m_tslot_p;

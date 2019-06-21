@@ -129,13 +129,13 @@ bt_top bt_top_m(
 .fk                          (m_fk)
 
 );
-
+wire [27:2] regi_fhsslave_offset;
 bt_top bt_top_s(
 .clk_6M                      (s_clk_6M               ), 
 .rstz                        (s_rstz                 ),
 .regi_esti_offset            (28'd0),  //s_regi_esti_offset     ), 
 .regi_time_base_offset       (28'd0),  //s_regi_time_base_offset), 
-.regi_slave_offset           (s_regi_slave_offset    ),
+.regi_slave_offset           ({regi_fhsslave_offset,2'b0}),  //s_regi_slave_offset    ),
 .regi_interlace_offset       (5'd16),
 .regi_page_k_nudge           (5'd0), 
 .regi_isMaster               (1'b0),
@@ -197,7 +197,8 @@ bt_top bt_top_s(
 .rxbit                       (s_rxbit),
 //
 .txbit                       (s_txbit),
-.fk                          (s_fk)
+.fk                          (s_fk),
+.regi_fhsslave_offset        (regi_fhsslave_offset)
 
 );
 

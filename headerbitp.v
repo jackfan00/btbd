@@ -1,6 +1,6 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
-pagetxfhs, connsnewmaster,
+pagetxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir,
 rx_trailer_st_p,
 tx_packet_st_p,
@@ -28,7 +28,7 @@ dec_pk_type
 );
 
 input clk_6M, rstz, p_1us;
-input pagetxfhs, connsnewmaster;
+input pagetxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir;
 input rx_trailer_st_p;
 input tx_packet_st_p;
@@ -72,7 +72,7 @@ begin
   else if ((packet_endp)  & p_1us)
      all_bitcount <= 8'hff;
   else if (rx_trailer_st_p & p_1us)
-     all_bitcount <= 8'd68;
+     all_bitcount <= 8'd69;
   else if (tx_packet_st_p & p_1us)
      all_bitcount <= 8'h0;
   else if (header_packet_period & p_1us)
@@ -135,6 +135,7 @@ assign fec31inc_p = fec31count==2'd2 & p_1us;
 //
 wire [3:0] txpktype = pagetxfhs ? 4'b0010 :   //fhs
                     connsnewmaster ? 4'b0001 :    //poll
+                    connsnewslave ? 4'b0000 :    //null
                     regi_packet_type;
 wire [9:0] txpacket_header = {regi_SEQN,regi_ARQN,regi_FLOW,txpktype,regi_LT_ADDR};
 

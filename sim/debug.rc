@@ -2,11 +2,11 @@ Magic 271485
 Revision Verdi3_2013.07
 
 ; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
-viewPort 271 97 1442 823 252 65
+viewPort 0 25 1276 720 220 65
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
-openDirFile -d / "" "/home/jack/work/btbd/sim/bt.fsdb"
+openDirFile -d / "" "/home/jack/btbd/sim/bt.fsdb"
 
 ; file time scale:
 ; fileTimeScale ### s|ms|us|ns|ps
@@ -18,16 +18,16 @@ signalSpacing 5
 windowTimeUnit 10us
 
 ; waveform viewport range
-zoom 2518.733703 2775.389497 10u
-cursor 2687.428276
-marker 2562.448276
+zoom 1096.875579 4055.497831 10u
+cursor 2687.728228
+marker 2812.708228
 
 ; user define markers
 ; userMarker time_pos marker_name color linestyle
 ; visible top row signal index
 top 0
 ; marker line index
-markerPos 26
+markerPos 25
 
 ; event list
 ; addEvent event_name event_expression
@@ -74,70 +74,46 @@ nalias PageSlaveResp_txid_STATE		5'b01110		NULL
 nalias PageSlaveResp_rxfhs_STATE		5'b01111		NULL
 
 addGroup "G1"
-activeDirFile "" "/home/jack/work/btbd/sim/bt.fsdb"
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/rxallbit_u/CLK[27:0]
+activeDirFile "" "/home/jack/btbd/sim/bt.fsdb"
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/CLK[27:0]
+addSignal -h 15 /testbench/bt_top_m/bluetoothclk_u/m_conns_uncerWindow
 aliasname linkctrler.cs
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/linkctrler_u/cs[4:0]
-addSignal -h 15 /testbench/bt_top_m/txallbit_u/txheaderbitp_u/header_en
-addSignal -h 15 -holdScope hec_en
-addSignal -h 15 -holdScope py_st_p
-addSignal -h 15 /testbench/bt_top_m/txallbit_u/txpybitp_u/py_period
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/txallbit_u/txpybitp_u/pypro_u/fec32rem[4:0]
-addSignal -h 15 /testbench/bt_top_m/txallbit_u/txpybitp_u/fec32bk_endp
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/txallbit_u/txheaderbitp_u/headerpro_u/whiten_u/whitening[6:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/txallbit_u/txheaderbitp_u/headerpro_u/hecrem[7:0]
-addSignal -h 15 /testbench/bt_top_m/txallbit_u/txpybitp_u/pypro_u/crc16_datin
-addSignal -h 15 -holdScope shiftcrc_in
-addSignal -h 15 -holdScope shiftcrc_out
-addSignal -h 15 -holdScope loadcrcini_p
-addSignal -h 15 -UNSIGNED -HEX -holdScope crc16rem[15:0]
-addSignal -h 15 /testbench/bt_top_m/linkctrler_u/tx_packet_st_p
-addSignal -h 15 /testbench/bt_top_m/txallbit_u/txbit
+addSignal -h 15 -holdScope p_corre_threshold
+addSignal -h 15 /testbench/bt_top_m/linkctrler_u/correlator_u/corre_trgp
+addSignal -h 15 /testbench/bt_top_m/linkctrler_u/CLKE[1]
+addSignal -h 15 -holdScope m_tslot_p
+addSignal -h 15 -holdScope page
+addSignal -h 15 -holdScope tx_packet_st_p
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/hopkernal_u/fk[6:0]
-addSignal -h 15 /testbench/bt_top_m/rxallbit_u/rxbit
+addSignal -h 15 /testbench/bt_top_m/allbitp_u/headerbitp_u/connsnewmaster
+addSignal -h 15 /testbench/bt_top_m/linkctrler_u/pk_encode
+addSignal -h 15 -holdScope m_tslot_p
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/allbitp_u/headerbitp_u/txpktype[3:0]
+addSignal -h 15 /testbench/bt_top_m/allbitp_u/header_packet_period
+addSignal -h 15 /testbench/bt_top_m/linkctrler_u/tx_packet_st_p
+addSignal -h 15 /testbench/bt_top_m/allbitp_u/txbit
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/allbitp_u/headerbitp_u/regi_syncword_CAC[63:0]
 addGroup "G2"
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/CLKN[27:0]
+addSignal -h 15 /testbench/bt_top_s/bluetoothclk_u/s_conns_uncerWindow
+addSignal -h 15 /testbench/bt_top_s/linkctrler_u/pk_encode
+addSignal -h 15 -holdScope s_tslot_p
 aliasname linkctrler.cs
 addSignal -h 15 -UNSIGNED -HEX -holdScope cs[4:0]
-addSignal -h 15 -holdScope ps_corr_halftslotdly_endp
-addSignal -h 15 /testbench/bt_top_s/linkctrler_u/correlator_u/corre_trgp
-addSignal -h 15 /testbench/bt_top_s/linkctrler_u/ps_corre_threshold
-addSignal -h 15 -holdScope corr_tslotdly_endp
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopkernal_u/fk[6:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/correlator_u/sync_in[63:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope ref_sync[63:0]
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxbit
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/hecrem[7:0]
-addSignal -h 15 -holdScope spr
-addSignal -h 15 -holdScope header_en
-addSignal -h 15 -holdScope hec_en
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/py_st_p
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/dec_py_st_p
-addSignal -h 15 -holdScope py_period
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/fec32rem[4:0]
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/fec32bk_endp
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/syndrome[4:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope fec32decodeBus[9:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope dec_bitcnt[3:0]
-addSignal -h 15 -holdScope fec32decodebit
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/dec_py_period
-addSignal -h 15 -UNSIGNED -HEX -holdScope fec32count[3:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/whiten_u/whitening[6:0]
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/rx_trailer_st_p
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/header_st_p
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxheaderbit_u/headerpro_u/whiten_u/loadini_p
-addSignal -h 15 -holdScope datvalid_p
-addSignal -h 15 -UNSIGNED -HEX -holdScope whitening[6:0]
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/loadcrcini_p
-addSignal -h 15 -UNSIGNED -HEX -holdScope crc16rem[15:0]
-addSignal -h 15 -holdScope dec_crcgood
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pydecdatout
-addSignal -h 15 -UNSIGNED -HEX -holdScope processlen[12:0]
-addSignal -h 15 /testbench/bt_top_s/rxallbit_u/rxpybitp_u/pypro_u/decode_latch_p
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/rxallbit_u/rxpybitp_u/bitcount[11:0]
-addSignal -h 15 -holdScope existpyheader
-addSignal -h 15 /testbench/bt_top_s/linkctrler_u/psrxfhs
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/header_packet_period
+addSignal -h 15 -holdScope txheaderbit
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/headerbitp_u/syncword[63:0]
+addSignal -h 15 -holdScope conns
+addSignal -h 15 -UNSIGNED -HEX -holdScope txpktype[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope regi_packet_type[3:0]
+addSignal -h 15 /testbench/bt_top_s/txbit
 addGroup "G3"
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/bluetoothclk_u/CLKN_slave[27:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope regi_slave_offset[27:2]
+addSignal -h 15 -UNSIGNED -HEX -holdScope CLK_slave[27:0]
+addGroup "G4"
 
 ; getSignalForm Scope Hierarchy Status
 ; active file of getSignalForm
