@@ -1,20 +1,21 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
-pagetxfhs, connsnewmaster, connsnewslave,
-page, inquiry, conns, ps, mpr, spr, ir, psrxfhs,
+s_tslot_p,
+pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
+page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs,
 rx_trailer_st_p,
 tx_packet_st_p,
 regi_txwhitening, regi_rxwhitening,
 regi_payloadlen,
 regi_inquiryDIAC,
 regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC,
-regi_LT_ADDR,
+regi_LT_ADDR, regi_mylt_address,
+regi_FHS_LT_ADDR,
 regi_packet_type,
 regi_FLOW, regi_ARQN, regi_SEQN,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, 
 Xprm, Xir, Xprs,
 CLK,
-regi_FHS_LT_ADDR,
 regi_myClass,
 regi_my_BD_ADDR_NAP,
 regi_my_BD_ADDR_UAP,
@@ -28,6 +29,7 @@ rxbit,
 //
 txbit, txbit_period,
 rxispoll,
+lt_addressed,
 fhs_Pbits,
 fhs_LAP,
 fhs_EIR,
@@ -45,21 +47,22 @@ fhs_PSM
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
-input pagetxfhs, connsnewmaster, connsnewslave;
-input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs;
+input s_tslot_p;
+input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
+input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs;
 input rx_trailer_st_p;
 input tx_packet_st_p;
 input regi_txwhitening, regi_rxwhitening;
 input [9:0] regi_payloadlen;
 input regi_inquiryDIAC;
 input [63:0] regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC;
-input [2:0] regi_LT_ADDR;
+input [2:0] regi_LT_ADDR, regi_mylt_address;
+input [2:0] regi_FHS_LT_ADDR;
 input [3:0] regi_packet_type;
 input regi_FLOW, regi_ARQN, regi_SEQN;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP;
 input [4:0] Xprm, Xir, Xprs;
 input [27:0] CLK;
-input [2:0] regi_FHS_LT_ADDR;
 input [23:0] regi_myClass;
 input [15:0] regi_my_BD_ADDR_NAP;
 input [7:0] regi_my_BD_ADDR_UAP;
@@ -73,6 +76,7 @@ input rxbit;
 //
 output txbit, txbit_period;
 output rxispoll;
+output lt_addressed;
 output [33:0] fhs_Pbits;
 output [23:0] fhs_LAP;
 output        fhs_EIR;
@@ -114,7 +118,9 @@ headerbitp headerbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.s_tslot_p              (s_tslot_p              ),
 .pagetxfhs              (pagetxfhs              ), 
+.istxfhs                (istxfhs                ),
 .connsnewmaster         (connsnewmaster         ),
 .connsnewslave          (connsnewslave          ),
 .page                   (page                   ), 
@@ -135,6 +141,7 @@ headerbitp headerbitp_u(
 .regi_syncword_DIAC     (regi_syncword_DIAC     ), 
 .regi_syncword_GIAC     (regi_syncword_GIAC     ),
 .regi_LT_ADDR           (regi_LT_ADDR           ),
+.regi_mylt_address      (regi_mylt_address      ),
 .regi_packet_type       (regi_packet_type       ),
 .regi_FLOW              (regi_FLOW              ), 
 .regi_ARQN              (regi_ARQN              ), 
@@ -161,11 +168,12 @@ headerbitp headerbitp_u(
 .whitening              (whitening              ),
 .rxispoll               (rxispoll               ),
 .header_packet_period   (header_packet_period   ),
-.dec_pk_type            (dec_pk_type            )
+.dec_pk_type            (dec_pk_type            ),
+.lt_addressed           (lt_addressed           )
 
 );
 
-wire [3:0] txpk_type = mpr | ir ? 4'h2 : regi_packet_type;
+wire [3:0] txpk_type = mpr | istxfhs ? 4'h2 : regi_packet_type;
 
 wire [3:0] pk_type = pk_encode ? txpk_type : dec_pk_type;
 
@@ -201,6 +209,7 @@ pybitp pybitp_u(
 .ir                     (ir                     ),
 .spr                    (spr                    ),
 .psrxfhs                (psrxfhs                ),
+.inquiryrxfhs           (inquiryrxfhs           ),
 .py_st_p                (py_st_p                ),
 .regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
 .regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),

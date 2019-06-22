@@ -5,51 +5,9 @@ reg m_clk_6M, m_rstz;
 reg s_clk_6M, s_rstz;
 reg [27:0] s_regi_slave_offset;
 reg regi_InquiryEnable_oneshot, regi_PageEnable_oneshot, regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
-reg regi_PageScanEnable_oneshot;
-initial begin
-//
-$fsdbDumpfile("bt.fsdb");
-$fsdbDumpvars;
-// parameter setting
-regi_PageScanEnable_oneshot = 1'b0;
-s_regi_slave_offset = 28'd0;
-//
-//
-m_clk_6M = 1'b0;
-s_clk_6M = 1'b0;
-m_rstz = 1'b0;
-s_rstz = 1'b0;
-#1000;
-m_rstz = 1'b1;
-#10150000;
-s_rstz = 1'b1;
-//
-#10000000;
-@(posedge m_clk_6M);
-regi_PageScanEnable_oneshot = 1'b1;
-#1000 ;
-regi_PageScanEnable_oneshot = 1'b0;
-// reg setting
+reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
 
-@(posedge m_clk_6M);
-regi_InquiryEnable_oneshot = 1'b0;
-regi_PageEnable_oneshot = 1'b0;
-regi_ConnHold_oneshot = 1'b0;
-regi_ConnSniff_oneshot = 1'b0;
-regi_ConnPark_oneshot = 1'b0;
-@(posedge m_clk_6M);
-regi_PageEnable_oneshot = 1'b1;
-#1000 ;
-regi_PageEnable_oneshot = 1'b0;
-
-
-
-//
-#20000000;
-//#2000000000;
-//#2000000000;
-$finish;
-end
+`include "tp.v"
 
 always #83.333 m_clk_6M = ~m_clk_6M;
 always #83.320 s_clk_6M = ~s_clk_6M;
@@ -78,7 +36,8 @@ bt_top bt_top_m(
 .regi_my_BD_ADDR_LAP         (24'h0),
 .regi_PageScanEnable_oneshot (1'b0), 
 .regi_PageScanCancel_oneshot (1'b0),
-.regi_InquiryScanEnable      (1'b0),
+.regi_InquiryScanEnable_oneshot      (1'b0),
+.regi_InquiryScanCancel_oneshot      (1'b0),
 .regi_InquiryEnable_oneshot  (regi_InquiryEnable_oneshot),  
 .regi_PageEnable_oneshot     (regi_PageEnable_oneshot), 
 .regi_ConnHold_oneshot       (regi_ConnHold_oneshot), 
@@ -149,7 +108,8 @@ bt_top bt_top_s(
 .regi_my_BD_ADDR_LAP         (24'h0),
 .regi_PageScanEnable_oneshot (regi_PageScanEnable_oneshot), 
 .regi_PageScanCancel_oneshot (1'b0),
-.regi_InquiryScanEnable      (1'b0),
+.regi_InquiryScanEnable_oneshot      (regi_InquiryScanEnable_oneshot),
+.regi_InquiryScanCancel_oneshot      (1'b0),
 .regi_InquiryEnable_oneshot  (1'b0),  
 .regi_PageEnable_oneshot     (1'b0), 
 .regi_ConnHold_oneshot       (1'b0), 
@@ -178,9 +138,10 @@ bt_top bt_top_s(
 .regi_AFH_N                  (7'd20),
 .regi_AFH_modN               (7'd20),
 .regi_isMaxRand              (10'd50),
-.regi_extendedInquiryResponse(1'b0),
+.regi_extendedInquiryResponse(1'b1),
 .regi_Tsco                   (3'd6),
 .regi_LT_ADDR                (3'b011        ),
+.regi_mylt_address           (3'b001        ),
 .regi_packet_type            (4'b0100       ),
 .regi_FLOW                   (1'b0          ), 
 .regi_ARQN                   (1'b1          ), 
@@ -190,7 +151,7 @@ bt_top bt_top_s(
 .regi_myClass                (24'd1    ),
 .regi_my_BD_ADDR_NAP         (16'd0    ),
 .regi_SR                     (2'd0     ),
-.regi_EIR                    (1'b0     ),
+.regi_EIR                    (1'b1     ),
 .regi_my_syncword            (34'h3f3820f1a),   //LAP=0
 .regi_txwhitening            (1'b0),
 .regi_rxwhitening            (1'b1),

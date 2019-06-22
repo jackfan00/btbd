@@ -1,6 +1,7 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
-pagetxfhs, connsnewmaster, connsnewslave,
+s_tslot_p,
+pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir,
 rx_trailer_st_p,
 tx_packet_st_p,
@@ -8,7 +9,7 @@ packet_BRmode,
 regi_txwhitening, regi_rxwhitening,
 regi_inquiryDIAC,
 regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC,
-regi_LT_ADDR,
+regi_LT_ADDR, regi_mylt_address,
 regi_packet_type,
 regi_FLOW, regi_ARQN, regi_SEQN,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP,
@@ -24,11 +25,13 @@ txheaderbit,
 whitening,
 header_packet_period,
 rxispoll,
-dec_pk_type
+dec_pk_type,
+lt_addressed
 );
 
 input clk_6M, rstz, p_1us;
-input pagetxfhs, connsnewmaster, connsnewslave;
+input s_tslot_p;
+input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir;
 input rx_trailer_st_p;
 input tx_packet_st_p;
@@ -36,7 +39,7 @@ input packet_BRmode;
 input regi_txwhitening, regi_rxwhitening;
 input regi_inquiryDIAC;
 input [63:0] regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC;
-input [2:0] regi_LT_ADDR;
+input [2:0] regi_LT_ADDR, regi_mylt_address;
 input [3:0] regi_packet_type;
 input regi_FLOW, regi_ARQN, regi_SEQN;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP;
@@ -53,6 +56,7 @@ output [6:0] whitening;
 output header_packet_period;
 output rxispoll;
 output [3:0] dec_pk_type;
+output lt_addressed;
 
 wire packet_endp;
 reg header_packet_period;
@@ -133,7 +137,7 @@ assign fec31inc_p = fec31count==2'd2 & p_1us;
 
 
 //
-wire [3:0] txpktype = pagetxfhs ? 4'b0010 :   //fhs
+wire [3:0] txpktype = pagetxfhs | istxfhs ? 4'b0010 :   //fhs
                     connsnewmaster ? 4'b0001 :    //poll
                     connsnewslave ? 4'b0000 :    //null
                     regi_packet_type;
@@ -202,13 +206,13 @@ begin
   else if (p_1us)
      ckhec <= 1'b0;
 end
-reg hecgood;
+reg dec_hecgood;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     hecgood <= 0;
+     dec_hecgood <= 0;
   else if (ckhec & p_1us)
-     hecgood <=  (hecrem==8'h0) ;
+     dec_hecgood <=  (hecrem==8'h0) ;
 end
 
 //
@@ -220,6 +224,17 @@ begin
      dec_lt_addr <= 0;
   else if (header_bitcount<=5'd2 & fec31inc_p & header_en & (!pk_encode))
      dec_lt_addr <= {decodeout,dec_lt_addr[2:1]};
+end
+
+reg lt_addressed;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     lt_addressed <= 0;
+  else if (s_tslot_p | pk_encode)
+     lt_addressed <= 0;
+  else if (ckhec & p_1us)
+     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==regi_mylt_address) ;  //header good and match lt_address
 end
 
 reg [3:0] dec_pk_type;

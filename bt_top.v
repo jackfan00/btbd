@@ -6,7 +6,8 @@ regi_AFH_N,
 regi_isMaster,
 regi_GIAC_BD_ADDR_UAP, regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP,
 regi_GIAC_BD_ADDR_LAP, regi_paged_BD_ADDR_LAP, regi_master_BD_ADDR_LAP, regi_my_BD_ADDR_LAP,
-regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, regi_InquiryScanEnable,
+regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, 
+regi_InquiryScanEnable_oneshot, regi_InquiryScanCancel_oneshot,
 regi_InquiryEnable_oneshot,  regi_PageEnable_oneshot, 
 regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot,
 regi_Tpsinterval, regi_Tpswindow,
@@ -25,7 +26,7 @@ regi_AFH_modN,
 regi_isMaxRand,
 regi_extendedInquiryResponse,
 regi_Tsco,
-regi_LT_ADDR,
+regi_LT_ADDR, regi_mylt_address,
 regi_packet_type,
 regi_FLOW, regi_ARQN, regi_SEQN,
 regi_payloadlen,
@@ -53,7 +54,8 @@ input [6:0] regi_AFH_N;
 input regi_isMaster;
 input [7:0] regi_GIAC_BD_ADDR_UAP, regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP;
 input [23:0] regi_GIAC_BD_ADDR_LAP, regi_paged_BD_ADDR_LAP, regi_master_BD_ADDR_LAP, regi_my_BD_ADDR_LAP;
-input regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, regi_InquiryScanEnable;
+input regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot;
+input regi_InquiryScanEnable_oneshot, regi_InquiryScanCancel_oneshot;
 input regi_InquiryEnable_oneshot,  regi_PageEnable_oneshot;
 input regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
 input [15:0] regi_Tpsinterval, regi_Tpswindow;
@@ -74,7 +76,7 @@ input [6:0] regi_AFH_modN;
 input [9:0] regi_isMaxRand;
 input regi_extendedInquiryResponse;
 input [2:0] regi_Tsco;
-input [2:0] regi_LT_ADDR;
+input [2:0] regi_LT_ADDR, regi_mylt_address;
 input [3:0] regi_packet_type;
 input regi_FLOW, regi_ARQN, regi_SEQN;
 input [9:0] regi_payloadlen;
@@ -134,6 +136,7 @@ wire [63:0] syncinword;
 wire [6:0] whitening;
 wire py_period, daten, py_datvalid_p;
 wire pssyncCLK_p;
+wire lt_addressed;
 
 bluetoothclk bluetoothclk_u(
 .clk_6M               (clk_6M               ), 
@@ -283,6 +286,8 @@ linkctrler linkctrler_u(
 .regi_syncword_DAC           (regi_syncword_DAC           ),
 .regi_syncword_GIAC          (regi_syncword_GIAC          ),
 .regi_syncword_CAC           (regi_syncword_CAC           ),
+.regi_inquiryDIAC            (regi_inquiryDIAC            ), 
+.regi_syncword_DIAC          (regi_syncword_DIAC          ),
 .sync_in                     (syncinword                  ),
 .regi_Npage                  (regi_Npage                  ),
 .regi_slave_SRmode           (regi_slave_SRmode           ),
@@ -292,8 +297,10 @@ linkctrler linkctrler_u(
 .regi_isMaxRand              (regi_isMaxRand              ),
 .regi_PageScanEnable_oneshot (regi_PageScanEnable_oneshot ), 
 .regi_PageScanCancel_oneshot (regi_PageScanCancel_oneshot ), 
-.regi_InquiryScanEnable      (regi_InquiryScanEnable      ),
+.regi_InquiryScanEnable_oneshot (regi_InquiryScanEnable_oneshot ), 
+.regi_InquiryScanCancel_oneshot (regi_InquiryScanCancel_oneshot ), 
 .rxispoll                    (rxispoll                    ),
+.lt_addressed                (lt_addressed                ),
 .regi_Ninquiry               (regi_Ninquiry               ),
 .regi_Inquiry_Length         (regi_Inquiry_Length         ), 
 .regi_Extended_Inquiry_Length(regi_Extended_Inquiry_Length),
@@ -325,6 +332,7 @@ linkctrler linkctrler_u(
 .inquiryrxfhs              (inquiryrxfhs              ), 
 .rx_trailer_st_p           (rx_trailer_st_p           ),
 .pagetxfhs                 (pagetxfhs                 ), 
+.istxfhs                   (istxfhs                   ),
 .connsnewmaster            (connsnewmaster            ),
 .connsnewslave             (connsnewslave             ),
 .pk_encode                 (pk_encode                 ),
@@ -425,7 +433,9 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.s_tslot_p              (s_tslot_p              ),
 .pagetxfhs              (pagetxfhs              ), 
+.istxfhs                (istxfhs                ),
 .connsnewmaster         (connsnewmaster         ),
 .connsnewslave          (connsnewslave          ),
 .page                   (page                   ), 
@@ -436,6 +446,7 @@ allbitp allbitp_u(
 .spr                    (spr                    ),
 .ir                     (ir                     ),
 .psrxfhs                (psrxfhs                ),
+.inquiryrxfhs           (inquiryrxfhs           ),
 .rx_trailer_st_p        (rx_trailer_st_p        ),
 .tx_packet_st_p         (tx_packet_st_p         ),
 .regi_txwhitening       (regi_txwhitening       ),
@@ -446,7 +457,9 @@ allbitp allbitp_u(
 .regi_syncword_DAC      (regi_syncword_DAC      ), 
 .regi_syncword_DIAC     (regi_syncword_DIAC     ), 
 .regi_syncword_GIAC     (regi_syncword_GIAC     ),
-.regi_LT_ADDR           (regi_LT_ADDR           ),
+.regi_LT_ADDR           (regi_LT_ADDR           ),  // packet header LT_ADDR sent by master
+.regi_mylt_address      (regi_mylt_address      ),  // slave LT_ADDR, assigned by master FHS
+.regi_FHS_LT_ADDR       (regi_FHS_LT_ADDR       ),  // master sent to slave LT_ADDR by FHS packet
 .regi_packet_type       (regi_packet_type       ),
 .regi_FLOW              (regi_FLOW              ), 
 .regi_ARQN              (regi_ARQN              ), 
@@ -457,7 +470,6 @@ allbitp allbitp_u(
 .Xir                    (Xir                    ),
 .Xprs                   (Xprs                   ),
 .CLK                    (CLK                    ),
-.regi_FHS_LT_ADDR       (regi_FHS_LT_ADDR       ),
 .regi_myClass           (regi_myClass           ),
 .regi_my_BD_ADDR_NAP    (regi_my_BD_ADDR_NAP    ),
 .regi_my_BD_ADDR_UAP    (regi_my_BD_ADDR_UAP    ),
@@ -475,6 +487,7 @@ allbitp allbitp_u(
 .txbit                  (txbit                  ), 
 .txbit_period           (txbit_period           ),
 .rxispoll               (rxispoll               ),
+.lt_addressed           (lt_addressed           ),
 .fhs_Pbits              (fhs_Pbits              ),
 .fhs_LAP                (fhs_LAP                ),
 .fhs_EIR                (fhs_EIR                ),

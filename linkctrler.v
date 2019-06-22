@@ -19,6 +19,7 @@ regi_correthreshold,
 regi_psinterlace, regi_isinterlace,
 regi_syncword_DAC,
 regi_syncword_GIAC, regi_syncword_CAC,
+regi_inquiryDIAC, regi_syncword_DIAC,
 sync_in,
 regi_Npage,
 regi_slave_SRmode,
@@ -26,8 +27,9 @@ regi_Tsco,
 regi_scolink_num,
 regi_Page_Timeout,
 regi_isMaxRand,
-regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, regi_InquiryScanEnable,
-rxispoll,
+regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, 
+regi_InquiryScanEnable_oneshot, regi_InquiryScanCancel_oneshot,
+rxispoll, lt_addressed,
 regi_Ninquiry,
 regi_Inquiry_Length, regi_Extended_Inquiry_Length,
 dec_iscanEIR,
@@ -43,7 +45,7 @@ prs_clock_frozen, prm_clock_frozen,
 tx_packet_st_p,
 psrxfhs, inquiryrxfhs,
 rx_trailer_st_p,
-pagetxfhs, connsnewmaster, connsnewslave,
+pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 pk_encode,
 pssyncCLK_p
 
@@ -63,7 +65,8 @@ input [15:0] regi_Tpsinterval, regi_Tpswindow;
 input [15:0] regi_Tisinterval, regi_Tiswindow;
 input [5:0] regi_correthreshold;
 input regi_psinterlace, regi_isinterlace;
-input [63:0] regi_syncword_DAC, regi_syncword_GIAC, regi_syncword_CAC;
+input [63:0] regi_syncword_DAC, regi_syncword_GIAC, regi_syncword_CAC, regi_syncword_DIAC;
+input regi_inquiryDIAC;
 input [63:0] sync_in;
 input [9:0] regi_Npage;
 input [1:0] regi_slave_SRmode;
@@ -71,8 +74,9 @@ input [2:0] regi_Tsco;
 input [1:0] regi_scolink_num;
 input [15:0] regi_Page_Timeout;
 input [9:0] regi_isMaxRand;
-input regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, regi_InquiryScanEnable;
-input rxispoll;
+input regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot;
+input regi_InquiryScanEnable_oneshot, regi_InquiryScanCancel_oneshot;
+input rxispoll, lt_addressed;
 input [9:0] regi_Ninquiry;
 input [15:0] regi_Inquiry_Length, regi_Extended_Inquiry_Length;
 input dec_iscanEIR;
@@ -88,7 +92,7 @@ output prs_clock_frozen, prm_clock_frozen;
 output tx_packet_st_p;
 output psrxfhs, inquiryrxfhs;
 output rx_trailer_st_p;
-output pagetxfhs, connsnewmaster, connsnewslave;
+output pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 output pk_encode;
 output pssyncCLK_p;
 
@@ -109,6 +113,8 @@ wire PageScanWindow1more;
 wire psrxfhs;
 wire istxfhs_tslotdly_endp, istxfhs_tslot2dly_endp, isextfhs_tslotdly_endp;
 reg m_corre, s_corre;
+wire newconnectionTO;
+wire inqExt_tslotdly_endp, inqExt_tslot2dly_endp;
 
 parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_STATE=5'd3, PageScan_STATE=5'd4,
           CONNECTIONActive_STATE=5'd5, CONNECTIONHold_STATE=5'd6, CONNECTIONSniff_STATE=5'd7, CONNECTIONPark_STATE=5'd8,
@@ -117,7 +123,7 @@ parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_S
           PageSlaveResp_rxfhs_STATE=5'd15, PageSlaveResp_ackfhs_STATE=5'd16, InquiryScanRand_STATE=5'd17,
           InquiryScantxFHS_STATE=5'd18, InquiryScantxExtIRP_STATE=5'd19, CONNECTIONnewslave_STATE=5'd20, CONNECTIONnewmaster_STATE=5'd21,
           InquiryEIR_STATE=5'd22, Inquiryintern_STATE=5'd23, Pagetmp_STATE=5'd24, PageSlaveResp_rxfhsdone_STATE=5'd25,
-          CONNECTIONnewslave_ackpoll_STATE=5'd26;
+          CONNECTIONnewslave_ackpoll_STATE=5'd26, Inquiryrsp_STATE=5'd27;
 
 reg [4:0] cs, ns, pre_state_ff, pre_state;
 
@@ -156,8 +162,10 @@ begin
       end  
     CONNECTIONnewslave_STATE:
       begin
-        if (s_corre & rxispoll & s_tslot_p)   //receive master send poll packet
+        if (s_corre & rxispoll & s_tslot_p & lt_addressed)   //receive master send poll packet
           ns = CONNECTIONnewslave_ackpoll_STATE;
+        else if (newconnectionTO)
+          ns = PageScan_STATE;
       end
     CONNECTIONnewslave_ackpoll_STATE:
       begin
@@ -168,6 +176,8 @@ begin
       begin
         if (m_corre & m_tslot_p)
           ns = CONNECTIONActive_STATE;        //receive slave ack poll
+        else if (newconnectionTO)
+          ns = Page_STATE;
       end
     CONNECTIONActive_STATE:
       begin
@@ -297,14 +307,23 @@ begin
       begin
         if (inquiryTO)
           ns = pre_state_ff;
-        else if (corre_threshold & (!dec_iscanEIR) & corr_tslotdly_endp)
+        else if (corre_threshold)
+          ns = Inquiryrsp_STATE;
+//        else if (corre_threshold & (!dec_iscanEIR) & corr_tslotdly_endp)
+//          ns = Inquiryintern_STATE;
+//        else if (corre_threshold & (dec_iscanEIR) & corr_tslotdly_endp)
+//          ns = InquiryEIR_STATE;
+      end  
+    Inquiryrsp_STATE:
+      begin
+        if ((!dec_iscanEIR) & corr_tslotdly_endp)
           ns = Inquiryintern_STATE;
-        else if (corre_threshold & (dec_iscanEIR) & corr_tslotdly_endp)
+        else if (dec_iscanEIR & corr_tslotdly_endp)
           ns = InquiryEIR_STATE;
       end  
     InquiryEIR_STATE:  //receive extended FHS
       begin
-        if (corre_threshold & corr_tslotdly_endp)
+        if (inqExt_tslot2dly_endp)
           ns = Inquiryintern_STATE;
       end  
     Inquiryintern_STATE:
@@ -322,6 +341,12 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      is_counter_1us <= 0;
+// InquiryEIR_STATE delay count
+  else if (cs==Inquiryrsp_STATE & dec_iscanEIR & corr_tslotdly_endp)
+     is_counter_1us <= 0;
+  else if (p_1us & (cs==InquiryEIR_STATE))
+     is_counter_1us <= is_counter_1us + 1'b1;
+// InquiryScan delay count
   else if (regi_extendedInquiryResponse & istxfhs_tslot2dly_endp & (cs==InquiryScantxFHS_STATE))
      is_counter_1us <= 0;     
   else if (is_corre_threshold & corr_tslotdly_endp & (cs==InquiryScan_STATE))
@@ -332,6 +357,8 @@ end
 assign istxfhs_tslotdly_endp  = (is_counter_1us==11'd624)  & p_1us & (cs==InquiryScantxFHS_STATE);
 assign istxfhs_tslot2dly_endp = (is_counter_1us==11'd1249) & p_1us & (cs==InquiryScantxFHS_STATE);
 assign isextfhs_tslotdly_endp = (is_counter_1us==11'd624)  & p_1us & (cs==InquiryScantxExtIRP_STATE);
+assign inqExt_tslotdly_endp   = (is_counter_1us==11'd624)  & p_1us & (cs==InquiryEIR_STATE) ;
+assign inqExt_tslot2dly_endp  = (is_counter_1us==11'd1249) & p_1us & (cs==InquiryEIR_STATE) ;
 //
 reg PageScanEnable;
 always @(posedge clk_6M or negedge rstz)
@@ -342,6 +369,17 @@ begin
      PageScanEnable <= 1'b1;
   else if ((cs==PageSlaveResp_ackfhs_STATE & s_tslot_p) || regi_PageScanCancel_oneshot)
      PageScanEnable <= 1'b0;
+end
+
+reg InquiryScanEnable;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     InquiryScanEnable <= 1'b0;
+  else if (regi_InquiryScanEnable_oneshot)
+     InquiryScanEnable <= 1'b1;
+  else if (regi_InquiryScanCancel_oneshot)
+     InquiryScanEnable <= 1'b0;
 end
 
 
@@ -370,7 +408,11 @@ end
 assign is_randwin_endp = (randcnt == regi_isMaxRand) & p_1us & is_randwin;
 
 reg [4:0] counter_isFHS;
-wire isFHS_en = (cs==Inquiryintern_STATE & m_tslot_p);
+wire isFHS_en = regi_isMaster ? ( dec_iscanEIR ? (cs==InquiryEIR_STATE) & inqExt_tslot2dly_endp : 
+                                                                 (cs==Inquiryrsp_STATE) & corr_tslotdly_endp ) : 
+                regi_extendedInquiryResponse ? (cs==InquiryScantxExtIRP_STATE) & isextfhs_tslotdly_endp :
+                                               (cs==InquiryScantxFHS_STATE) & istxfhs_tslotdly_endp;
+
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -384,8 +426,8 @@ begin
 end
 
 wire corre_trgp;
-assign ps_corre_sync_p = corre_trgp;
-assign conns_corre_sync_p = corre_trgp;
+assign ps_corre_sync_p = corre_trgp & ps;
+assign conns_corre_sync_p = corre_trgp & conns;
 
 //
 reg prs_clock_frozen;
@@ -456,7 +498,26 @@ end
 //assign ps_N_incr_p = (ps_FHS_count_1us==11'd1249 & p_1us) ;
 assign ps_N_incr_p = (CLKN[1] & s_tslot_p & spr) ;
 //
+// newconnectionTO
+//
+wire s_wpoll = cs == CONNECTIONnewslave_STATE;
+wire newc_p = regi_isMaster ? connsnewmaster & (!m_corre) & m_tslot_p & CLK[1] : s_wpoll & CLK[1] & s_tslot_p;
+reg [4:0] newconnectionTO_count;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     newconnectionTO_count <= 0;
+  else if (regi_isMaster & (!connsnewmaster))
+     newconnectionTO_count <= 0;
+  else if ((!regi_isMaster) & s_wpoll)
+     newconnectionTO_count <= 0;
+  else if (newc_p)
+     newconnectionTO_count <= newconnectionTO_count + 1'b1;
+end
 
+assign newconnectionTO = newconnectionTO_count > 5'd15;
+
+//
 ps_ctrl ps_ctrl_u(
 .clk_6M                   (clk_6M                   ), 
 .rstz                     (rstz                     ), 
@@ -516,7 +577,7 @@ is_ctrl is_ctrl_u(
 .regi_Tisinterval      (regi_Tisinterval      ), 
 .regi_Tiswindow        (regi_Tiswindow        ),
 .regi_isinterlace      (regi_isinterlace      ),
-.regi_InquiryScanEnable(regi_InquiryScanEnable),
+.regi_InquiryScanEnable(InquiryScanEnable     ),
 .is                    (is                    ), 
 .giis                  (giis                  ),
 //               
@@ -611,7 +672,7 @@ inquiry_ctrl inquiry_ctrl_u(
 
 wire ConnsWindow = regi_isMaster ? m_conns_uncerWindow : s_conns_uncerWindow;  
 wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DAC :
-                       InquiryScanWindow ? regi_syncword_GIAC :
+                       InquiryScanWindow | inquiry ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
                        conns ? regi_syncword_CAC : 64'b0 ;
                        
 wire correWindow = page ? p_correWin :
@@ -619,7 +680,7 @@ wire correWindow = page ? p_correWin :
                    spr ? spr_correWin :
                    mpr ? mpr_correWin :
                    is ? InquiryScanWindow :
-                   conns ? ConnsWindow : 1'b0;
+                   conns | inquiry ? ConnsWindow : 1'b0;
 //
 correlator correlator_u(
 .clk_6M                 (clk_6M                   ), 
@@ -689,9 +750,11 @@ assign mpr = (cs==PageMasterResp_txfhs_STATE) | (cs==PageMasterResp_rxackfhs_STA
 
 assign spr = (cs==PageSlaveResp_txid_STATE) | (cs==PageSlaveResp_rxfhs_STATE) | (cs==PageSlaveResp_rxfhsdone_STATE) | (cs==PageSlaveResp_ackfhs_STATE);
 
-assign ir = 1'b0;
+assign ir = (cs==InquiryScantxFHS_STATE) | (cs==InquiryScantxExtIRP_STATE) | (cs==Inquiryrsp_STATE) | (cs==InquiryEIR_STATE);
 
 assign pagetxfhs = (cs==PageMasterResp_txfhs_STATE);
+
+assign istxfhs = (cs==InquiryScantxFHS_STATE);
 
 assign connsnewmaster = (cs==CONNECTIONnewmaster_STATE);
 assign connsnewslave = (cs==CONNECTIONnewslave_STATE) | (cs==CONNECTIONnewslave_ackpoll_STATE);
@@ -702,7 +765,7 @@ assign pstxid = (cs==PageSlaveResp_txid_STATE);
 
 assign psrxfhs = (cs==PageSlaveResp_rxfhs_STATE) | (cs==PageSlaveResp_rxfhsdone_STATE);
 
-assign inquiryrxfhs = 1'b0; //for tmp
+assign inquiryrxfhs = (cs==Inquiryrsp_STATE);
 
 assign pssyncCLK_p = (cs==PageSlaveResp_ackfhs_STATE) & s_tslot_p;
 //
@@ -717,7 +780,7 @@ assign tx_packet_st_p =
                      
                      ps  ? ps_corre_threshold & corr_tslotdly_endp :  // slave page response, ID         
                      cs==PageSlaveResp_rxfhsdone_STATE ? s_tslot_p :   // slave page response, ID
-                     cs==InquiryScanRand_STATE ? is_corre_threshold & corr_tslotdly_endp :  // inquiryScan response, FHS
+                     cs==InquiryScan_STATE ? is_corre_threshold & corr_tslotdly_endp :  // inquiryScan response, FHS
                      cs==InquiryScantxFHS_STATE ? regi_extendedInquiryResponse & istxfhs_tslot2dly_endp : //  inquiryScan extended response
                      cs==PageMasterResp_rxackfhs_STATE & m_corre    ?  CLKE[1] & m_tslot_p :  // master send first poll
                      cs==PageMasterResp_rxackfhs_STATE & (!m_corre) ?  CLKE[1] & m_tslot_p & (!regi_pagetruncated) :  // re-transmit FHS ,master page response, 

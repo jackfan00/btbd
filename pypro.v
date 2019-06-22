@@ -13,6 +13,7 @@ txpybitin,
 pk_encode,
 fec32bk_endp,
 whitening,
+fec32encode,
 rxbit,
 //
 fec32encodeout, fec32decodeBus,
@@ -32,6 +33,7 @@ input txpybitin;
 input pk_encode;
 input fec32bk_endp;
 input [6:0] whitening;
+input fec32encode;
 input rxbit;
 //
 output fec32encodeout;
@@ -185,16 +187,16 @@ assign fec32encodeout = shiftfec32_out ? fec32rem[4] :
 // 00010
 // 00001
 
-wire correct_b0 = syndrome==5'b00001;
-wire correct_b1 = syndrome==5'b00010;
-wire correct_b2 = syndrome==5'b00100;
-wire correct_b3 = syndrome==5'b01000;
-wire correct_b4 = syndrome==5'b10000;
-wire correct_b5 = syndrome==5'b01011;
-wire correct_b6 = syndrome==5'b10110;
-wire correct_b7 = syndrome==5'b00111;
-wire correct_b8 = syndrome==5'b01110;
-wire correct_b9 = syndrome==5'b11100;
+wire correct_b0 = (syndrome==5'b00001) & fec32encode;
+wire correct_b1 = (syndrome==5'b00010) & fec32encode;
+wire correct_b2 = (syndrome==5'b00100) & fec32encode;
+wire correct_b3 = (syndrome==5'b01000) & fec32encode;
+wire correct_b4 = (syndrome==5'b10000) & fec32encode;
+wire correct_b5 = (syndrome==5'b01011) & fec32encode;
+wire correct_b6 = (syndrome==5'b10110) & fec32encode;
+wire correct_b7 = (syndrome==5'b00111) & fec32encode;
+wire correct_b8 = (syndrome==5'b01110) & fec32encode;
+wire correct_b9 = (syndrome==5'b11100) & fec32encode;
 
 
 

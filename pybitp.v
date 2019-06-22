@@ -1,6 +1,6 @@
 module pybitp(
 clk_6M, rstz, p_1us, 
-mpr, ir, spr, psrxfhs,
+mpr, ir, spr, psrxfhs, inquiryrxfhs,
 py_st_p,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP,
 whitening,
@@ -45,7 +45,7 @@ fhs_PSM
 );
 
 input clk_6M, rstz, p_1us;
-input mpr, ir, spr, psrxfhs;
+input mpr, ir, spr, psrxfhs, inquiryrxfhs;
 input py_st_p;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP;
 input [6:0] whitening;
@@ -258,6 +258,7 @@ pypro pypro_u(
 .pk_encode              (pk_encode              ),
 .fec32bk_endp           (fec32bk_endp           ),
 .whitening              (whitening              ),
+.fec32encode            (fec32encode            ),
 .rxbit                  (rxbit                  ),
 //                     (//                     )
 .fec32encodeout         (fec32encodeout         ),
@@ -316,6 +317,7 @@ end
 wire [12:0] dec_pylenbit = dec_pylenByte > 10'd1021 ? {10'd1021,3'b0} : {dec_pylenByte,3'b0};
 
 //
+wire rxfhs = psrxfhs | inquiryrxfhs;
 //
 decFHS decFHS_u(
 .clk_6M       (clk_6M       ), 
@@ -325,7 +327,7 @@ decFHS decFHS_u(
 .dec_py_period(dec_py_period), 
 .py_datvalid_p(py_datvalid_p), 
 .pydecdatout  (pydecdatout  ),
-.psrxfhs      (psrxfhs      ),
+.rxfhs        (rxfhs        ),
 //
 .Pbits        (fhs_Pbits        ),
 .LAP          (fhs_LAP          ),

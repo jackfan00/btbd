@@ -7,3 +7,4 @@ sim/INCA_libs/*
 sim/verdiLog/*
 sim/ncverilog*
 sim/novas*
+sim/tp.v
