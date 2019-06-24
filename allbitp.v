@@ -24,7 +24,8 @@ regi_EIR,
 regi_my_BD_ADDR_LAP,
 regi_my_syncword,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
-pk_encode,
+pk_encode, conns_1stslot,
+bufpacketin,
 rxbit,
 //
 txbit, txbit_period,
@@ -71,7 +72,8 @@ input regi_EIR;
 input [23:0] regi_my_BD_ADDR_LAP;
 input [33:0] regi_my_syncword;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
-input pk_encode;
+input pk_encode, conns_1stslot;
+input bufpacketin;
 input rxbit;
 //
 output txbit, txbit_period;
@@ -177,7 +179,7 @@ wire [3:0] txpk_type = mpr | istxfhs ? 4'h2 : regi_packet_type;
 
 wire [3:0] pk_type = pk_encode ? txpk_type : dec_pk_type;
 
-wire [9:0] pylenB = pk_encode ? regi_payloadlen : dec_pylenByte;
+wire [9:0] pylenB = pk_encode_1stslot ? regi_payloadlen : dec_pylenByte;
 
 wire [12:0] pylenbit;
 wire [2:0] occpuy_slots;
@@ -188,16 +190,18 @@ pktydecode pktydecode_u(
 .is_ACL         (is_ACL         ),
 .pk_type        (pk_type        ),
 .regi_payloadlen(pylenB         ),
+.conns_1stslot  (conns_1stslot  ),
 //             (//             )
-.pylenbit       (pylenbit       ),
-.occpuy_slots   (occpuy_slots   ),
-.fec31encode    (fec31encode    ), 
-.fec32encode    (fec32encode    ), 
-.crcencode      (crcencode      ), 
-.packet_BRmode  (packet_BRmode  ), 
-.packet_DPSK    (packet_DPSK    ),
-.BRss           (BRss           ),
-.existpyheader  (existpyheader  )
+.pylenbit_f       (pylenbit       ),
+.occpuy_slots_f   (occpuy_slots   ),
+.fec31encode_f    (fec31encode    ), 
+.fec32encode_f    (fec32encode    ), 
+.crcencode_f      (crcencode      ), 
+.packet_BRmode_f  (packet_BRmode  ), 
+.packet_DPSK_f    (packet_DPSK    ),
+.BRss_f           (BRss           ),
+.existpyheader_f  (existpyheader  ),
+.allowedeSCOtype  (allowedeSCOtype)
 );
 
 //
@@ -236,6 +240,7 @@ pybitp pybitp_u(
 .pk_encode              (pk_encode              ),
 .BRss                   (BRss                   ),
 .existpyheader          (existpyheader          ),
+.bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit                  ),
 //                                              
 .txpybit                (txpybit                ), 

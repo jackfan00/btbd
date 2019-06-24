@@ -4,22 +4,22 @@
 module pyrxscobufctrl (
 clk_6M, rstz,
 tsco_p, 
-bsm_addr, inctrl_addr,
-bsm_din,
-bsm_we,
+bsm_addr, lnctrl_addr,
+lnctrl_din,
+lnctrl_we,
 bsm_cs, lnctrl_cs,
 //
-lnctrl_dout
+bsm_dout
 );
 
 input clk_6M, rstz;
 input tsco_p;
-input [7:0] bsm_addr, inctrl_addr;
+input [7:0] bsm_addr, lnctrl_addr;
 input [31:0] lnctrl_din;
 input lnctrl_we;
 input bsm_cs, lnctrl_cs;
 //
-output [31:0] lnctrl_dout;
+output [31:0] bsm_dout;
 
 reg s2a;
 always @(posedge clk_6M or negedge rstz)

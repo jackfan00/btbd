@@ -21,6 +21,7 @@ py_datvalid_p,
 pk_encode,
 BRss,
 existpyheader,
+bufpacketin,
 rxbit,
 //
 txpybit, py_period,
@@ -66,6 +67,7 @@ input py_datvalid_p;
 input pk_encode;
 input BRss;
 input existpyheader;
+input bufpacketin;
 input rxbit;
 //
 output txpybit, py_period;
@@ -231,7 +233,7 @@ assign py_daten = py_datperiod & daten;
 wire [143:0] FHSpacket = {3'b0, CLK[27:2], regi_FHS_LT_ADDR[2:0], regi_myClass[23:0], regi_my_BD_ADDR_NAP[15:0], 
                     regi_my_BD_ADDR_UAP[7:0], 2'b10, regi_SR[1:0], 1'b0, regi_EIR, regi_my_BD_ADDR_LAP[23:0], regi_my_syncword[33:0]};
 
-wire txpybitin = pk_type==4'h2 ? FHSpacket[bitcount] : 1'bz; //DataPacket[pybitcount];
+wire txpybitin = pk_type==4'h2 ? FHSpacket[bitcount] : bufpacketin; //DataPacket[pybitcount];
 
 //
 pypro pypro_u(

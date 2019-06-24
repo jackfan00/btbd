@@ -95,6 +95,7 @@ output rx_trailer_st_p;
 output pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 output pk_encode;
 output pssyncCLK_p;
+output conns_1stslot;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -115,6 +116,9 @@ wire istxfhs_tslotdly_endp, istxfhs_tslot2dly_endp, isextfhs_tslotdly_endp;
 reg m_corre, s_corre;
 wire newconnectionTO;
 wire inqExt_tslotdly_endp, inqExt_tslot2dly_endp;
+reg m_txcmd, s_txcmd;
+reg m_conns_1stslot, s_conns_1stslot;
+
 
 parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_STATE=5'd3, PageScan_STATE=5'd4,
           CONNECTIONActive_STATE=5'd5, CONNECTIONHold_STATE=5'd6, CONNECTIONSniff_STATE=5'd7, CONNECTIONPark_STATE=5'd8,
@@ -788,13 +792,55 @@ assign tx_packet_st_p =
                      cs==CONNECTIONnewslave_STATE  ? s_corre & rxispoll & s_tslot_p :   // slave send null to ack poll
                      1'b0;
                       
-assign pk_encode = page | mpr ? !CLKE[1] :
+wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
                    spr ? (cs==PageSlaveResp_txid_STATE) | (cs==PageSlaveResp_ackfhs_STATE) :
-                   conns ? (regi_isMaster ? !CLK[1] : CLK[1]) :
+                   //conns ? (regi_isMaster ? !CLK[1] : CLK[1]) :
+                   conns ? (regi_isMaster ? m_conns_1stslot : s_conns_1stslot) :
                    inquiry ? !CLKN[1] :
                    cs==InquiryScantxFHS_STATE ? 1'b1 :
                    cs==InquiryScantxExtIRP_STATE ? 1'b1 : 
                    1'b0;
                    
+
+//
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     m_txcmd <= 0;
+  else if (txcmd_p)
+     m_txcmd <= 1'b1;
+  else if (m_tslot_p)
+     m_txcmd <= 1'b0;
+end
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     m_conns_1stslot <= 0;
+  else if (m_txcmd & m_tslot_p)
+     m_conns_1stslot <= 1'b1;
+  else if (m_tslot_p)
+     m_conns_1stslot <= 1'b0;
+end
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     s_txcmd <= 0;
+  else if (txcmd_p)
+     s_txcmd <= 1'b1;
+  else if (s_tslot_p)
+     s_txcmd <= 1'b0;
+end
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     s_conns_1stslot <= 0;
+  else if (s_txcmd & s_tslot_p)
+     s_conns_1stslot <= 1'b1;
+  else if (m_tslot_p)
+     s_conns_1stslot <= 1'b0;
+end
+ 
+assign conns_1stslot = conns & (regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
+assign pk_encode = pk_encode_1stslot | extendslot;
 
 endmodule

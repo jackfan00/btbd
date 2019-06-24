@@ -4,7 +4,7 @@
 module pyrxaclbufctrl (
 clk_6M, rstz,
 bsm_read_endp,
-bsm_addr, inctrl_addr,
+bsm_addr, lnctrl_addr,
 lnctrl_din,
 lnctrl_we,
 bsm_cs, lnctrl_cs,
@@ -14,7 +14,7 @@ bsm_dout
 
 input clk_6M, rstz;
 input bsm_read_endp;
-input [7:0] bsm_addr, inctrl_addr;
+input [7:0] bsm_addr, lnctrl_addr;
 input [31:0] lnctrl_din;
 input lnctrl_we;
 input bsm_cs, lnctrl_cs;

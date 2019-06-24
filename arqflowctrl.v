@@ -1,8 +1,19 @@
 //
-// Vol2 Part B sec 4.5.3 flow control
+// Vol2 Part B sec 7.6 / 4.5.3 arq / flow control
 //
 module arqflowctrl();
 
+input clk_6M, rstz;
+input pk_encode;
+input allowedeSCOtype;
+input header_st_p;
+input [3:0] pktype;
+input dec_STOP, pre_notrans;
+input flushcmd;
+output ACK;
+output txSEQN;
+
+wire pktype_data;
 
 //destination control
 //
@@ -11,8 +22,8 @@ assign dstSTOP = !aclrxbufempty;
 
 //source control
 //
-assign srctxpktype = dec_STOP ? 4'b0 : regi_pktype;
-assign srcGO = !dec_STOP | !packetreceived;
+assign srctxpktype = dec_STOP ? 4'b0 : pktype;
+assign srcGO = !dec_STOP | pre_notrans;
 
 
 wire pktype_data, ACK;
@@ -21,16 +32,16 @@ wire pktype_data, ACK;
 // Vol2 PartB Figure 7.15
 //
 
-wire sendnewpy = !pktype_data | (pktype_data & ACK);
-wire sendoldpy =  pktype_data & !ACK & !flushcmd;
-wire send0cpy  =  pktype_data & !ACK &  flushcmd;  // 0 length continue ACL-U packet
+wire sendnewpy = pk_encode & !pktype_data | (pktype_data & ACK);
+wire sendoldpy = pk_encode &  pktype_data & !ACK & !flushcmd;
+wire send0cpy  = pk_encode &  pktype_data & !ACK &  flushcmd;  // 0 length continue ACL-U packet
 
 reg txSEQN;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      txSEQN <= 0;
-  else if (pktype_data & ACK & header_st_p)
+  else if (pk_encode & pktype_data & ACK & header_st_p)
      txSEQN <= ~txSEQN ;
 end
 
@@ -44,7 +55,7 @@ wire esco_addressed = dec_LT_ADDR == esco_LT_ADDR;
 wire pktype_data = pktype==4'h3 | pktype==4'h4 | pktype==4'h8 | pktype==4'ha | pktype==4'hb | pktype==4'he | pktype==4'hf;
 wire pktype_kk = pktype==4'h0 | pktype==4'h1 | pktype==4'h9 | pktype==4'h5 | (pktype==4'h6 & !is_eSCO) | (pktype==4'h7 & !is_eSCO);
 
-wire condi_A = (!fail1 & !fail2 ) ;
+wire condi_A = (!fail1 & !fail2 ) & (!pk_encode) ;
 
 wire condi_B = condi_A & esco_addressed;
 
@@ -53,9 +64,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      rxeSCOvalid_pyload <= 0;
-  else if (hecgood & crcgood & eSCOwindow & s_tslot_p)
+  else if ((!pk_encode) & hecgood & crcgood & eSCOwindow & s_tslot_p)
      rxeSCOvalid_pyload <= 1'b1 ;
-  else if (eSCOwindow)
+  else if (!eSCOwindow)
      rxeSCOvalid_pyload <= 1'b0 ;
 end
 
@@ -87,9 +98,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      ACK <= 0;
-  else if ((accept_eSCOpyload|ignore_eSCOpyload) )
+  else if ((accept_eSCOpyload|ignore_eSCOpyload) & eSCOwindow)
      ACK <= 1'b1 ;
-  else if (reject_eSCOpyload)
+  else if (reject_eSCOpyload & eSCOwindow)
      ACK <= 1'b0 ;
 //
   else if (accept_aclpyload )

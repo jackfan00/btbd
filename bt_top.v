@@ -336,7 +336,8 @@ linkctrler linkctrler_u(
 .connsnewmaster            (connsnewmaster            ),
 .connsnewslave             (connsnewslave             ),
 .pk_encode                 (pk_encode                 ),
-.pssyncCLK_p               (pssyncCLK_p               )
+.pssyncCLK_p               (pssyncCLK_p               ),
+.conns_1stslot             (conns_1stslot             )
 );
 
 //for tmp
@@ -482,6 +483,8 @@ allbitp allbitp_u(
 .is_SCO                 (is_SCO                 ), 
 .is_ACL                 (is_ACL                 ),
 .pk_encode              (pk_encode              ),
+.conns_1stslot          (conns_1stslot          ),
+.bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit_resync           ),
 //                                              
 .txbit                  (txbit                  ), 
@@ -503,36 +506,6 @@ allbitp allbitp_u(
 );
 
 
-//
-///////////////////////rxallbit rxallbit_u(
-///////////////////////.clk_6M                 (clk_6M                 ), 
-///////////////////////.rstz                   (rstz                   ), 
-///////////////////////.p_1us                  (p_1us                  ),
-///////////////////////.p_05us                 (p_05us                 ),
-///////////////////////.p_033us                (p_033us                ),
-///////////////////////.is_BRmode              (rxis_BRmode            ), 
-///////////////////////.is_eSCO                (rxis_eSCO              ), 
-///////////////////////.is_SCO                 (rxis_SCO               ), 
-///////////////////////.is_ACL                 (rxis_ACL               ),
-///////////////////////.regi_rxwhitening       (regi_rxwhitening       ),
-///////////////////////.regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
-///////////////////////.regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),
-///////////////////////.regi_my_BD_ADDR_UAP    (regi_my_BD_ADDR_UAP    ),
-///////////////////////.mpr                    (mpr                    ), 
-///////////////////////.spr                    (spr                    ), 
-///////////////////////.ir                     (ir                     ),
-///////////////////////.rx_trailer_st_p        (rx_trailer_st_p        ),
-///////////////////////.psrxfhs                (psrxfhs                ), 
-///////////////////////.inquiryrxfhs           (inquiryrxfhs           ), 
-///////////////////////.conns                  (conns                  ),
-///////////////////////.Xprm                   (Xprm                   ), 
-///////////////////////.Xir                    (Xir                    ), 
-///////////////////////.Xprs                   (Xprs                   ),
-///////////////////////.CLK                    (CLK                    ),
-///////////////////////.rxbit                  (rxbit_resync           ),
-/////////////////////////
-///////////////////////.rxispoll               (rxispoll               )
-///////////////////////);
 
 
 

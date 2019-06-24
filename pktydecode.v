@@ -2,24 +2,100 @@ module pktydecode(
 is_BRmode, is_eSCO, is_SCO, is_ACL,
 pk_type,
 regi_payloadlen,
+conns_1stslot,
 //
-pylenbit,
-occpuy_slots,
-fec31encode, fec32encode, crcencode, packet_BRmode, packet_DPSK,
-BRss,
-existpyheader
+pylenbit_f,
+occpuy_slots_f,
+fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f,
+BRss_f,
+existpyheader_f,
+allowedeSCOtype
 );
 
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
 input [3:0] pk_type;
 input [9:0] regi_payloadlen;
-
+input conns_1stslot;
 //
-output [12:0] pylenbit;
-output [2:0] occpuy_slots;
-output fec31encode, fec32encode, crcencode, packet_BRmode, packet_DPSK;
-output BRss;
-output existpyheader;
+output [12:0] pylenbit_f;
+output [2:0] occpuy_slots_f;
+output fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f;
+output BRss_f;
+output existpyheader_f;
+output allowedeSCOtype;
+//
+
+reg [12:0] pylenbit_f;
+reg [2:0] occpuy_slots_f;
+reg fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f;
+reg BRss_f;
+reg existpyheader_f;
+
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+      pylenbit_f <= 0 ;
+      occpuy_slots_f <= 0;
+      fec31encode_f <= 0;
+      fec32encode_f <= 0;
+      crcencode_f <= 0;
+      packet_BRmode_f <= 0;
+      packet_DPSK_f <= 0;
+      BRss_f <= 0;
+      existpyheader_f <= 0;
+    end
+
+  else if (pk_encode_1stslot)
+    begin
+      pylenbit_f <= pylenbit ;
+      occpuy_slots_f <= occpuy_slots;
+      fec31encode_f <= fec31encode;
+      fec32encode_f <= fec32encode;
+      crcencode_f <= crcencode;
+      packet_BRmode_f <= packet_BRmode;
+      packet_DPSK_f <= packet_DPSK;
+      BRss_f <= BRss;
+      existpyheader_f <= existpyheader;
+    end
+end
+
+reg extendslot;
+reg [2:0] extendslotcnt;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     extendslotcnt <= 3'd2;
+    end 
+  else if (conns_1stslot)
+    begin
+     extendslotcnt <= 3'd2;
+    end 
+  else if (tslot_p & extendslot)
+    begin
+     extendslotcnt <= extendslotcnt+1'b1;
+    end 
+end
+
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     extendslot <= 0;
+    end 
+  else if (conns_1stslot & tslot_p & (occpuy_slots>3'd1))
+    begin
+     extendslot <= 1'b1;
+    end 
+  else if (tslot_p & (occpuy_slots==extendslotcnt))
+    begin
+     extendslot <= 1'b0;
+    end 
+end
+
+assign allowedeSCOtype = pk_type==4'd0 | pk_type==4'd1 | pk_type==4'd6 | pk_type==4'd7 | pk_type==4'hc | pk_type==4'hd;
+
 //
 reg [12:0] pylenbit;
 reg [2:0] occpuy_slots;
