@@ -816,7 +816,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      m_conns_1stslot <= 0;
-  else if (m_txcmd & m_tslot_p)
+  else if (m_txcmd & m_tslot_p & CLK[1])
      m_conns_1stslot <= 1'b1;
   else if (m_tslot_p)
      m_conns_1stslot <= 1'b0;
@@ -834,9 +834,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      s_conns_1stslot <= 0;
-  else if (s_txcmd & s_tslot_p)
+  else if (s_txcmd & s_tslot_p & (!CLK[1]))
      s_conns_1stslot <= 1'b1;
-  else if (m_tslot_p)
+  else if (s_tslot_p)
      s_conns_1stslot <= 1'b0;
 end
  

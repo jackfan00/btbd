@@ -226,16 +226,20 @@ begin
      dec_lt_addr <= {decodeout,dec_lt_addr[2:1]};
 end
 
+wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_slot_p;
+wire [2:0] c_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 reg lt_addressed;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      lt_addressed <= 0;
-  else if (s_tslot_p | pk_encode)
+  else if (ms_tslot_p | pk_encode)
      lt_addressed <= 0;
   else if (ckhec & p_1us)
-     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==regi_mylt_address) ;  //header good and match lt_address
+     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==c_lt_addr) ;  //header good and match lt_address
 end
+
+
 
 reg [3:0] dec_pk_type;
 always @(posedge clk_6M or negedge rstz)
