@@ -7,7 +7,7 @@ bsm_addr, lnctrl_addr,
 bsm_din,
 bsm_we,
 bsm_cs, lnctrl_cs,
-txaclSEQN,
+s1a,
 //
 lnctrl_dout
 );
@@ -17,13 +17,13 @@ input [7:0] bsm_addr, lnctrl_addr;
 input [31:0] bsm_din;
 input bsm_we;
 input bsm_cs, lnctrl_cs;
-input txaclSEQN;
+input s1a;
 
 //
 output [31:0] lnctrl_dout;
 
 
-wire s1a = txaclSEQN;
+//wire s1a = txaclSEQN;
 
 wire [7:0]  u0_sram_a    = s1a ? bsm_addr : lnctrl_addr;
 wire [31:0] u0_sram_din  = s1a ? bsm_din  : 32'b0;

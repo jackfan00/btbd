@@ -5,27 +5,33 @@ module arqflowctrl();
 
 input clk_6M, rstz;
 input pk_encode;
+input dec_seqn;
+input [2:0] dec_lt_addr;
 input lt_addressed;
 input allowedeSCOtype;
 input header_st_p;
 input [3:0] pktype;
-input dec_STOP, pre_notrans, dec_crcgood;
+input [2:0] dec_flow;
+input pre_notrans, dec_crcgood;
 input regi_flushcmd_p;
 input regi_txcmsd_p;
+input regi_aclrxbufempty;
 output ACK;
 output txaclSEQN;
+output [3:0] srctxpktype;
 
 wire pktype_data;
 
 //destination control
 //
-assign rspFLOW = aclrxbufempty;
+assign rspFLOW = regi_aclrxbufempty;
 
 
+wire dec_flow_device = dec_flow[dec_lt_addr];
 //source control
 //
-assign srctxpktype = dec_STOP ? 4'b0 : pktype;
-assign srcFLOW = !dec_STOP | pre_notrans | !dec_crcgood |!aclpacket;
+assign srctxpktype = dec_flow_device ? regi_packet_type : 4'b0 ;
+assign srcFLOW = dec_flow_device | pre_notrans | !dec_crcgood | !aclpacket;
 
 
 wire pktype_data, ACK;
@@ -56,17 +62,17 @@ wire sendnewpy = pk_encode & !pktype_data | (pktype_data & ACK);
 wire sendoldpy = pk_encode &  pktype_data & !ACK & !flushcmd;
 wire send0cpy  = pk_encode &  pktype_data & !ACK &  flushcmd;  // 0 length continue ACL-U packet
 
-reg txaclSEQN;
+reg [7:0] txaclSEQN;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     txaclSEQN <= 1'b1;
+     txaclSEQN <= 8'hff;
   else if (connsnewmaster | connsnewslave)
-     txaclSEQN <= 1'b1;
+     txaclSEQN <= 8'hff;
   else if (regi_txcmsd_p)  // start tx cmd
-     txaclSEQN <= ~txaclSEQN ;
-  else if (pk_encode & pktype_data & ACK & header_st_p)
-     txaclSEQN <= ~txaclSEQN ;
+     txaclSEQN[regi_LT_ADDR] <= ~txaclSEQN[regi_LT_ADDR] ;
+  else if (pk_encode & pktype_data & txpk_arqn & header_st_p)
+     txaclSEQN[regi_LT_ADDR] <= ~txaclSEQN[regi_LT_ADDR] ;
 end
 
 reg txscoSEQN;
@@ -110,13 +116,13 @@ wire accept_eSCOpyload = condi_B & !rxeSCOvalid_pyload & rxeSCOpacketOK;
 wire ignore_eSCOpyload = condi_B &  rxeSCOvalid_pyload ;
 wire reject_eSCOpyload = condi_B & !rxeSCOvalid_pyload & !rxeSCOpacketOK;
 
-reg SEQN_old;
+reg [7:0] SEQN_old;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      SEQN_old <= 0;
   else if (accept_pyload )
-     SEQN_old <= dec_SEQN ;
+     SEQN_old[dec_lt_addr] <= dec_seqn ;
 end
 
 wire accept_aclpyload = condi_A & !esco_addressed & pktype_data & dec_SEQN!=SEQN_old & crcgood & micgood;
@@ -127,20 +133,20 @@ wire reject_aclpyload = condi_A & !esco_addressed & (
                                                   (!pktype_data & !pktype_kk             )  
                                                  ) ;
 
-reg ACK;
+reg [2:0] txARQN;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     ACK <= 0;
+     txARQN <= 0;
   else if ((accept_eSCOpyload|ignore_eSCOpyload) & eSCOwindow)
-     ACK <= 1'b1 ;
+     txARQN[dec_lt_addr] <= 1'b1 ;
   else if (reject_eSCOpyload & eSCOwindow)
-     ACK <= 1'b0 ;
+     txARQN[dec_lt_addr] <= 1'b0 ;
 //
   else if (accept_aclpyload | ignore_aclpyload )
-     ACK <= 1'b1 ;
+     txARQN[dec_lt_addr] <= 1'b1 ;
   else if ( reject_aclpyload | fail1 | (fail2 & regi_isMaster) )
-     ACK <= 1'b0 ;
+     txARQN[dec_lt_addr] <= 1'b0 ;
 end
 
 

@@ -434,6 +434,7 @@ allbitp allbitp_u(
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
 .s_tslot_p              (s_tslot_p              ),
+.ms_tslot_p             (ms_tslot_p             ),
 .pagetxfhs              (pagetxfhs              ), 
 .istxfhs                (istxfhs                ),
 .connsnewmaster         (connsnewmaster         ),
@@ -483,7 +484,7 @@ allbitp allbitp_u(
 .is_ACL                 (is_ACL                 ),
 .pk_encode              (pk_encode              ),
 .conns_1stslot          (conns_1stslot          ),
-.bufpacketin            (bufpacketin            ),
+//.bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit_resync           ),
 //                                              
 .txbit                  (txbit                  ), 

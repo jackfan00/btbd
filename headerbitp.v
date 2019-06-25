@@ -26,7 +26,9 @@ whitening,
 header_packet_period,
 rxispoll,
 dec_pk_type,
-lt_addressed
+lt_addressed,
+txpktype
+
 );
 
 input clk_6M, rstz, p_1us;
@@ -57,6 +59,7 @@ output header_packet_period;
 output rxispoll;
 output [3:0] dec_pk_type;
 output lt_addressed;
+output [3:0] txpktype;
 
 wire packet_endp;
 reg header_packet_period;
@@ -137,11 +140,15 @@ assign fec31inc_p = fec31count==2'd2 & p_1us;
 
 
 //
-wire [3:0] txpktype = pagetxfhs | istxfhs ? 4'b0010 :   //fhs
+wire [3:0] txpktype = mpr | istxfhs ? 4'b0010 :   //fhs
                     connsnewmaster ? 4'b0001 :    //poll
                     connsnewslave ? 4'b0000 :    //null
-                    regi_packet_type;
-wire [9:0] txpacket_header = {regi_SEQN,regi_ARQN,regi_FLOW,txpktype,regi_LT_ADDR};
+                    conns ? srctxpktype : 4'b0; //regi_packet_type;
+wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : dec_lt_addr;
+wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
+wire txpk_arqn = conns ? txARQN[txpk_lt_addr] : 1'b0;
+wire txpk_flow = conns ? srcFLOW : 1'b1;
+wire [9:0] txpacket_header = {txpk_seqn,txpk_arqn,txpk_flow,txpktype,txpk_lt_addr};
 
 
 assign pkheader_bitin = txpacket_header[header_bitcount];
@@ -250,13 +257,14 @@ begin
      dec_pk_type <= {decodeout,dec_pk_type[3:1]};
 end
 
-reg dec_flow, dec_arqn, dec_seqn;
+reg [7:0] dec_flow, dec_arqn;
+reg dec_seqn;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_flow <= 0;
   else if (header_bitcount==5'd7 & fec31inc_p & header_en & (!pk_encode))
-     dec_flow <= {decodeout};
+     dec_flow[dec_lt_addr] <= {decodeout};
 end
 
 always @(posedge clk_6M or negedge rstz)
@@ -264,7 +272,7 @@ begin
   if (!rstz)
      dec_arqn <= 0;
   else if (header_bitcount==5'd8 & fec31inc_p & header_en & (!pk_encode))
-     dec_arqn <= {decodeout};
+     dec_arqn[dec_lt_addr] <= {decodeout};
 end
 
 always @(posedge clk_6M or negedge rstz)

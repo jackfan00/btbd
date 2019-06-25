@@ -299,13 +299,13 @@ begin
   else if (bitcount==12'hb & py_datvalid_p & existpyheader)
      dec_LLID <= {pydecdatout,pydecdatout_d[0]};
 end
-reg dec_FLOW;
+reg dec_pyFLOW;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     dec_FLOW <= 0;
+     dec_pyFLOW <= 0;
   else if (bitcount==12'hc & py_datvalid_p & existpyheader)
-     dec_FLOW <= pydecdatout;
+     dec_pyFLOW <= pydecdatout;
 end
 
 reg [9:0] dec_pylenByte;

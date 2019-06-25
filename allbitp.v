@@ -1,6 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
-s_tslot_p,
+s_tslot_p, ms_tslot_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs,
 rx_trailer_st_p,
@@ -25,7 +25,7 @@ regi_my_BD_ADDR_LAP,
 regi_my_syncword,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
 pk_encode, conns_1stslot,
-bufpacketin,
+//bufpacketin,
 rxbit,
 //
 pybitcount,
@@ -45,14 +45,15 @@ fhs_CLK,
 fhs_PSM,
 rxpydin,
 rxpyadr,
-rxpydin_valid_p
+rxpydin_valid_p,
+bsm_out
 
 
 );
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
-input s_tslot_p;
+input s_tslot_p, ms_tslot_p;
 input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs;
 input rx_trailer_st_p;
@@ -77,7 +78,7 @@ input [23:0] regi_my_BD_ADDR_LAP;
 input [33:0] regi_my_syncword;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
 input pk_encode, conns_1stslot;
-input bufpacketin;
+//input bufpacketin;
 input rxbit;
 //
 output [12:0] pybitcount;
@@ -98,7 +99,7 @@ output [2:0]  fhs_PSM;
 output [31:0] rxpydin;
 output [7:0] rxpyadr;
 output rxpydin_valid_p;
-
+output [31:0] bsm_out ;
 //
 wire py_period, daten, dec_py_period;
 wire py_st_p;
@@ -118,7 +119,7 @@ wire [27:2] fhs_CLK;
 wire [2:0]  fhs_PSM;
 wire [9:0] dec_pylenByte;
 wire [3:0] dec_pk_type;
-
+wire [3:0] txpktype;
 
 wire py_datvalid_p = packet_BRmode ? p_1us :
                   packet_DPSK ? p_05us : p_033us;
@@ -179,13 +180,14 @@ headerbitp headerbitp_u(
 .rxispoll               (rxispoll               ),
 .header_packet_period   (header_packet_period   ),
 .dec_pk_type            (dec_pk_type            ),
-.lt_addressed           (lt_addressed           )
+.lt_addressed           (lt_addressed           ),
+.txpktype               (txpktype               )
 
 );
 
-wire [3:0] txpk_type = mpr | istxfhs ? 4'h2 : regi_packet_type;
+//wire [3:0] txpk_type = mpr | istxfhs ? 4'h2 : regi_packet_type;
 
-wire [3:0] pk_type = pk_encode ? txpk_type : dec_pk_type;
+wire [3:0] pk_type = pk_encode ? txpktype : dec_pk_type;
 
 wire [9:0] pylenB = pk_encode_1stslot ? regi_payloadlen : dec_pylenByte;
 
@@ -213,6 +215,8 @@ pktydecode pktydecode_u(
 );
 
 //
+wire lnctrl_txpybitin;
+wire bufpacketin = lnctrl_txpybitin;
 pybitp pybitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
@@ -282,5 +286,51 @@ assign txbit = header_packet_period & pk_encode ? txheaderbit :
                py_period & pk_encode     ? txpybit     : 1'b0;
 
 assign txbit_period = (header_packet_period | py_period) & pk_encode;
+
+//
+wire [31:0] rxlnctrl_din = rxpydin;
+wire [7:0]  rxlnctrl_addr = rxpyadr;
+wire rxlnctrl_we = rxpydin_valid_p;
+wire dec_LMPcmd = dec_LLID==2'b11;
+//
+wire tx_reservedslot = 1'b0; //for tmp
+wire rx_reservedslot = 1'b0; //for tmp
+wire txtsco_p = 1'b0; //for tmp
+wire rxtsco_p = 1'b0; //for tmp
+
+bufctrl bufctrl_u(
+.clk_6M          (clk_6M          ), 
+.rstz            (rstz            ), 
+.ms_tslot_p      (ms_tslot_p      ),
+.pybitcount      (pybitcount      ),
+.regi_LMPcmd_p   (regi_LMPcmd_p   ),  
+.dec_LMPcmd      (dec_LMPcmd      ),
+.py_datperiod    (py_datperiod    ), 
+.dec_py_period   (dec_py_period   ),
+.tx_reservedslot (tx_reservedslot ), 
+.rx_reservedslot (rx_reservedslot ), 
+.txtsco_p        (txtsco_p        ), 
+.rxtsco_p        (rxtsco_p        ),
+.txbsmacl_addr   (txbsmacl_addr   ), 
+.txbsmsco_addr   (txbsmsco_addr   ),
+.txbsmacl_din    (txbsmacl_din    ), 
+.txbsmsco_din    (txbsmsco_din    ),
+.txbsmacl_we     (txbsmacl_we     ), 
+.txbsmsco_we     (txbsmsco_we     ), 
+.txbsmacl_cs     (txbsmacl_cs     ), 
+.txbsmsco_cs     (txbsmsco_cs     ),
+.rxbsmacl_addr   (rxbsmacl_addr   ), 
+.rxbsmsco_addr   (rxbsmsco_addr   ), 
+.rxlnctrl_addr   (rxlnctrl_addr   ),
+.rxlnctrl_din    (rxlnctrl_din    ),
+.rxlnctrl_we     (rxlnctrl_we     ), 
+.rxbsmacl_cs     (rxbsmacl_cs     ), 
+.rxbsmsco_cs     (rxbsmsco_cs     ),
+.txaclSEQN       (txaclSEQN       ),
+//
+.lnctrl_txpybitin(lnctrl_txpybitin),
+.bsm_out         (bsm_out         )
+);
+
 
 endmodule

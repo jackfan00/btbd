@@ -12,7 +12,8 @@ lnctrl_din,
 lnctrl_we,
 bsm_cs, lnctrl_cs,
 //
-bsm_dout
+bsm_dout,
+regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
@@ -26,6 +27,7 @@ input lnctrl_we;
 input bsm_cs, lnctrl_cs;
 //
 output [31:0] bsm_dout;
+output regi_aclrxbufempty;
 
 wire bsm_read_endp;
 wire [31:0] u0_bsm_dout, u1_bsm_dout;
@@ -91,5 +93,16 @@ assign bsm_dout = s1a ? u1_bsm_dout : u0_bsm_dout;
 wire [9:0] pylenByte = s1a ? u1_length : u0_length;
 wire [7:0] endaddr = (pylenByte[1:0]==2'b0) ? pylenByte[9:2]-1'b1 : pylenByte[9:2];
 assign bsm_read_endp = (bsm_addr >= endaddr) & bsm_valid_p;
+//
+reg regi_aclrxbufempty;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     regi_aclrxbufempty <= 1'b1;
+  else if (bsm_read_endp)
+     regi_aclrxbufempty <= 1'b1;
+  else if (ms_tslot_p & !pk_encode & hecgood & crcgood)
+     regi_aclrxbufempty <= 1'b0;
+end
 
 endmodule
