@@ -10,9 +10,10 @@ input allowedeSCOtype;
 input header_st_p;
 input [3:0] pktype;
 input dec_STOP, pre_notrans, dec_crcgood;
-input flushcmd;
+input regi_flushcmd_p;
+input regi_txcmsd_p;
 output ACK;
-output txSEQN;
+output txaclSEQN;
 
 wire pktype_data;
 
@@ -32,7 +33,25 @@ wire pktype_data, ACK;
 // TX arq ctrl
 // Vol2 PartB Figure 7.15
 //
-
+reg flushcmd_trg, flushcmd;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     flushcmd_trg <= 1'b0;
+  else if (regi_flushcmd_p)
+     flushcmd_trg <= 1'b1;
+  else if (ms_tslot_p)  
+     flushcmd_trg <= 1'b0 ;
+end
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     flushcmd <= 1'b0;
+  else if (flushcmd_trg & ms_tslot_p)
+     flushcmd <= 1'b1;
+  else if (ACK)  
+     flushcmd <= 1'b0 ;
+end
 wire sendnewpy = pk_encode & !pktype_data | (pktype_data & ACK);
 wire sendoldpy = pk_encode &  pktype_data & !ACK & !flushcmd;
 wire send0cpy  = pk_encode &  pktype_data & !ACK &  flushcmd;  // 0 length continue ACL-U packet
@@ -44,6 +63,8 @@ begin
      txaclSEQN <= 1'b1;
   else if (connsnewmaster | connsnewslave)
      txaclSEQN <= 1'b1;
+  else if (regi_txcmsd_p)  // start tx cmd
+     txaclSEQN <= ~txaclSEQN ;
   else if (pk_encode & pktype_data & ACK & header_st_p)
      txaclSEQN <= ~txaclSEQN ;
 end

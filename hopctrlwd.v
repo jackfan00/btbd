@@ -4,8 +4,8 @@
 //
 
 module hopctrlwd(
-clk_6M, divffclk, rstz, div_en_p,
-m_tslot_p,
+clk_6M, rstz, 
+m_tslot_p, ms_tslot_p,
 ps_N_incr_p,
 pageAB_2Npage_count, 
 Atrain,
@@ -27,8 +27,8 @@ D,
 E, F, Fprime
 );
 
-input clk_6M, divffclk, rstz, div_en_p;
-input m_tslot_p;
+input clk_6M, rstz;
+input m_tslot_p, ms_tslot_p;
 input ps_N_incr_p;
 input [3:0] pageAB_2Npage_count;
 input Atrain;
@@ -198,14 +198,18 @@ assign D = ({9{ps}}      & BD_ADDR[18:10]) |    //page scan
            
 assign E = {BD_ADDR[13],BD_ADDR[11],BD_ADDR[9],BD_ADDR[7],BD_ADDR[5],BD_ADDR[3],BD_ADDR[1]};           
 
+//
+wire div_en_p = (CLK[6:0]==7'h7f) & ms_tslot_p;
+wire divffclk = clk_6M;
+
 wire [24:0] Ft, nc1;
 div mod79_F(
-.clk      (divffclk                      ),
+.clk      (divffclk                   ),
 .rstz     (rstz                       ),
-.div_en_p     (div_en_p                       ),
+.div_en_p (div_en_p                   ),
 .dividend ({CLK[27:7],4'b0}           ),
 .divisor  (7'd79                      ),
-.result_o ({Ft[24:0],nc1[24:0]}         )
+.result_o ({Ft[24:0],nc1[24:0]}       )
 );
 
 assign F = ({7{conns}} & Ft[6:0]);
@@ -213,12 +217,12 @@ assign F = ({7{conns}} & Ft[6:0]);
 
 wire [24:0] Fprimet, nc2;
 div mod79_Fprime(
-.clk      (divffclk                        ),
+.clk      (divffclk                   ),
 .rstz     (rstz                       ),
-.div_en_p     (div_en_p                       ),
+.div_en_p (div_en_p                   ),
 .dividend ({CLK[27:7],4'b0}           ),
-.divisor  (regi_AFH_N                          ),
-.result_o ({Fprimet[24:0],nc2[24:0]}         )
+.divisor  (regi_AFH_N                 ),
+.result_o ({Fprimet[24:0],nc2[24:0]}  )
 );
 
 assign Fprime = ({7{conns}} & Fprimet[6:0]);

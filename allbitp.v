@@ -28,6 +28,7 @@ pk_encode, conns_1stslot,
 bufpacketin,
 rxbit,
 //
+pybitcount,
 txbit, txbit_period,
 rxispoll,
 lt_addressed,
@@ -41,7 +42,10 @@ fhs_NAP,
 fhs_CoD,
 fhs_LT_ADDR,
 fhs_CLK,
-fhs_PSM
+fhs_PSM,
+rxpydin,
+rxpyadr,
+rxpydin_valid_p
 
 
 );
@@ -76,6 +80,7 @@ input pk_encode, conns_1stslot;
 input bufpacketin;
 input rxbit;
 //
+output [12:0] pybitcount;
 output txbit, txbit_period;
 output rxispoll;
 output lt_addressed;
@@ -90,6 +95,9 @@ output [23:0] fhs_CoD;
 output [2:0]  fhs_LT_ADDR;
 output [27:2] fhs_CLK;
 output [2:0]  fhs_PSM;
+output [31:0] rxpydin;
+output [7:0] rxpyadr;
+output rxpydin_valid_p;
 
 //
 wire py_period, daten, dec_py_period;
@@ -243,6 +251,7 @@ pybitp pybitp_u(
 .bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit                  ),
 //                                              
+.pybitcount             (pybitcount             ),
 .txpybit                (txpybit                ), 
 .py_period              (py_period              ),
 .daten                  (daten                  ),
@@ -261,7 +270,10 @@ pybitp pybitp_u(
 .fhs_CoD                (fhs_CoD                ),
 .fhs_LT_ADDR            (fhs_LT_ADDR            ),
 .fhs_CLK                (fhs_CLK                ),
-.fhs_PSM                (fhs_PSM                )
+.fhs_PSM                (fhs_PSM                ),
+.rxpydin                (rxpydin                ),
+.rxpyadr                (rxpyadr                ),
+.rxpydin_valid_p        (rxpydin_valid_p        )
 
 );
 

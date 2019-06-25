@@ -24,6 +24,7 @@ existpyheader,
 bufpacketin,
 rxbit,
 //
+pybitcount,
 txpybit, py_period,
 daten,
 dec_py_period,
@@ -41,7 +42,10 @@ fhs_NAP,
 fhs_CoD,
 fhs_LT_ADDR,
 fhs_CLK,
-fhs_PSM
+fhs_PSM,
+rxpydin,
+rxpyadr,
+rxpydin_valid_p
 
 );
 
@@ -70,6 +74,7 @@ input existpyheader;
 input bufpacketin;
 input rxbit;
 //
+output [12:0] pybitcount;
 output txpybit, py_period;
 output daten;
 output dec_py_period;
@@ -88,7 +93,9 @@ output [23:0] fhs_CoD;
 output [2:0]  fhs_LT_ADDR;
 output [27:2] fhs_CLK;
 output [2:0]  fhs_PSM;
-
+output [31:0] rxpydin;
+output [7:0] rxpyadr;
+output rxpydin_valid_p;
 
 wire py_endp;
 reg py_period;
@@ -190,7 +197,7 @@ begin
 ////////  else if (daten & py_period & p_033us & (!packet_DPSK) & (!packet_BRmode))
 ////////     bitcount <= bitcount + 1'b1 ;
 end
-
+assign pybitcount = bitcount;
 assign py_crc16period = py_period & (bitcount >= pylenbit);
 assign py_datperiod = py_period & (bitcount < pylenbit);
 assign py_daten = py_datperiod & daten;
@@ -317,6 +324,53 @@ end
 //assign dec_FLOW = py_header[2];
 //assign dec_pylenByte = BRss ? {5'b0,py_header[7:3]} : py_header[12:3];
 wire [12:0] dec_pylenbit = dec_pylenByte > 10'd1021 ? {10'd1021,3'b0} : {dec_pylenByte,3'b0};
+
+//
+// pyload data word
+reg [4:0] pydin_bitcnt;
+reg [31:0] rxpydin;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     rxpydin <= 0;
+  else if (daten & dec_py_period & py_datvalid_p)
+     rxpydin <= {pydecdatout,rxpydin[31:1]};
+end
+
+reg dec_py_period_ext;
+reg [4:0] dec_pybitcnt;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     dec_pybitcnt <= 0;
+  else if (dec_py_st_p)
+     dec_pybitcnt <= 0;
+  else if ((daten & dec_py_period & py_datvalid_p) | dec_py_period_ext)
+     dec_pybitcnt <= dec_pybitcnt + 1'b1 ;
+end
+
+//extend to make 32 bit
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     dec_py_period_ext <= 0;
+  else if (dec_py_end_p & dec_pybitcnt!=5'd31)
+     dec_py_period_ext <= 1'b1;
+  else if (dec_pybitcnt==5'd31 & py_datvalid_p)
+     dec_py_period_ext <= 1'b0 ;
+end
+assign rxpydin_valid_p = (dec_pybitcnt==5'd31) & py_datvalid_p;
+
+reg [7:0] rxpyadr;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     rxpyadr <= 0;
+  else if (dec_py_st_p)
+     rxpyadr <= 0;
+  else if (pydin_valid_p)
+     rxpyadr <= rxpyadr + 1'b1 ;
+end
 
 //
 wire rxfhs = psrxfhs | inquiryrxfhs;

@@ -1,5 +1,5 @@
 module bt_top(
-clk_6M, divffclk, rstz,
+clk_6M, rstz,
 regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_interlace_offset, regi_page_k_nudge,
 regi_AFH_N,
@@ -47,7 +47,7 @@ regi_fhsslave_offset
 );
 
 
-input clk_6M, divffclk, rstz;
+input clk_6M, rstz;
 input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [4:0] regi_interlace_offset, regi_page_k_nudge;
 input [6:0] regi_AFH_N;
@@ -182,12 +182,12 @@ wire [27:0] CLKN = regi_isMaster ? CLKN_master : CLKN_slave;
 wire [27:0] CLKE = CLKE_master;
 wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
 
+
 hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
-.divffclk             (divffclk             ), 
 .rstz                 (rstz                 ), 
-.div_en_p             (div_en_p             ),
 .m_tslot_p            (m_tslot_p            ),
+.ms_tslot_p           (ms_tslot_p           ),
 .ps_N_incr_p          (ps_N_incr_p          ),
 .pageAB_2Npage_count  (pageAB_2Npage_count  ), 
 .Atrain               (Atrain               ),
@@ -226,7 +226,6 @@ hopctrlwd hopctrlwd_u(
 .F                    (F                    ), 
 .Fprime               (Fprime               )
 );
-
 
 hopkernal hopkernal_u(
 .divffclk            (divffclk            ), 
