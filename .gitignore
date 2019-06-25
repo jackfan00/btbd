@@ -1,5 +1,6 @@
 *.bak
 *.v~
+sim/*.rc
 sim/*.log
 sim/*.v~
 sim/*.fsdb
