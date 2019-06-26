@@ -51,7 +51,8 @@ pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 pk_encode,
 pssyncCLK_p,
 conns_1stslot,
-pk_encode_1stslot
+pk_encode_1stslot,
+ms_txcmd_p
 
 );
 
@@ -103,6 +104,7 @@ output pk_encode;
 output pssyncCLK_p;
 output conns_1stslot;
 output pk_encode_1stslot;
+output ms_txcmd_p;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -817,13 +819,13 @@ wire m_scotxcmd_p = 1'b0; //for tmp
 wire s_scotxcmd_p = 1'b0; //for tmp
 
 
-assign txcmd_p = regi_isMaster ? m_acltxcmd_p | m_scotxcmd_p : s_acltxcmd_p | s_scotxcmd_p;
+assign ms_txcmd_p = regi_isMaster ? m_acltxcmd_p | m_scotxcmd_p : s_acltxcmd_p | s_scotxcmd_p;
 
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      m_txcmd <= 0;
-  else if (txcmd_p)
+  else if (ms_txcmd_p)
      m_txcmd <= 1'b1;
   else if (m_tslot_p & CLK[1])
      m_txcmd <= 1'b0;
@@ -841,7 +843,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      s_txcmd <= 0;
-  else if (txcmd_p)
+  else if (ms_txcmd_p)
      s_txcmd <= 1'b1;
   else if (s_tslot_p & (!CLK[1]))
      s_txcmd <= 1'b0;

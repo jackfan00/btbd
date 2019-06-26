@@ -46,7 +46,9 @@ fhs_PSM,
 rxpydin,
 rxpyadr,
 rxpydin_valid_p,
-py_endp
+py_endp,
+dec_py_endp,
+py_datperiod
 
 );
 
@@ -98,11 +100,13 @@ output [31:0] rxpydin;
 output [7:0] rxpyadr;
 output rxpydin_valid_p;
 output py_endp;
+output dec_py_endp;
+output py_datperiod;
 
 //
 reg py_period;
 wire fec32bk_endp;
-wire dec_py_endp;
+
 wire [9:0] fec32decodeBus;
 
 wire [12:0] payloadlen_crc = crcencode ? pylenbit + 5'd16 : pylenbit;

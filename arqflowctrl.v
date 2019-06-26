@@ -3,13 +3,15 @@
 //
 module arqflowctrl(
 clk_6M, rstz,
+regi_isMaster,
+dec_py_endp,
 esco_LT_ADDR,
 noCAC,
 is_eSCO,
 dec_hecgood, dec_micgood,
 connsnewmaster, connsnewslave,
 ms_lt_addr,
-ms_tslot_p,
+ms_tslot_p, s_tslot_p,
 pk_encode,
 dec_seqn,
 dec_lt_addr,
@@ -21,7 +23,7 @@ dec_flow,
 dec_arqn,
 prerx_notrans, dec_crcgood,
 regi_flushcmd_p,
-txcmd_p,
+ms_txcmd_p,
 regi_aclrxbufempty,
 //
 txARQN,
@@ -33,13 +35,15 @@ srcFLOW
 );
 
 input clk_6M, rstz;
+input regi_isMaster;
+input dec_py_endp;
 input [2:0] esco_LT_ADDR;
 input noCAC;
 input is_eSCO;
 input dec_hecgood, dec_micgood;
 input connsnewmaster, connsnewslave;
 input [2:0] ms_lt_addr;
-input ms_tslot_p;
+input ms_tslot_p, s_tslot_p;
 input pk_encode;
 input dec_seqn;
 input [2:0] dec_lt_addr;
@@ -51,7 +55,7 @@ input [7:0] dec_flow;
 input [7:0] dec_arqn;
 input prerx_notrans, dec_crcgood;
 input regi_flushcmd_p;
-input txcmd_p;
+input ms_txcmd_p;
 input regi_aclrxbufempty;
 //
 output [7:0] txARQN;
@@ -116,7 +120,7 @@ begin
      txaclSEQN <= 8'hff;
   else if (connsnewmaster | connsnewslave)
      txaclSEQN <= 8'hff;
-  else if (txcmd_p)  // start tx cmd, from lnctrl
+  else if (ms_txcmd_p)  // start tx cmd, from lnctrl
      txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
   else if (pk_encode & pktype_data & dec_arqn[ms_lt_addr] & header_st_p)
      txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
@@ -176,6 +180,15 @@ wire reject_aclpyload = condi_A & !esco_addressed & (
                                                   (!dec_pktype_data & !dec_pktype_kk             )  
                                                  ) ;
 //
+reg dec_py_endp_d1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     dec_py_endp_d1 <= 0;
+  else 
+     dec_py_endp_d1 <= dec_py_endp ;
+end
+
 
 always @(posedge clk_6M or negedge rstz)
 begin

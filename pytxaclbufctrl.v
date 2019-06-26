@@ -27,7 +27,7 @@ output [31:0] lnctrl_dout;
 
 wire [7:0]  u0_sram_a    = s1a ? bsm_addr : lnctrl_addr;
 wire [31:0] u0_sram_din  = s1a ? bsm_din  : 32'b0;
-wire [7:0]  u0_sram_we   = s1a ? bsm_we   : 1'b0;
+wire        u0_sram_we   = s1a ? bsm_we   : 1'b0;
 wire        u0_sram_cs   = s1a ? bsm_cs   : lnctrl_cs;
 
 wire [31:0] u0_dout;
@@ -43,7 +43,7 @@ sram256x32_1p sram256x32_1p_u0(
 
 wire [7:0]  u1_sram_a    = !s1a ? bsm_addr : lnctrl_addr;
 wire [31:0] u1_sram_din  = !s1a ? bsm_din  : 32'b0;
-wire [7:0]  u1_sram_we   = !s1a ? bsm_we   : 1'b0;
+wire        u1_sram_we   = !s1a ? bsm_we   : 1'b0;
 wire        u1_sram_cs   = !s1a ? bsm_cs   : lnctrl_cs;
 
 wire [31:0] u1_dout;

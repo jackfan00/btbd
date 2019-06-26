@@ -34,7 +34,7 @@ end
 
 wire [7:0]  sram_a    = s2a ? bsm_addr : lnctrl_addr;
 wire [31:0] sram_din  = s2a ? bsm_din  : 32'b0;
-wire [7:0]  sram_we   = s2a ? bsm_we   : 1'b0;
+wire        sram_we   = s2a ? bsm_we   : 1'b0;
 wire        sram_cs   = s2a ? bsm_cs   : lnctrl_cs;
 
 wire [31:0] dout;

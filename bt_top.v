@@ -1,5 +1,12 @@
 module bt_top(
 clk_6M, rstz,
+txbsmacl_addr, txbsmsco_addr,
+txbsmacl_din, txbsmsco_din,
+txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs,
+rxbsmacl_addr, rxbsmsco_addr,
+rxbsmacl_cs, rxbsmsco_cs,
+rxbsm_valid_p,
+regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p,
 regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_interlace_offset, regi_page_k_nudge,
 regi_AFH_N,
@@ -43,11 +50,19 @@ rxbit,
 //
 txbit,
 fk,
-regi_fhsslave_offset
+regi_fhsslave_offset,
+bsm_dout
 );
 
 
 input clk_6M, rstz;
+input [7:0] txbsmacl_addr, txbsmsco_addr;
+input [31:0] txbsmacl_din, txbsmsco_din;
+input txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs;
+input [7:0] rxbsmacl_addr, rxbsmsco_addr;
+input rxbsmacl_cs, rxbsmsco_cs;
+input rxbsm_valid_p;
+input regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p;
 input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [4:0] regi_interlace_offset, regi_page_k_nudge;
 input [6:0] regi_AFH_N;
@@ -94,6 +109,7 @@ input rxbit;
 output txbit;
 output [6:0] fk;
 output [27:2] regi_fhsslave_offset;
+output [31:0] bsm_dout ;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -138,6 +154,7 @@ wire [6:0] whitening;
 wire py_period, daten, py_datvalid_p;
 wire pssyncCLK_p;
 wire lt_addressed;
+
 
 bluetoothclk bluetoothclk_u(
 .clk_6M               (clk_6M               ), 
@@ -229,8 +246,8 @@ hopctrlwd hopctrlwd_u(
 );
 
 hopkernal hopkernal_u(
-.divffclk            (divffclk            ), 
-.div_en_p            (div_en_p            ),
+//.divffclk            (divffclk            ), 
+//.div_en_p            (div_en_p            ),
 .rstz                (rstz                ),
 .X                   (X                   ), 
 .A                   (A                   ), 
@@ -307,7 +324,7 @@ linkctrler linkctrler_u(
 .dec_iscanEIR                (fhs_EIR                     ),
 .regi_isMaster               (regi_isMaster               ),
 .extendslot                  (extendslot                  ),
-.m_acltxcmd_p                (m_acltxcmd_p                ),
+.m_acltxcmd_p                (regi_txcmd_p                ),
 .s_acltxcmd_p                (s_acltxcmd_p                ),
 //
 //
@@ -340,7 +357,8 @@ linkctrler linkctrler_u(
 .pk_encode                 (pk_encode                 ),
 .pssyncCLK_p               (pssyncCLK_p               ),
 .conns_1stslot             (conns_1stslot             ),
-.pk_encode_1stslot         (pk_encode_1stslot         )
+.pk_encode_1stslot         (pk_encode_1stslot         ),
+.ms_txcmd_p                (ms_txcmd_p                )
 );
 
 //for tmp
@@ -434,9 +452,27 @@ end
 allbitp allbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
+.regi_txcmd_p           (regi_txcmd_p           ), 
+.regi_flushcmd_p        (regi_flushcmd_p        ), 
+.regi_aclrxbufempty     (regi_aclrxbufempty     ),
+.regi_LMPcmd_p          (regi_LMPcmd_p          ),
+.ms_txcmd_p             (ms_txcmd_p             ),
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.txbsmacl_addr          (txbsmacl_addr          ), 
+.txbsmsco_addr          (txbsmsco_addr          ),
+.txbsmacl_din           (txbsmacl_din           ), 
+.txbsmsco_din           (txbsmsco_din           ),
+.txbsmacl_we            (txbsmacl_we            ), 
+.txbsmsco_we            (txbsmsco_we            ), 
+.txbsmacl_cs            (txbsmacl_cs            ), 
+.txbsmsco_cs            (txbsmsco_cs            ),
+.rxbsmacl_addr          (rxbsmacl_addr          ), 
+.rxbsmsco_addr          (rxbsmsco_addr          ), 
+.rxbsmacl_cs            (rxbsmacl_cs            ), 
+.rxbsmsco_cs            (rxbsmsco_cs            ),
+.rxbsm_valid_p          (rxbsm_valid_p          ),
 .s_tslot_p              (s_tslot_p              ),
 .ms_tslot_p             (ms_tslot_p             ),
 .pagetxfhs              (pagetxfhs              ), 
@@ -511,7 +547,7 @@ allbitp allbitp_u(
 //.rxpydin,
 //.rxpyadr,
 //.rxpydin_valid_p,
-.bsm_out                (bsm_out                ),
+.bsm_dout                (bsm_dout                ),
 .extendslot             (extendslot             ),
 .s_acltxcmd_p           (s_acltxcmd_p           )
 

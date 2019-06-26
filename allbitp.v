@@ -1,5 +1,13 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p,
+ms_txcmd_p,
+txbsmacl_addr, txbsmsco_addr,
+txbsmacl_din, txbsmsco_din,
+txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs,
+rxbsmacl_addr, rxbsmsco_addr,
+rxbsmacl_cs, rxbsmsco_cs,
+rxbsm_valid_p,
 s_tslot_p, ms_tslot_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs,
@@ -47,7 +55,7 @@ fhs_PSM,
 rxpydin,
 rxpyadr,
 rxpydin_valid_p,
-bsm_out,
+bsm_dout,
 extendslot,
 s_acltxcmd_p
 
@@ -56,6 +64,14 @@ s_acltxcmd_p
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p;
+input ms_txcmd_p;
+input [7:0] txbsmacl_addr, txbsmsco_addr;
+input [31:0] txbsmacl_din, txbsmsco_din;
+input txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs;
+input [7:0] rxbsmacl_addr, rxbsmsco_addr;
+input rxbsmacl_cs, rxbsmsco_cs;
+input rxbsm_valid_p;
 input s_tslot_p, ms_tslot_p;
 input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs;
@@ -103,7 +119,7 @@ output [2:0]  fhs_PSM;
 output [31:0] rxpydin;
 output [7:0] rxpyadr;
 output rxpydin_valid_p;
-output [31:0] bsm_out ;
+output [31:0] bsm_dout ;
 output extendslot;
 output s_acltxcmd_p;
 //
@@ -205,7 +221,8 @@ headerbitp headerbitp_u(
 .dec_flow               (dec_flow               ), 
 .dec_arqn               (dec_arqn               ),
 .header_st_p            (header_st_p            ),
-.dec_hecgood            (dec_hecgood            )
+.dec_hecgood            (dec_hecgood            ),
+.dec_seqn               (dec_seqn               )
 
 );
 
@@ -307,7 +324,9 @@ pybitp pybitp_u(
 .rxpydin                (rxpydin                ),
 .rxpyadr                (rxpyadr                ),
 .rxpydin_valid_p        (rxpydin_valid_p        ),
-.py_endp                (py_endp                )
+.py_endp                (py_endp                ),
+.dec_py_endp            (dec_py_endp            ),
+.py_datperiod           (py_datperiod           )
 
 );
 
@@ -321,7 +340,7 @@ assign txbit_period = (header_packet_period | py_period) & pk_encode;
 wire [31:0] rxlnctrl_din = rxpydin;
 wire [7:0]  rxlnctrl_addr = rxpyadr;
 wire rxlnctrl_we = rxpydin_valid_p;
-wire dec_LMPcmd = dec_LLID==2'b11;
+wire dec_LMPcmd = (dec_LLID==2'b11);
 //
 wire tx_reservedslot = 1'b0; //for tmp
 wire rx_reservedslot = 1'b0; //for tmp
@@ -330,7 +349,10 @@ wire rxtsco_p = 1'b0; //for tmp
 
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
-.rstz            (rstz            ), 
+.rstz            (rstz            ),
+.dec_hecgood     (dec_hecgood     ), 
+.dec_crcgood     (dec_crcgood     ),
+.dec_pylenByte   (dec_pylenByte   ), 
 .header_st_p     (header_st_p     ),
 .pk_encode       (pk_encode       ),
 .py_endp         (py_endp         ),
@@ -362,9 +384,10 @@ bufctrl bufctrl_u(
 .rxlnctrl_we     (rxlnctrl_we     ), 
 .rxbsmacl_cs     (rxbsmacl_cs     ), 
 .rxbsmsco_cs     (rxbsmsco_cs     ),
+.rxbsm_valid_p   (rxbsm_valid_p   ),
 //
 .lnctrl_txpybitin(lnctrl_txpybitin),
-.bsm_out         (bsm_out         )
+.bsm_dout         (bsm_dout         )
 );
 
 wire dec_micgood = 1'b1; //for tmp
@@ -372,6 +395,8 @@ wire dec_micgood = 1'b1; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.regi_isMaster      (regi_isMaster      ),
+.dec_py_endp        (dec_py_endp        ),
 .is_eSCO            (is_eSCO            ),
 .dec_hecgood        (dec_hecgood        ),
 .dec_micgood        (dec_micgood        ),
@@ -379,6 +404,7 @@ arqflowctrl arqflowctrl_u(
 .connsnewslave      (connsnewslave      ),
 .ms_lt_addr         (ms_lt_addr         ),
 .ms_tslot_p         (ms_tslot_p         ),
+.s_tslot_p          (s_tslot_p          ),
 .pk_encode          (pk_encode          ),
 .dec_seqn           (dec_seqn           ),
 .dec_lt_addr        (dec_lt_addr        ),
@@ -393,7 +419,7 @@ arqflowctrl arqflowctrl_u(
 .prerx_notrans      (prerx_notrans      ), 
 .dec_crcgood        (dec_crcgood        ),
 .regi_flushcmd_p    (regi_flushcmd_p    ),
-.txcmd_p            (txcmd_p            ),
+.ms_txcmd_p         (ms_txcmd_p         ),
 .regi_aclrxbufempty (regi_aclrxbufempty ),
 //
 .txARQN             (txARQN             ),

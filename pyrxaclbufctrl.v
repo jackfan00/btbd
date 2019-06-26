@@ -3,8 +3,10 @@
 //
 module pyrxaclbufctrl (
 clk_6M, rstz,
-m_tslot_p, s_tslot_p, pk_encode, hecgood, crcgood,
-regi_isMaster,
+//m_tslot_p, s_tslot_p, 
+pk_encode, dec_hecgood, dec_crcgood,
+//regi_isMaster,
+ms_tslot_p,
 dec_pylenByte,
 bsm_valid_p,
 bsm_addr, lnctrl_addr,
@@ -17,8 +19,10 @@ regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
-input m_tslot_p, s_tslot_p, pk_encode, hecgood, crcgood;
-input regi_isMaster;
+//input m_tslot_p, s_tslot_p;
+input pk_encode, dec_hecgood, dec_crcgood;
+//input regi_isMaster;
+input ms_tslot_p;
 input [9:0] dec_pylenByte;
 input bsm_valid_p;
 input [7:0] bsm_addr, lnctrl_addr;
@@ -32,7 +36,7 @@ output regi_aclrxbufempty;
 wire bsm_read_endp;
 wire [31:0] u0_bsm_dout, u1_bsm_dout;
 
-wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
+//wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
 reg s1a;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -44,7 +48,7 @@ end
 
 wire [7:0]  u0_sram_a    = s1a ? lnctrl_addr : bsm_addr;
 wire [31:0] u0_sram_din  = s1a ? lnctrl_din  : 32'b0;
-wire [7:0]  u0_sram_we   = s1a ? lnctrl_we   : 1'b0;
+wire        u0_sram_we   = s1a ? lnctrl_we   : 1'b0;
 wire        u0_sram_cs   = s1a ? lnctrl_cs   : bsm_cs;
 
 reg [9:0] u0_length;
@@ -52,7 +56,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      u0_length <= 0;
-  else if (ms_tslot_p & !pk_encode & hecgood & crcgood & s1a)
+  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & s1a)
      u0_length <= dec_pylenByte;
 end
 sram256x32_1p sram256x32_1p_u0(
@@ -67,7 +71,7 @@ sram256x32_1p sram256x32_1p_u0(
 
 wire [7:0]  u1_sram_a    = !s1a ? lnctrl_addr : bsm_addr;
 wire [31:0] u1_sram_din  = !s1a ? lnctrl_din  : 32'b0;
-wire [7:0]  u1_sram_we   = !s1a ? lnctrl_we   : 1'b0;
+wire        u1_sram_we   = !s1a ? lnctrl_we   : 1'b0;
 wire        u1_sram_cs   = !s1a ? lnctrl_cs   : bsm_cs;
 
 reg [9:0] u1_length;
@@ -75,7 +79,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      u1_length <= 0;
-  else if (ms_tslot_p & !pk_encode & hecgood & crcgood & !s1a)
+  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & !s1a)
      u1_length <= dec_pylenByte;
 end
 
@@ -101,7 +105,7 @@ begin
      regi_aclrxbufempty <= 1'b1;
   else if (bsm_read_endp)
      regi_aclrxbufempty <= 1'b1;
-  else if (ms_tslot_p & !pk_encode & hecgood & crcgood)
+  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood)
      regi_aclrxbufempty <= 1'b0;
 end
 

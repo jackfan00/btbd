@@ -4,7 +4,8 @@
 //
 
 module hopkernal(
-divffclk, div_en_p, rstz,
+//divffclk, div_en_p, 
+rstz,
 X, A, C,
 B,
 D,
@@ -17,7 +18,8 @@ fk
 
 );
 
-input divffclk, div_en_p, rstz;
+//input divffclk, div_en_p;
+input rstz;
 input [4:0] X, C;
 input [4:0] A;
 input [3:0] B;

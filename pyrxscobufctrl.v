@@ -32,7 +32,7 @@ end
 
 wire [7:0]  sram_a    = s2a ? lnctrl_addr : bsm_addr;
 wire [31:0] sram_din  = s2a ? lnctrl_din  : 32'b0;
-wire [7:0]  sram_we   = s2a ? lnctrl_we   : 1'b0;
+wire        sram_we   = s2a ? lnctrl_we   : 1'b0;
 wire        sram_cs   = s2a ? lnctrl_cs   : bsm_cs;
 
 sram256x32_1p sram256x32_1p_u(

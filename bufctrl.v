@@ -1,5 +1,7 @@
 module bufctrl(
 clk_6M, rstz,
+dec_hecgood, dec_crcgood,
+dec_pylenByte,
 header_st_p,
 pk_encode,
 py_endp,
@@ -15,14 +17,17 @@ txbsmacl_din, txbsmsco_din,
 txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs,
 //[7:0] txlnctrl_addr,
 rxbsmacl_addr, rxbsmsco_addr, rxlnctrl_addr,
+rxbsm_valid_p,
 rxlnctrl_din,
 rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs,
 //
 lnctrl_txpybitin,
-bsm_out
+bsm_dout
 );
 
 input clk_6M, rstz;
+input dec_hecgood, dec_crcgood;
+input [9:0] dec_pylenByte;
 input header_st_p;
 input pk_encode;
 input py_endp;
@@ -38,14 +43,16 @@ input [31:0] txbsmacl_din, txbsmsco_din;
 input txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs;
 //input [7:0] txlnctrl_addr;
 input [7:0] rxbsmacl_addr, rxbsmsco_addr, rxlnctrl_addr;
+input rxbsm_valid_p;
 input [31:0] rxlnctrl_din;
 input rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs;
 
 //
 output lnctrl_txpybitin;
-output [31:0] bsm_out;
+output [31:0] bsm_dout;
 
 wire [31:0] lncacl_dout, lncsco_dout;
+wire [31:0] bsmacl_dout, bsmsco_dout;
 
 
 reg LMPcmd, LMP_c_slot;
@@ -140,6 +147,12 @@ wire rxlnctrlsco_cs = dec_py_period & ((!dec_LMP_c_slot) & rx_reservedslot);
 pyrxaclbufctrl pyrxaclbufctrl_u(
 .clk_6M        (clk_6M          ), 
 .rstz          (rstz            ),
+.pk_encode     (pk_encode       ), 
+.dec_hecgood   (dec_hecgood     ), 
+.dec_crcgood   (dec_crcgood     ),
+.ms_tslot_p    (ms_tslot_p      ),
+.dec_pylenByte (dec_pylenByte   ),
+.bsm_valid_p   (rxbsm_valid_p   ),
 .bsm_addr      (rxbsmacl_addr   ), 
 .lnctrl_addr   (rxlnctrl_addr   ),
 .lnctrl_din    (rxlnctrl_din    ),

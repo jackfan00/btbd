@@ -36,7 +36,8 @@ txpktype,
 dec_lt_addr,
 dec_flow, dec_arqn,
 header_st_p,
-dec_hecgood
+dec_hecgood,
+dec_seqn
 
 );
 
@@ -78,6 +79,7 @@ output [2:0] dec_lt_addr;
 output [7:0] dec_flow, dec_arqn;
 output header_st_p;
 output dec_hecgood;
+output dec_seqn;
 
 wire packet_endp;
 reg header_packet_period;
