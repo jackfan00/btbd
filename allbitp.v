@@ -5,6 +5,7 @@ pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs,
 rx_trailer_st_p,
 tx_packet_st_p,
+regi_isMaster,
 regi_txwhitening, regi_rxwhitening,
 regi_payloadlen,
 regi_inquiryDIAC,
@@ -24,7 +25,7 @@ regi_EIR,
 regi_my_BD_ADDR_LAP,
 regi_my_syncword,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
-pk_encode, conns_1stslot,
+pk_encode, conns_1stslot, pk_encode_1stslot,
 //bufpacketin,
 rxbit,
 //
@@ -46,7 +47,9 @@ fhs_PSM,
 rxpydin,
 rxpyadr,
 rxpydin_valid_p,
-bsm_out
+bsm_out,
+extendslot,
+s_acltxcmd_p
 
 
 );
@@ -58,6 +61,7 @@ input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs;
 input rx_trailer_st_p;
 input tx_packet_st_p;
+input regi_isMaster;
 input regi_txwhitening, regi_rxwhitening;
 input [9:0] regi_payloadlen;
 input regi_inquiryDIAC;
@@ -77,7 +81,7 @@ input regi_EIR;
 input [23:0] regi_my_BD_ADDR_LAP;
 input [33:0] regi_my_syncword;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
-input pk_encode, conns_1stslot;
+input pk_encode, conns_1stslot, pk_encode_1stslot;
 //input bufpacketin;
 input rxbit;
 //
@@ -100,6 +104,8 @@ output [31:0] rxpydin;
 output [7:0] rxpyadr;
 output rxpydin_valid_p;
 output [31:0] bsm_out ;
+output extendslot;
+output s_acltxcmd_p;
 //
 wire py_period, daten, dec_py_period;
 wire py_st_p;
@@ -120,7 +126,13 @@ wire [2:0]  fhs_PSM;
 wire [9:0] dec_pylenByte;
 wire [3:0] dec_pk_type;
 wire [3:0] txpktype;
+wire [7:0] txaclSEQN, txARQN;
+wire srcFLOW;
+wire [3:0] srctxpktype;
+wire [2:0] dec_lt_addr;
+wire [7:0] dec_flow, dec_arqn;
 
+wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
                   packet_DPSK ? p_05us : p_033us;
 
@@ -129,7 +141,9 @@ headerbitp headerbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.ms_lt_addr             (ms_lt_addr             ),
 .s_tslot_p              (s_tslot_p              ),
+.ms_tslot_p             (ms_tslot_p             ),
 .pagetxfhs              (pagetxfhs              ), 
 .istxfhs                (istxfhs                ),
 .connsnewmaster         (connsnewmaster         ),
@@ -144,6 +158,7 @@ headerbitp headerbitp_u(
 .rx_trailer_st_p        (rx_trailer_st_p        ),
 .tx_packet_st_p         (tx_packet_st_p         ),
 .packet_BRmode          (packet_BRmode          ),
+.regi_isMaster          (regi_isMaster          ),
 .regi_txwhitening       (regi_txwhitening       ),
 .regi_rxwhitening       (regi_rxwhitening       ),
 .regi_inquiryDIAC       (regi_inquiryDIAC       ),
@@ -169,6 +184,10 @@ headerbitp headerbitp_u(
 .daten                  (daten                  ), 
 .py_datvalid_p          (py_datvalid_p          ),
 .pk_encode              (pk_encode              ),
+.srctxpktype            (srctxpktype            ),
+.txaclSEQN              (txaclSEQN              ), 
+.txARQN                 (txARQN                 ),
+.srcFLOW                (srcFLOW                ),
 .rxbit                  (rxbit                  ),
 
 //                (//                )          
@@ -181,7 +200,12 @@ headerbitp headerbitp_u(
 .header_packet_period   (header_packet_period   ),
 .dec_pk_type            (dec_pk_type            ),
 .lt_addressed           (lt_addressed           ),
-.txpktype               (txpktype               )
+.txpktype               (txpktype               ),
+.dec_lt_addr            (dec_lt_addr            ),
+.dec_flow               (dec_flow               ), 
+.dec_arqn               (dec_arqn               ),
+.header_st_p            (header_st_p            ),
+.dec_hecgood            (dec_hecgood            )
 
 );
 
@@ -194,6 +218,9 @@ wire [9:0] pylenB = pk_encode_1stslot ? regi_payloadlen : dec_pylenByte;
 wire [12:0] pylenbit;
 wire [2:0] occpuy_slots;
 pktydecode pktydecode_u(
+.clk_6M                 (clk_6M                 ), 
+.rstz                   (rstz                   ), 
+.ms_tslot_p     (ms_tslot_p     ),
 .is_BRmode      (is_BRmode      ), 
 .is_eSCO        (is_eSCO        ), 
 .is_SCO         (is_SCO         ), 
@@ -201,6 +228,7 @@ pktydecode pktydecode_u(
 .pk_type        (pk_type        ),
 .regi_payloadlen(pylenB         ),
 .conns_1stslot  (conns_1stslot  ),
+.pk_encode_1stslot(pk_encode_1stslot),
 //             (//             )
 .pylenbit_f       (pylenbit       ),
 .occpuy_slots_f   (occpuy_slots   ),
@@ -211,7 +239,8 @@ pktydecode pktydecode_u(
 .packet_DPSK_f    (packet_DPSK    ),
 .BRss_f           (BRss           ),
 .existpyheader_f  (existpyheader  ),
-.allowedeSCOtype  (allowedeSCOtype)
+.allowedeSCOtype  (allowedeSCOtype),
+.extendslot       (extendslot     )
 );
 
 //
@@ -263,7 +292,7 @@ pybitp pybitp_u(
 .dec_pylenByte          (dec_pylenByte          ),
 .dec_crcgood            (dec_crcgood            ),
 .dec_LLID               (dec_LLID               ),
-.dec_FLOW               (dec_FLOW               ),
+.dec_pyFLOW             (dec_pyFLOW             ),
 .fhs_Pbits              (fhs_Pbits              ),
 .fhs_LAP                (fhs_LAP                ),
 .fhs_EIR                (fhs_EIR                ),
@@ -277,7 +306,8 @@ pybitp pybitp_u(
 .fhs_PSM                (fhs_PSM                ),
 .rxpydin                (rxpydin                ),
 .rxpyadr                (rxpyadr                ),
-.rxpydin_valid_p        (rxpydin_valid_p        )
+.rxpydin_valid_p        (rxpydin_valid_p        ),
+.py_endp                (py_endp                )
 
 );
 
@@ -301,6 +331,12 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ), 
+.header_st_p     (header_st_p     ),
+.pk_encode       (pk_encode       ),
+.py_endp         (py_endp         ),
+.ms_lt_addr      (ms_lt_addr      ),
+.dec_arqn        (dec_arqn        ),
+.dec_flow        (dec_flow        ),
 .ms_tslot_p      (ms_tslot_p      ),
 .pybitcount      (pybitcount      ),
 .regi_LMPcmd_p   (regi_LMPcmd_p   ),  
@@ -326,10 +362,46 @@ bufctrl bufctrl_u(
 .rxlnctrl_we     (rxlnctrl_we     ), 
 .rxbsmacl_cs     (rxbsmacl_cs     ), 
 .rxbsmsco_cs     (rxbsmsco_cs     ),
-.txaclSEQN       (txaclSEQN       ),
 //
 .lnctrl_txpybitin(lnctrl_txpybitin),
 .bsm_out         (bsm_out         )
+);
+
+wire dec_micgood = 1'b1; //for tmp
+//
+arqflowctrl arqflowctrl_u(
+.clk_6M             (clk_6M             ), 
+.rstz               (rstz               ),
+.is_eSCO            (is_eSCO            ),
+.dec_hecgood        (dec_hecgood        ),
+.dec_micgood        (dec_micgood        ),
+.connsnewmaster     (connsnewmaster     ), 
+.connsnewslave      (connsnewslave      ),
+.ms_lt_addr         (ms_lt_addr         ),
+.ms_tslot_p         (ms_tslot_p         ),
+.pk_encode          (pk_encode          ),
+.dec_seqn           (dec_seqn           ),
+.dec_lt_addr        (dec_lt_addr        ),
+.lt_addressed       (lt_addressed       ),
+.allowedeSCOtype    (allowedeSCOtype    ),
+.header_st_p        (header_st_p        ),
+.dec_pktype         (dec_pk_type        ), 
+.txpktype           (txpktype           ),
+.regi_packet_type   (regi_packet_type   ),
+.dec_flow           (dec_flow           ),
+.dec_arqn           (dec_arqn           ),
+.prerx_notrans      (prerx_notrans      ), 
+.dec_crcgood        (dec_crcgood        ),
+.regi_flushcmd_p    (regi_flushcmd_p    ),
+.txcmd_p            (txcmd_p            ),
+.regi_aclrxbufempty (regi_aclrxbufempty ),
+//
+.txARQN             (txARQN             ),
+.txaclSEQN          (txaclSEQN          ),
+.srctxpktype        (srctxpktype        ),
+.s_acltxcmd_p       (s_acltxcmd_p       ),
+.srcFLOW            (srcFLOW            )
+
 );
 
 

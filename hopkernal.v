@@ -111,7 +111,7 @@ wire rfchused = regi_AFH_channel_map[adder2m79[6:0]];
 wire [6:0] emN = {2'b0,E[6:0]} >= {regi_AFH_modN,2'b0}                 ? {2'b0,E[6:0]} - {regi_AFH_modN,2'b0} :
                  {2'b0,E[6:0]} >= ({regi_AFH_modN,1'b0}+regi_AFH_modN) ? {2'b0,E[6:0]} - ({regi_AFH_modN,1'b0}+regi_AFH_modN) :
                  {1'b0,E[6:0]} >= {regi_AFH_modN,1'b0}                 ? {1'b0,E[6:0]} - {regi_AFH_modN,1'b0} :
-                 E[6:0]} >= regi_AFH_modN                              ? E[6:0]-regi_AFH_modN : E[6:0];
+                 E[6:0] >= regi_AFH_modN                              ? E[6:0]-regi_AFH_modN : E[6:0];
 //
 wire [7:0] tmp1N = emN + Fprime[6:0]; //should less than regi_AFH_modN*2
 wire [7:0] tmp1mN = tmp1N[7:0] >= regi_AFH_modN ? tmp1N[7:0]-regi_AFH_modN : tmp1N[7:0];  //should less than regi_AFH_modN

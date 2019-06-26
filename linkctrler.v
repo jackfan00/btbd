@@ -34,6 +34,8 @@ regi_Ninquiry,
 regi_Inquiry_Length, regi_Extended_Inquiry_Length,
 dec_iscanEIR,
 regi_isMaster,
+extendslot,
+m_acltxcmd_p, s_acltxcmd_p,
 //
 ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns,
 ps_corre_sync_p, conns_corre_sync_p,
@@ -47,7 +49,9 @@ psrxfhs, inquiryrxfhs,
 rx_trailer_st_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 pk_encode,
-pssyncCLK_p
+pssyncCLK_p,
+conns_1stslot,
+pk_encode_1stslot
 
 );
 
@@ -81,6 +85,8 @@ input [9:0] regi_Ninquiry;
 input [15:0] regi_Inquiry_Length, regi_Extended_Inquiry_Length;
 input dec_iscanEIR;
 input regi_isMaster;
+input extendslot;
+input m_acltxcmd_p, s_acltxcmd_p;
 //
 output ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
 output ps_corre_sync_p, conns_corre_sync_p;
@@ -96,6 +102,7 @@ output pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 output pk_encode;
 output pssyncCLK_p;
 output conns_1stslot;
+output pk_encode_1stslot;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -795,21 +802,30 @@ assign tx_packet_st_p =
 wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
                    spr ? (cs==PageSlaveResp_txid_STATE) | (cs==PageSlaveResp_ackfhs_STATE) :
                    //conns ? (regi_isMaster ? !CLK[1] : CLK[1]) :
+                   connsnewmaster | connsnewslave ? (regi_isMaster ? !CLK[1] : CLK[1]) :
                    conns ? (regi_isMaster ? m_conns_1stslot : s_conns_1stslot) :
                    inquiry ? !CLKN[1] :
                    cs==InquiryScantxFHS_STATE ? 1'b1 :
                    cs==InquiryScantxExtIRP_STATE ? 1'b1 : 
                    1'b0;
                    
-
+// txcmd_p : 
+//  Master : issue by mcu for new acl packet transmit,or by reserved-timeslot for sco packet transmit,  
+//  Slave  : issue in slave-to-master slot 
 //
+wire m_scotxcmd_p = 1'b0; //for tmp
+wire s_scotxcmd_p = 1'b0; //for tmp
+
+
+assign txcmd_p = regi_isMaster ? m_acltxcmd_p | m_scotxcmd_p : s_acltxcmd_p | s_scotxcmd_p;
+
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      m_txcmd <= 0;
   else if (txcmd_p)
      m_txcmd <= 1'b1;
-  else if (m_tslot_p)
+  else if (m_tslot_p & CLK[1])
      m_txcmd <= 1'b0;
 end
 always @(posedge clk_6M or negedge rstz)
@@ -827,7 +843,7 @@ begin
      s_txcmd <= 0;
   else if (txcmd_p)
      s_txcmd <= 1'b1;
-  else if (s_tslot_p)
+  else if (s_tslot_p & (!CLK[1]))
      s_txcmd <= 1'b0;
 end
 always @(posedge clk_6M or negedge rstz)

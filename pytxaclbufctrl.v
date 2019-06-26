@@ -58,6 +58,7 @@ sram256x32_1p sram256x32_1p_u1(
 );
 
 wire [31:0] dout = s1a ? u1_dout : u0_dout;
+wire sram_cs = s1a ? u1_sram_cs : u0_sram_cs;
 //
 reg [31:0] inctrl_dout;
 always @(posedge clk_6M)

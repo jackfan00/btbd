@@ -11,7 +11,7 @@ input WE, CS, CLK;
 output [31:0] DOUT;
 
 //
-reg [31:0] Mem[0:255]
+reg [31:0] Mem[0:255];
 //
 reg [7:0] A_i;
 always @(posedge CLK)

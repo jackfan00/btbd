@@ -36,3 +36,11 @@ testbench.v
 ../pybitp.v
 ../headerbitp.v
 ../allbitp.v
+../bufctrl.v
+../pytxaclbufctrl.v
+../pytxscobufctrl.v
+../pyrxaclbufctrl.v
+../pyrxscobufctrl.v
+../arqflowctrl.v
+../sram256x32_1p.v
+

@@ -1,11 +1,13 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
-s_tslot_p,
+ms_lt_addr,
+s_tslot_p, ms_tslot_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 page, inquiry, conns, ps, mpr, spr, ir,
 rx_trailer_st_p,
 tx_packet_st_p,
 packet_BRmode, 
+regi_isMaster,
 regi_txwhitening, regi_rxwhitening,
 regi_inquiryDIAC,
 regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC,
@@ -18,6 +20,9 @@ CLK,
 py_period, daten, py_datvalid_p,
 dec_py_period,
 pk_encode,
+srctxpktype,
+txaclSEQN, txARQN,
+srcFLOW,
 rxbit,
 //
 guard_st_p, edrsync11_st_p, py_st_p,
@@ -27,17 +32,23 @@ header_packet_period,
 rxispoll,
 dec_pk_type,
 lt_addressed,
-txpktype
+txpktype,
+dec_lt_addr,
+dec_flow, dec_arqn,
+header_st_p,
+dec_hecgood
 
 );
 
 input clk_6M, rstz, p_1us;
-input s_tslot_p;
+input [2:0] ms_lt_addr;
+input s_tslot_p, ms_tslot_p;
 input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 input page, inquiry, conns, ps, mpr, spr, ir;
 input rx_trailer_st_p;
 input tx_packet_st_p;
 input packet_BRmode;
+input regi_isMaster;
 input regi_txwhitening, regi_rxwhitening;
 input regi_inquiryDIAC;
 input [63:0] regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC;
@@ -50,6 +61,9 @@ input [27:0] CLK;
 input py_period, daten, py_datvalid_p;
 input dec_py_period;
 input pk_encode;
+input [3:0] srctxpktype;
+input [7:0] txaclSEQN, txARQN;
+input srcFLOW;
 input rxbit;
 //
 output guard_st_p, edrsync11_st_p, py_st_p;
@@ -60,6 +74,10 @@ output rxispoll;
 output [3:0] dec_pk_type;
 output lt_addressed;
 output [3:0] txpktype;
+output [2:0] dec_lt_addr;
+output [7:0] dec_flow, dec_arqn;
+output header_st_p;
+output dec_hecgood;
 
 wire packet_endp;
 reg header_packet_period;
@@ -70,6 +88,7 @@ reg [3:0] header_bitcount;
 reg [1:0] fec31count;
 wire hecencodebit;
 wire pkheader_bitin;
+reg [2:0] dec_lt_addr;
 
 reg [7:0] all_bitcount;
 always @(posedge clk_6M or negedge rstz)
@@ -224,7 +243,7 @@ end
 
 //
 
-reg [2:0] dec_lt_addr;
+
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -233,8 +252,8 @@ begin
      dec_lt_addr <= {decodeout,dec_lt_addr[2:1]};
 end
 
-wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_slot_p;
-wire [2:0] c_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
+//wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_slot_p;
+//wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 reg lt_addressed;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -243,7 +262,7 @@ begin
   else if (ms_tslot_p | pk_encode)
      lt_addressed <= 0;
   else if (ckhec & p_1us)
-     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==c_lt_addr) ;  //header good and match lt_address
+     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==ms_lt_addr) ;  //header good and match lt_address
 end
 
 

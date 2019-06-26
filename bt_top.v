@@ -109,6 +109,7 @@ wire [23:0] fhs_CoD;
 wire [2:0]  fhs_LT_ADDR;
 wire [27:2] fhs_CLK;
 wire [2:0]  fhs_PSM;
+wire s_acltxcmd_p;
 
 wire [27:0] hop_BD_ADDR = 
                           is | giis | ir | inquiry ? {regi_GIAC_BD_ADDR_UAP[3:0], regi_GIAC_BD_ADDR_LAP}  :
@@ -305,7 +306,9 @@ linkctrler linkctrler_u(
 .regi_Extended_Inquiry_Length(regi_Extended_Inquiry_Length),
 .dec_iscanEIR                (fhs_EIR                     ),
 .regi_isMaster               (regi_isMaster               ),
-
+.extendslot                  (extendslot                  ),
+.m_acltxcmd_p                (m_acltxcmd_p                ),
+.s_acltxcmd_p                (s_acltxcmd_p                ),
 //
 //
 .ps                        (ps                        ), 
@@ -336,7 +339,8 @@ linkctrler linkctrler_u(
 .connsnewslave             (connsnewslave             ),
 .pk_encode                 (pk_encode                 ),
 .pssyncCLK_p               (pssyncCLK_p               ),
-.conns_1stslot             (conns_1stslot             )
+.conns_1stslot             (conns_1stslot             ),
+.pk_encode_1stslot         (pk_encode_1stslot         )
 );
 
 //for tmp
@@ -450,6 +454,7 @@ allbitp allbitp_u(
 .inquiryrxfhs           (inquiryrxfhs           ),
 .rx_trailer_st_p        (rx_trailer_st_p        ),
 .tx_packet_st_p         (tx_packet_st_p         ),
+.regi_isMaster          (regi_isMaster          ),
 .regi_txwhitening       (regi_txwhitening       ),
 .regi_rxwhitening       (regi_rxwhitening       ),
 .regi_payloadlen        (regi_payloadlen        ),
@@ -484,6 +489,7 @@ allbitp allbitp_u(
 .is_ACL                 (is_ACL                 ),
 .pk_encode              (pk_encode              ),
 .conns_1stslot          (conns_1stslot          ),
+.pk_encode_1stslot      (pk_encode_1stslot      ),
 //.bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit_resync           ),
 //                                              
@@ -501,7 +507,13 @@ allbitp allbitp_u(
 .fhs_CoD                (fhs_CoD                ),
 .fhs_LT_ADDR            (fhs_LT_ADDR            ),
 .fhs_CLK                (fhs_CLK                ),
-.fhs_PSM                (fhs_PSM                )
+.fhs_PSM                (fhs_PSM                ),
+//.rxpydin,
+//.rxpyadr,
+//.rxpydin_valid_p,
+.bsm_out                (bsm_out                ),
+.extendslot             (extendslot             ),
+.s_acltxcmd_p           (s_acltxcmd_p           )
 
 );
 

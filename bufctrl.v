@@ -1,5 +1,10 @@
 module bufctrl(
 clk_6M, rstz,
+header_st_p,
+pk_encode,
+py_endp,
+ms_lt_addr,
+dec_arqn, dec_flow,
 ms_tslot_p,
 pybitcount,
 regi_LMPcmd_p, dec_LMPcmd,
@@ -12,13 +17,17 @@ txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs,
 rxbsmacl_addr, rxbsmsco_addr, rxlnctrl_addr,
 rxlnctrl_din,
 rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs,
-txaclSEQN,
 //
 lnctrl_txpybitin,
 bsm_out
 );
 
 input clk_6M, rstz;
+input header_st_p;
+input pk_encode;
+input py_endp;
+input [2:0] ms_lt_addr;
+input [7:0] dec_arqn, dec_flow;
 input ms_tslot_p;
 input [12:0] pybitcount;
 input regi_LMPcmd_p, dec_LMPcmd;
@@ -31,7 +40,7 @@ input txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs;
 input [7:0] rxbsmacl_addr, rxbsmsco_addr, rxlnctrl_addr;
 input [31:0] rxlnctrl_din;
 input rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs;
-input txaclSEQN;
+
 //
 output lnctrl_txpybitin;
 output [31:0] bsm_out;
@@ -62,7 +71,7 @@ begin
 end
 
 wire [7:0] txlnctrl_addr = pybitcount[12:5];
-wire txlncacl_cs = py_datperiod & (LMP_c_slot | (!tx_reservedslot);
+wire txlncacl_cs = py_datperiod & (LMP_c_slot | (!tx_reservedslot));
 wire txlncsco_cs = py_datperiod & ((!LMP_c_slot) & tx_reservedslot);
 
 wire [31:0] lnctrl_bufpacket = ({32{txlncacl_cs}} & lncacl_dout) |
@@ -76,11 +85,11 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      s1a <= 1'b0;
-  else if (py_endp)
+  else if (dec_arqn[ms_lt_addr] & py_endp)  //receive ACK then switch to new data
      s1a <= ~s1a;
   // change back to previous packet, if previous flow is STOP
   // Vol2 PartB  4.5.3.2
-  else if ((dec_flow[txpk_lt_addr] == 1'b0) & pk_encode & header_st_p)  
+  else if ((dec_flow[ms_lt_addr] == 1'b0) & pk_encode & header_st_p)  
      s1a <= ~s1a;
       
 end
@@ -155,6 +164,7 @@ pyrxscobufctrl pyrxscobufctrl_u(
 .lnctrl_cs     (rxlnctrlsco_cs  ),
 //
 .bsm_dout      (bsmsco_dout     )
+);
 
 assign bsm_dout = ({32{rxbsmacl_cs}} & bsmacl_dout) |
                   ({32{rxbsmsco_cs}} & bsmsco_dout) ;

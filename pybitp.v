@@ -31,7 +31,7 @@ dec_py_period,
 dec_pylenByte,
 dec_crcgood,
 dec_LLID,
-dec_FLOW,
+dec_pyFLOW,
 fhs_Pbits,
 fhs_LAP,
 fhs_EIR,
@@ -45,7 +45,8 @@ fhs_CLK,
 fhs_PSM,
 rxpydin,
 rxpyadr,
-rxpydin_valid_p
+rxpydin_valid_p,
+py_endp
 
 );
 
@@ -81,7 +82,7 @@ output dec_py_period;
 output [9:0] dec_pylenByte;
 output dec_crcgood;
 output [1:0] dec_LLID;
-output dec_FLOW;
+output dec_pyFLOW;
 output [33:0] fhs_Pbits;
 output [23:0] fhs_LAP;
 output        fhs_EIR;
@@ -96,8 +97,9 @@ output [2:0]  fhs_PSM;
 output [31:0] rxpydin;
 output [7:0] rxpyadr;
 output rxpydin_valid_p;
+output py_endp;
 
-wire py_endp;
+//
 reg py_period;
 wire fec32bk_endp;
 wire dec_py_endp;
@@ -354,7 +356,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_py_period_ext <= 0;
-  else if (dec_py_end_p & dec_pybitcnt!=5'd31)
+  else if (dec_py_endp & dec_pybitcnt!=5'd31)
      dec_py_period_ext <= 1'b1;
   else if (dec_pybitcnt==5'd31 & py_datvalid_p)
      dec_py_period_ext <= 1'b0 ;
@@ -368,7 +370,7 @@ begin
      rxpyadr <= 0;
   else if (dec_py_st_p)
      rxpyadr <= 0;
-  else if (pydin_valid_p)
+  else if (rxpydin_valid_p)
      rxpyadr <= rxpyadr + 1'b1 ;
 end
 
