@@ -20,6 +20,23 @@ wire [6:0] m_fk, s_fk;
 bt_top bt_top_m(
 .clk_6M                      (m_clk_6M               ), 
 .rstz                        (m_rstz                 ),
+.txbsmacl_addr               (), 
+.txbsmsco_addr               (),
+.txbsmacl_din                (), 
+.txbsmsco_din                (),
+.txbsmacl_we                 (), 
+.txbsmsco_we                 (), 
+.txbsmacl_cs                 (), 
+.txbsmsco_cs                 (),
+.rxbsmacl_addr               (), 
+.rxbsmsco_addr               (),
+.rxbsmacl_cs                 (), 
+.rxbsmsco_cs                 (),
+.rxbsm_valid_p               (),
+.regi_txcmd_p                (1'b0), 
+.regi_flushcmd_p             (1'b0), 
+.regi_LMPcmdfg               (1'b0),
+
 .regi_esti_offset            (28'd0),  //m_regi_esti_offset     ), 
 .regi_time_base_offset       (28'd0),  //m_regi_time_base_offset), 
 .regi_slave_offset           (28'd0),  //m_regi_slave_offset    )
@@ -74,7 +91,7 @@ bt_top bt_top_m(
 .regi_ARQN                   (1'b1          ), 
 .regi_SEQN                   (1'b1          ),
 .regi_payloadlen             (10'd144),  //FHS: 144bits
-.regi_FHS_LT_ADDR            (3'd1     ),
+.regi_FHS_LT_ADDR            (3'd2     ),
 .regi_myClass                (24'd1    ),
 .regi_my_BD_ADDR_NAP         (16'd0    ),
 .regi_SR                     (2'd0     ),
@@ -85,15 +102,37 @@ bt_top bt_top_m(
 .rxbit                       (m_rxbit),
 //
 .txbit                       (m_txbit),
-.fk                          (m_fk)
+.fk                          (m_fk),
+.regi_aclrxbufempty          ()
 
 );
 wire [27:2] regi_fhsslave_offset;
+wire [33:0] fhs_Pbits_L2M;
+wire [23:0] fhs_LAP_L2M;
+wire [2:0] fhs_LT_ADDR;
+
 bt_top bt_top_s(
 .clk_6M                      (s_clk_6M               ), 
 .rstz                        (s_rstz                 ),
+.txbsmacl_addr               (), 
+.txbsmsco_addr               (),
+.txbsmacl_din                (), 
+.txbsmsco_din                (),
+.txbsmacl_we                 (), 
+.txbsmsco_we                 (), 
+.txbsmacl_cs                 (), 
+.txbsmsco_cs                 (),
+.rxbsmacl_addr               (), 
+.rxbsmsco_addr               (),
+.rxbsmacl_cs                 (), 
+.rxbsmsco_cs                 (),
+.rxbsm_valid_p               (),
+.regi_txcmd_p                (1'b0), 
+.regi_flushcmd_p             (1'b0), 
+.regi_LMPcmdfg               (1'b0),
+
 .regi_esti_offset            (28'd0),  //s_regi_esti_offset     ), 
-.regi_time_base_offset       (28'd0),  //s_regi_time_base_offset), 
+.regi_time_base_offset       ({15'b0,1'b1,12'b0}),  //s_regi_time_base_offset), 
 .regi_slave_offset           ({regi_fhsslave_offset,2'b0}),  //s_regi_slave_offset    ),
 .regi_interlace_offset       (5'd16),
 .regi_page_k_nudge           (5'd0), 
@@ -141,7 +180,7 @@ bt_top bt_top_s(
 .regi_extendedInquiryResponse(1'b1),
 .regi_Tsco                   (3'd6),
 .regi_LT_ADDR                (3'b011        ),
-.regi_mylt_address           (3'b001        ),
+.regi_mylt_address           (3'b010        ),
 .regi_packet_type            (4'b0100       ),
 .regi_FLOW                   (1'b0          ), 
 .regi_ARQN                   (1'b1          ), 
@@ -159,8 +198,11 @@ bt_top bt_top_s(
 //
 .txbit                       (s_txbit),
 .fk                          (s_fk),
-.regi_fhsslave_offset        (regi_fhsslave_offset)
-
+.regi_fhsslave_offset        (regi_fhsslave_offset),
+.regi_aclrxbufempty          (),
+.fhs_LT_ADDR                 (fhs_LT_ADDR),
+.fhs_Pbits_L2M                   (fhs_Pbits_L2M),
+.fhs_LAP_L2M                     (fhs_LAP_L2M)
 );
 
 

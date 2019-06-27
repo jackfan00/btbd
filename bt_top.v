@@ -6,7 +6,7 @@ txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs,
 rxbsmacl_addr, rxbsmsco_addr,
 rxbsmacl_cs, rxbsmsco_cs,
 rxbsm_valid_p,
-regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p,
+regi_txcmd_p, regi_flushcmd_p, regi_LMPcmdfg,
 regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_interlace_offset, regi_page_k_nudge,
 regi_AFH_N,
@@ -51,7 +51,11 @@ rxbit,
 txbit,
 fk,
 regi_fhsslave_offset,
-bsm_dout
+bsm_dout,
+regi_aclrxbufempty,
+fhs_LT_ADDR,
+fhs_Pbits_L2M,
+fhs_LAP_L2M
 );
 
 
@@ -62,7 +66,7 @@ input txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs;
 input [7:0] rxbsmacl_addr, rxbsmsco_addr;
 input rxbsmacl_cs, rxbsmsco_cs;
 input rxbsm_valid_p;
-input regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p;
+input regi_txcmd_p, regi_flushcmd_p, regi_LMPcmdfg;
 input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [4:0] regi_interlace_offset, regi_page_k_nudge;
 input [6:0] regi_AFH_N;
@@ -110,19 +114,21 @@ output txbit;
 output [6:0] fk;
 output [27:2] regi_fhsslave_offset;
 output [31:0] bsm_dout ;
+output regi_aclrxbufempty;
+output [2:0]  fhs_LT_ADDR;
+output [33:0] fhs_Pbits_L2M;
+output [23:0] fhs_LAP_L2M;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
 wire Atrain;
-wire [33:0] fhs_Pbits;
-wire [23:0] fhs_LAP;
 wire        fhs_EIR;
 wire [1:0]  fhs_SR;
 wire [1:0]  fhs_SP;
 wire [7:0]  fhs_UAP;
 wire [15:0] fhs_NAP;
 wire [23:0] fhs_CoD;
-wire [2:0]  fhs_LT_ADDR;
+
 wire [27:2] fhs_CLK;
 wire [2:0]  fhs_PSM;
 wire s_acltxcmd_p;
@@ -154,6 +160,7 @@ wire [6:0] whitening;
 wire py_period, daten, py_datvalid_p;
 wire pssyncCLK_p;
 wire lt_addressed;
+wire pstxid;
 
 
 bluetoothclk bluetoothclk_u(
@@ -204,6 +211,8 @@ wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
 hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
+.p_033us              (p_033us              ),
+.pstxid               (pstxid               ),
 .m_tslot_p            (m_tslot_p            ),
 .ms_tslot_p           (ms_tslot_p           ),
 .ps_N_incr_p          (ps_N_incr_p          ),
@@ -271,6 +280,7 @@ linkctrler linkctrler_u(
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
 .s_tslot_p                   (s_tslot_p                   ),
+.regi_LMPcmdfg               (regi_LMPcmdfg               ),
 .regi_pagetruncated          (regi_pagetruncated          ),
 .regi_InquiryEnable_oneshot  (regi_InquiryEnable_oneshot  ), 
 .regi_PageEnable_oneshot     (regi_PageEnable_oneshot     ), 
@@ -358,7 +368,12 @@ linkctrler linkctrler_u(
 .pssyncCLK_p               (pssyncCLK_p               ),
 .conns_1stslot             (conns_1stslot             ),
 .pk_encode_1stslot         (pk_encode_1stslot         ),
-.ms_txcmd_p                (ms_txcmd_p                )
+.ms_txcmd_p                (ms_txcmd_p                ),
+.rxCAC                     (rxCAC                     ), 
+.prerx_trans               (prerx_trans               ),
+.LMP_c_slot                (LMP_c_slot                ),
+.pstxid                    (pstxid                    )
+
 );
 
 //for tmp
@@ -452,10 +467,12 @@ end
 allbitp allbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
+.LMP_c_slot             (LMP_c_slot             ),
+.rxCAC                  (rxCAC                  ), 
+.prerx_trans            (prerx_trans            ),
 .regi_txcmd_p           (regi_txcmd_p           ), 
 .regi_flushcmd_p        (regi_flushcmd_p        ), 
-.regi_aclrxbufempty     (regi_aclrxbufempty     ),
-.regi_LMPcmd_p          (regi_LMPcmd_p          ),
+
 .ms_txcmd_p             (ms_txcmd_p             ),
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
@@ -533,8 +550,8 @@ allbitp allbitp_u(
 .txbit_period           (txbit_period           ),
 .rxispoll               (rxispoll               ),
 .lt_addressed           (lt_addressed           ),
-.fhs_Pbits              (fhs_Pbits              ),
-.fhs_LAP                (fhs_LAP                ),
+.fhs_Pbits_L2M              (fhs_Pbits_L2M              ),
+.fhs_LAP_L2M                (fhs_LAP_L2M                ),
 .fhs_EIR                (fhs_EIR                ),
 .fhs_SR                 (fhs_SR                 ),
 .fhs_SP                 (fhs_SP                 ),
@@ -549,8 +566,8 @@ allbitp allbitp_u(
 //.rxpydin_valid_p,
 .bsm_dout                (bsm_dout                ),
 .extendslot             (extendslot             ),
-.s_acltxcmd_p           (s_acltxcmd_p           )
-
+.s_acltxcmd_p           (s_acltxcmd_p           ),
+.regi_aclrxbufempty     (regi_aclrxbufempty     )
 );
 
 

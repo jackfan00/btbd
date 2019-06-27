@@ -1,6 +1,8 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
-regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p,
+LMP_c_slot,
+rxCAC, prerx_trans,
+regi_txcmd_p, regi_flushcmd_p,  
 ms_txcmd_p,
 txbsmacl_addr, txbsmsco_addr,
 txbsmacl_din, txbsmsco_din,
@@ -41,8 +43,8 @@ pybitcount,
 txbit, txbit_period,
 rxispoll,
 lt_addressed,
-fhs_Pbits,
-fhs_LAP,
+fhs_Pbits_L2M,
+fhs_LAP_L2M,
 fhs_EIR,
 fhs_SR,
 fhs_SP,
@@ -57,14 +59,17 @@ rxpyadr,
 rxpydin_valid_p,
 bsm_dout,
 extendslot,
-s_acltxcmd_p
+s_acltxcmd_p,
+regi_aclrxbufempty
 
 
 );
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
-input regi_txcmd_p, regi_flushcmd_p, regi_aclrxbufempty, regi_LMPcmd_p;
+input LMP_c_slot;
+input rxCAC, prerx_trans;
+input regi_txcmd_p, regi_flushcmd_p;
 input ms_txcmd_p;
 input [7:0] txbsmacl_addr, txbsmsco_addr;
 input [31:0] txbsmacl_din, txbsmsco_din;
@@ -105,8 +110,8 @@ output [12:0] pybitcount;
 output txbit, txbit_period;
 output rxispoll;
 output lt_addressed;
-output [33:0] fhs_Pbits;
-output [23:0] fhs_LAP;
+output [33:0] fhs_Pbits_L2M;
+output [23:0] fhs_LAP_L2M;
 output        fhs_EIR;
 output [1:0]  fhs_SR;
 output [1:0]  fhs_SP;
@@ -122,14 +127,15 @@ output rxpydin_valid_p;
 output [31:0] bsm_dout ;
 output extendslot;
 output s_acltxcmd_p;
+output regi_aclrxbufempty;
 //
 wire py_period, daten, dec_py_period;
 wire py_st_p;
 wire [6:0] whitening;
 wire packet_BRmode, packet_DPSK;
 wire [1:0] dec_LLID;
-wire [33:0] fhs_Pbits;
-wire [23:0] fhs_LAP;
+wire [33:0] fhs_Pbits_L2M;
+wire [23:0] fhs_LAP_L2M;
 wire        fhs_EIR;
 wire [1:0]  fhs_SR;
 wire [1:0]  fhs_SP;
@@ -310,8 +316,8 @@ pybitp pybitp_u(
 .dec_crcgood            (dec_crcgood            ),
 .dec_LLID               (dec_LLID               ),
 .dec_pyFLOW             (dec_pyFLOW             ),
-.fhs_Pbits              (fhs_Pbits              ),
-.fhs_LAP                (fhs_LAP                ),
+.fhs_Pbits_L2M              (fhs_Pbits_L2M              ),
+.fhs_LAP_L2M                (fhs_LAP_L2M                ),
 .fhs_EIR                (fhs_EIR                ),
 .fhs_SR                 (fhs_SR                 ),
 .fhs_SP                 (fhs_SP                 ),
@@ -350,6 +356,7 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.LMP_c_slot      (LMP_c_slot      ),
 .dec_hecgood     (dec_hecgood     ), 
 .dec_crcgood     (dec_crcgood     ),
 .dec_pylenByte   (dec_pylenByte   ), 
@@ -361,7 +368,6 @@ bufctrl bufctrl_u(
 .dec_flow        (dec_flow        ),
 .ms_tslot_p      (ms_tslot_p      ),
 .pybitcount      (pybitcount      ),
-.regi_LMPcmd_p   (regi_LMPcmd_p   ),  
 .dec_LMPcmd      (dec_LMPcmd      ),
 .py_datperiod    (py_datperiod    ), 
 .dec_py_period   (dec_py_period   ),
@@ -387,16 +393,20 @@ bufctrl bufctrl_u(
 .rxbsm_valid_p   (rxbsm_valid_p   ),
 //
 .lnctrl_txpybitin(lnctrl_txpybitin),
-.bsm_dout         (bsm_dout         )
+.bsm_dout        (bsm_dout        ),
+.regi_aclrxbufempty(regi_aclrxbufempty)
 );
 
 wire dec_micgood = 1'b1; //for tmp
+wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 //
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
 .regi_isMaster      (regi_isMaster      ),
 .dec_py_endp        (dec_py_endp        ),
+.esco_LT_ADDR       (esco_LT_ADDR       ),
+.rxCAC              (rxCAC              ),
 .is_eSCO            (is_eSCO            ),
 .dec_hecgood        (dec_hecgood        ),
 .dec_micgood        (dec_micgood        ),
@@ -416,7 +426,7 @@ arqflowctrl arqflowctrl_u(
 .regi_packet_type   (regi_packet_type   ),
 .dec_flow           (dec_flow           ),
 .dec_arqn           (dec_arqn           ),
-.prerx_notrans      (prerx_notrans      ), 
+.prerx_trans        (prerx_trans        ), 
 .dec_crcgood        (dec_crcgood        ),
 .regi_flushcmd_p    (regi_flushcmd_p    ),
 .ms_txcmd_p         (ms_txcmd_p         ),

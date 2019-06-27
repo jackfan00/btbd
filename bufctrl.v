@@ -1,5 +1,6 @@
 module bufctrl(
 clk_6M, rstz,
+LMP_c_slot,
 dec_hecgood, dec_crcgood,
 dec_pylenByte,
 header_st_p,
@@ -9,7 +10,7 @@ ms_lt_addr,
 dec_arqn, dec_flow,
 ms_tslot_p,
 pybitcount,
-regi_LMPcmd_p, dec_LMPcmd,
+dec_LMPcmd,
 py_datperiod, dec_py_period,
 tx_reservedslot, rx_reservedslot, txtsco_p, rxtsco_p,
 txbsmacl_addr, txbsmsco_addr,
@@ -22,10 +23,12 @@ rxlnctrl_din,
 rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs,
 //
 lnctrl_txpybitin,
-bsm_dout
+bsm_dout,
+regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
+input LMP_c_slot;
 input dec_hecgood, dec_crcgood;
 input [9:0] dec_pylenByte;
 input header_st_p;
@@ -35,7 +38,7 @@ input [2:0] ms_lt_addr;
 input [7:0] dec_arqn, dec_flow;
 input ms_tslot_p;
 input [12:0] pybitcount;
-input regi_LMPcmd_p, dec_LMPcmd;
+input dec_LMPcmd;
 input py_datperiod, dec_py_period;
 input tx_reservedslot, rx_reservedslot, txtsco_p, rxtsco_p;
 input [7:0] txbsmacl_addr, txbsmsco_addr;
@@ -50,32 +53,33 @@ input rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs;
 //
 output lnctrl_txpybitin;
 output [31:0] bsm_dout;
+output regi_aclrxbufempty;
 
 wire [31:0] lncacl_dout, lncsco_dout;
 wire [31:0] bsmacl_dout, bsmsco_dout;
 
 
-reg LMPcmd, LMP_c_slot;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     LMPcmd <= 1'b0;
-  else if (regi_LMPcmd_p)
-     LMPcmd <= 1'b1;
-  else if (ms_tslot_p)
-     LMPcmd <= 1'b0 ;
-end
+//reg LMPcmd, LMP_c_slot;
+//always @(posedge clk_6M or negedge rstz)
+//begin
+//  if (!rstz)
+//     LMPcmd <= 1'b0;
+//  else if (regi_LMPcmd_p)
+//     LMPcmd <= 1'b1;
+//  else if (ms_tslot_p)
+//     LMPcmd <= 1'b0 ;
+//end
 
-//LMP command contain only 1 slot
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     LMP_c_slot <= 1'b0;
-  else if (LMPcmd & ms_tslot_p)
-     LMP_c_slot <= 1'b1;
-  else if (ms_tslot_p)
-     LMP_c_slot <= 1'b0 ;
-end
+////LMP command contain only 1 slot
+//always @(posedge clk_6M or negedge rstz)
+//begin
+//  if (!rstz)
+//     LMP_c_slot <= 1'b0;
+//  else if (LMPcmd & ms_tslot_p)
+//     LMP_c_slot <= 1'b1;
+//  else if (ms_tslot_p)
+//     LMP_c_slot <= 1'b0 ;
+//end
 
 wire [7:0] txlnctrl_addr = pybitcount[12:5];
 wire txlncacl_cs = py_datperiod & (LMP_c_slot | (!tx_reservedslot));

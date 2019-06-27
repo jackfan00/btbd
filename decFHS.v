@@ -2,8 +2,8 @@ module decFHS (
 clk_6M, rstz,
 dec_py_st_p, daten, dec_py_period, py_datvalid_p, pydecdatout,
 rxfhs,
-Pbits,
-LAP,
+Pbits_L2M,
+LAP_L2M,
 EIR,
 SR,
 SP,
@@ -18,8 +18,8 @@ PSM
 input clk_6M, rstz;
 input dec_py_st_p, daten, dec_py_period, py_datvalid_p, pydecdatout;
 input rxfhs;
-output [33:0] Pbits;
-output [23:0] LAP;
+output [33:0] Pbits_L2M;
+output [23:0] LAP_L2M;
 output EIR;
 output [1:0] SR;
 output [1:0] SP;
@@ -52,22 +52,24 @@ end
 ////////     pydecdatout_d <= {pydecdatout,pydecdatout_d[33:1]};
 ////////end
 
-reg [33:0] Pbits;
+reg [33:0] Pbits_L2M;  //lsb is left-most position
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     Pbits <= 0;
+     Pbits_L2M <= 0;
   else if (py_datvalid_p & bitcount<=12'd33 & daten & dec_py_period & rxfhs)
-     Pbits <= {pydecdatout,Pbits[33:1]};
+     Pbits_L2M <= {pydecdatout, Pbits_L2M[33:1]};
+    // Pbits_L2M <= {Pbits_L2M[32:0], pydecdatout};
 end
 
-reg [23:0] LAP;
+reg [23:0] LAP_L2M; //lsb is left-most position
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     LAP <= 0;
+     LAP_L2M <= 0;
   else if (py_datvalid_p & bitcount>12'd33 & bitcount<=12'd57 & daten & dec_py_period & rxfhs)  //33+24
-     LAP <= {pydecdatout,LAP[23:1]};
+     LAP_L2M <= {pydecdatout, LAP_L2M[23:1]};
+    // LAP_L2M <= {LAP_L2M[22:0],pydecdatout};
 end
 
 reg EIR;

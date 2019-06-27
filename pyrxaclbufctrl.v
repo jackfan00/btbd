@@ -94,8 +94,8 @@ sram256x32_1p sram256x32_1p_u1(
 );
 
 assign bsm_dout = s1a ? u1_bsm_dout : u0_bsm_dout;
-wire [9:0] pylenByte = s1a ? u1_length : u0_length;
-wire [7:0] endaddr = (pylenByte[1:0]==2'b0) ? pylenByte[9:2]-1'b1 : pylenByte[9:2];
+wire [9:0] rxlenByte = s1a ? u1_length : u0_length;
+wire [7:0] endaddr = (rxlenByte[1:0]==2'b0) ? rxlenByte[9:2]-1'b1 : rxlenByte[9:2];
 assign bsm_read_endp = (bsm_addr >= endaddr) & bsm_valid_p;
 //
 reg regi_aclrxbufempty;

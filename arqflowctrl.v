@@ -6,7 +6,7 @@ clk_6M, rstz,
 regi_isMaster,
 dec_py_endp,
 esco_LT_ADDR,
-noCAC,
+rxCAC,
 is_eSCO,
 dec_hecgood, dec_micgood,
 connsnewmaster, connsnewslave,
@@ -21,7 +21,7 @@ header_st_p,
 dec_pktype, txpktype, regi_packet_type,
 dec_flow,
 dec_arqn,
-prerx_notrans, dec_crcgood,
+prerx_trans, dec_crcgood,
 regi_flushcmd_p,
 ms_txcmd_p,
 regi_aclrxbufempty,
@@ -38,7 +38,7 @@ input clk_6M, rstz;
 input regi_isMaster;
 input dec_py_endp;
 input [2:0] esco_LT_ADDR;
-input noCAC;
+input rxCAC;
 input is_eSCO;
 input dec_hecgood, dec_micgood;
 input connsnewmaster, connsnewslave;
@@ -53,7 +53,7 @@ input header_st_p;
 input [3:0] dec_pktype, txpktype, regi_packet_type;
 input [7:0] dec_flow;
 input [7:0] dec_arqn;
-input prerx_notrans, dec_crcgood;
+input prerx_trans, dec_crcgood;
 input regi_flushcmd_p;
 input ms_txcmd_p;
 input regi_aclrxbufempty;
@@ -79,7 +79,7 @@ wire dec_flow_device = dec_flow[dec_lt_addr];
 assign srctxpktype = dec_flow_device ? regi_packet_type : 4'b0 ;
 wire aclpacket = srctxpktype==4'h3 | srctxpktype==4'h4 | srctxpktype==4'h8 | srctxpktype==4'h9 | 
                  srctxpktype==4'ha | srctxpktype==4'hb | srctxpktype==4'he | srctxpktype==4'hf;
-assign srcFLOW = dec_flow_device | prerx_notrans | !dec_crcgood | !aclpacket;
+assign srcFLOW = dec_flow_device | !prerx_trans | !dec_crcgood | !aclpacket;
 
 
 
@@ -143,7 +143,7 @@ end
 // RX arq ctrl
 // Vol2 PartB Figure 7.12
 //
-wire fail1 = noCAC | !dec_hecgood;
+wire fail1 = !rxCAC | !dec_hecgood;
 wire fail2 = !lt_addressed;
 wire esco_addressed = dec_lt_addr == esco_LT_ADDR;
 assign dec_pktype_data = dec_pktype==4'h3 | dec_pktype==4'h4 | dec_pktype==4'h8 | dec_pktype==4'ha | dec_pktype==4'hb | dec_pktype==4'he | dec_pktype==4'hf;

@@ -4,7 +4,8 @@
 //
 
 module hopctrlwd(
-clk_6M, rstz, 
+clk_6M, rstz, p_033us,
+pstxid,
 m_tslot_p, ms_tslot_p,
 ps_N_incr_p,
 pageAB_2Npage_count, 
@@ -27,7 +28,8 @@ D,
 E, F, Fprime
 );
 
-input clk_6M, rstz;
+input clk_6M, rstz, p_033us;
+input pstxid;
 input m_tslot_p, ms_tslot_p;
 input ps_N_incr_p;
 input [3:0] pageAB_2Npage_count;
@@ -82,7 +84,7 @@ begin
     end 
 end
 //
-reg [4:0] counter_clkN1;
+reg [5:0] counter_clkN1;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -91,7 +93,7 @@ begin
     end 
   else if (!spr)  //slave page response
     begin
-     counter_clkN1 <= 0;
+     counter_clkN1 <= 5'h1;
     end 
   else if (ps_N_incr_p)
     begin
@@ -123,7 +125,7 @@ assign k_offset = Atrain ? 5'd24 : 5'd8;
 wire [3:0] xpt = {CLKE[4:2],CLKE[0]} - CLKE[16:12];   // mod 16
 wire [4:0] Xp = CLKE[16:12] + k_offset + k_nudge + xpt ;  // mod 32
 
-wire [4:0] Xprs = CLKN_frozen[16:12] + counter_clkN1;
+wire [4:0] Xprs = CLKN_frozen[16:12] + counter_clkN1[5:1];
 
 wire [3:0] xprmt = {CLKE_frozen[4:2],CLKE_frozen[0]} - CLKE_frozen[16:12];
 wire [4:0] Xprm = CLKE_frozen[16:12] + k_offset_frozen + k_nudge_frozen + xprmt + counter_clkE1;
@@ -147,17 +149,19 @@ assign X = ({5{ps}}      & CLKN[16:12]) |    //page scan
            ({5{conns}}   & CLK[6:2]);     //connection state
            
 
+wire spr_Y = pstxid | counter_clkN1[0];
+
 assign Y1 =({1{page}}    & CLKE[1]) |
            ({1{inquiry}} & CLKN[1]) |
            ({1{mpr}}     & CLKE[1]) |   //master page respone
-           ({1{spr}}     & CLKN[1]) |   //slave page response
+           ({1{spr}}     & spr_Y  ) |  //CLKN[1]) |   //slave page response
            ({1{ir}}      & 1'b1) |    //inquiry response
            ({1{conns}}   & CLK[1]);     //connection state
 
 assign Y2 =({6{page}}    & {CLKE[1],5'b0}) |
            ({6{inquiry}} & {CLKN[1],5'b0}) |
            ({6{mpr}}     & {CLKE[1],5'b0}) |   //master page respone
-           ({6{spr}}     & {CLKN[1],5'b0}) |   //slave page response
+           ({6{spr}}     & {spr_Y  ,5'b0}) |  //{CLKN[1],5'b0}) |   //slave page response
            ({6{ir}}      & {1'b1   ,5'b0}) |    //inquiry response
            ({6{conns}}   & {CLK[1] ,5'b0});     //connection state
 
@@ -199,7 +203,17 @@ assign D = ({9{ps}}      & BD_ADDR[18:10]) |    //page scan
 assign E = {BD_ADDR[13],BD_ADDR[11],BD_ADDR[9],BD_ADDR[7],BD_ADDR[5],BD_ADDR[3],BD_ADDR[1]};           
 
 //
-wire div_en_p = (CLK[6:0]==7'h7f) & ms_tslot_p;
+
+//wire div_en_p = (CLK[6:0]==7'hff) & ms_tslot_p;
+reg div_en_p;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     div_en_p <= 0;
+  else 
+     div_en_p <= (CLK[6:0]==7'hff) & ms_tslot_p;
+end
+
 wire divffclk = clk_6M;
 
 wire [24:0] Ft, nc1;

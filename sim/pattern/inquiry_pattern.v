@@ -1,6 +1,6 @@
 initial begin
 //
-$fsdbDumpfile("bt_inquiry.fsdb");
+$fsdbDumpfile("bt.fsdb");
 $fsdbDumpvars;
 // parameter setting
 regi_InquiryScanEnable_oneshot = 1'b0;

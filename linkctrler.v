@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+regi_LMPcmdfg,
 regi_pagetruncated,
 regi_InquiryEnable_oneshot,  regi_PageEnable_oneshot, 
 regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot,
@@ -52,11 +53,15 @@ pk_encode,
 pssyncCLK_p,
 conns_1stslot,
 pk_encode_1stslot,
-ms_txcmd_p
+ms_txcmd_p,
+rxCAC, prerx_trans,
+LMP_c_slot,
+pstxid
 
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input regi_LMPcmdfg;
 input regi_pagetruncated;
 input regi_InquiryEnable_oneshot,  regi_PageEnable_oneshot;
 input regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
@@ -105,6 +110,9 @@ output pssyncCLK_p;
 output conns_1stslot;
 output pk_encode_1stslot;
 output ms_txcmd_p;
+output rxCAC, prerx_trans;
+output LMP_c_slot;
+output pstxid;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -118,7 +126,7 @@ wire ps_corr_halftslotdly_endp = corr_halftslotdly_endp;
 wire pageTO_status, inquiryTO;
 wire is_corr_4tslotdly_endp, is_corr_3tslotdly_endp, is_corr_2tslotdly_endp, is_corr_tslotdly_endp;
 wire ps_pagerespTO, page_pagerespTO;
-wire pstxid;
+wire psrxfhs_corwin;
 wire PageScanWindow1more;
 wire psrxfhs;
 wire istxfhs_tslotdly_endp, istxfhs_tslot2dly_endp, isextfhs_tslotdly_endp;
@@ -439,7 +447,7 @@ begin
 end
 
 wire corre_trgp;
-assign ps_corre_sync_p = corre_trgp & ps;
+assign ps_corre_sync_p = corre_trgp & (ps|spr);
 assign conns_corre_sync_p = corre_trgp & conns;
 
 //
@@ -509,7 +517,7 @@ begin
 end
 
 //assign ps_N_incr_p = (ps_FHS_count_1us==11'd1249 & p_1us) ;
-assign ps_N_incr_p = (CLKN[1] & s_tslot_p & spr) ;
+assign ps_N_incr_p = pstxid ? ps_corr_halftslotdly_endp : (s_tslot_p & spr); // (CLKN[1] & s_tslot_p & spr);
 //
 // newconnectionTO
 //
@@ -522,7 +530,7 @@ begin
      newconnectionTO_count <= 0;
   else if (regi_isMaster & (!connsnewmaster))
      newconnectionTO_count <= 0;
-  else if ((!regi_isMaster) & s_wpoll)
+  else if ((!regi_isMaster) & (!s_wpoll))
      newconnectionTO_count <= 0;
   else if (newc_p)
      newconnectionTO_count <= newconnectionTO_count + 1'b1;
@@ -690,7 +698,7 @@ wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DA
                        
 wire correWindow = page ? p_correWin :
                    ps ? PageScanWindow :
-                   spr ? spr_correWin :
+                   spr ? spr_correWin | psrxfhs_corwin :
                    mpr ? mpr_correWin :
                    is ? InquiryScanWindow :
                    conns | inquiry ? ConnsWindow : 1'b0;
@@ -699,6 +707,8 @@ correlator correlator_u(
 .clk_6M                 (clk_6M                   ), 
 .rstz                   (rstz                     ), 
 .p_1us                  (p_1us                    ),
+.pk_encode              (pk_encode                ), 
+.conns                  (conns                    ),
 .correWindow            (correWindow              ),
 .sync_in                (sync_in                  ), 
 .ref_sync               (ref_sync                 ),
@@ -708,7 +718,10 @@ correlator correlator_u(
 .corre_tslotdly_endp    (corr_tslotdly_endp       ), 
 .corre_halftslotdly_endp(corr_halftslotdly_endp   ),
 .corre_trgp             (corre_trgp               ),
-.rx_trailer_st_p        (raw_rx_trailer_st_p      )
+.rx_trailer_st_p        (raw_rx_trailer_st_p      ),
+.rxCAC                  (rxCAC                    ), 
+.prerx_trans            (prerx_trans              ),
+.psrxfhs_corwin         (psrxfhs_corwin           )
 );
 
 always @(posedge clk_6M or negedge rstz)
@@ -798,7 +811,7 @@ assign tx_packet_st_p =
                      cs==PageMasterResp_rxackfhs_STATE & m_corre    ?  CLKE[1] & m_tslot_p :  // master send first poll
                      cs==PageMasterResp_rxackfhs_STATE & (!m_corre) ?  CLKE[1] & m_tslot_p & (!regi_pagetruncated) :  // re-transmit FHS ,master page response, 
                      cs==CONNECTIONnewmaster_STATE ? (!m_corre) & CLKE[1] & m_tslot_p :   // master send retry poll
-                     cs==CONNECTIONnewslave_STATE  ? s_corre & rxispoll & s_tslot_p :   // slave send null to ack poll
+                     cs==CONNECTIONnewslave_STATE  ? s_corre & rxispoll & s_tslot_p & lt_addressed :   // slave send null to ack poll
                      1'b0;
                       
 wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
@@ -860,5 +873,28 @@ end
  
 assign conns_1stslot = conns & (regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
 assign pk_encode = pk_encode_1stslot | extendslot;
+
+reg LMPcmd;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     LMPcmd <= 0;
+  else if (ms_txcmd_p & regi_LMPcmdfg)
+     LMPcmd <= 1'b1;
+  else if (ms_tslot_p & !pk_encode)
+     LMPcmd <= 1'b0;
+end
+
+//LMP command contain only 1 slot
+reg LMP_c_slot;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     LMP_c_slot <= 1'b0;
+  else if (LMPcmd & ms_tslot_p)
+     LMP_c_slot <= 1'b1;
+  else if (ms_tslot_p)
+     LMP_c_slot <= 1'b0 ;
+end
 
 endmodule

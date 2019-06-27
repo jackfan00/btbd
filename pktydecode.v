@@ -31,46 +31,60 @@ output existpyheader_f;
 output allowedeSCOtype;
 output extendslot;
 //
-
-reg [12:0] pylenbit_f;
-reg [2:0] occpuy_slots_f;
-reg fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f;
-reg BRss_f;
-reg existpyheader_f;
+//
+wire BRss;
 reg [12:0] pylenbit;
 reg [2:0] occpuy_slots;
 reg fec31encode, fec32encode, crcencode, packet_BRmode, packet_DPSK;
 reg existpyheader;
-wire BRss;
 
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-    begin
-      pylenbit_f <= 0 ;
-      occpuy_slots_f <= 0;
-      fec31encode_f <= 0;
-      fec32encode_f <= 0;
-      crcencode_f <= 0;
-      packet_BRmode_f <= 0;
-      packet_DPSK_f <= 0;
-      BRss_f <= 0;
-      existpyheader_f <= 0;
-    end
 
-  else if (pk_encode_1stslot)
-    begin
-      pylenbit_f <= pylenbit ;
-      occpuy_slots_f <= occpuy_slots;
-      fec31encode_f <= fec31encode;
-      fec32encode_f <= fec32encode;
-      crcencode_f <= crcencode;
-      packet_BRmode_f <= packet_BRmode;
-      packet_DPSK_f <= packet_DPSK;
-      BRss_f <= BRss;
-      existpyheader_f <= existpyheader;
-    end
-end
+//reg [12:0] pylenbit_f;
+//reg [2:0] occpuy_slots_f;
+//reg fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f;
+//reg BRss_f;
+//reg existpyheader_f;
+
+
+//always @(posedge clk_6M or negedge rstz)
+//begin
+//  if (!rstz)
+//    begin
+//      pylenbit_f <= 0 ;
+//      occpuy_slots_f <= 0;
+//      fec31encode_f <= 0;
+//      fec32encode_f <= 0;
+//      crcencode_f <= 0;
+//      packet_BRmode_f <= 0;
+//      packet_DPSK_f <= 0;
+//      BRss_f <= 0;
+//      existpyheader_f <= 0;
+//    end
+//  else if (pk_encode_1stslot)
+//    begin
+//      pylenbit_f <= pylenbit ;
+//      occpuy_slots_f <= occpuy_slots;
+//      fec31encode_f <= fec31encode;
+//      fec32encode_f <= fec32encode;
+//      crcencode_f <= crcencode;
+//      packet_BRmode_f <= packet_BRmode;
+//      packet_DPSK_f <= packet_DPSK;
+//      BRss_f <= BRss;
+//      existpyheader_f <= existpyheader;
+//    end
+//end
+
+
+assign       pylenbit_f = pylenbit ;
+assign       occpuy_slots_f = occpuy_slots;
+assign       fec31encode_f = fec31encode;
+assign       fec32encode_f = fec32encode;
+assign       crcencode_f = crcencode;
+assign       packet_BRmode_f = packet_BRmode;
+assign       packet_DPSK_f = packet_DPSK;
+assign       BRss_f = BRss;
+assign       existpyheader_f = existpyheader;
+
 
 reg extendslot;
 reg [2:0] extendslotcnt;
