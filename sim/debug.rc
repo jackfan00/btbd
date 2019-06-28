@@ -2,11 +2,11 @@ Magic 271485
 Revision Verdi3_2013.07
 
 ; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
-viewPort 0 25 1276 720 220 65
+viewPort 31 70 1143 630 220 139
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
-openDirFile -d / -i 0 "" "/home/jack/btbd/sim/bt_page.fsdb"
+openDirFile -d / -i 1 "" "/home/jack/btbd/sim/bt.fsdb"
 
 ; file time scale:
 ; fileTimeScale ### s|ms|us|ns|ps
@@ -18,14 +18,14 @@ signalSpacing 5
 windowTimeUnit 10us
 
 ; waveform viewport range
-zoom 2607.020048 2675.826829 10u
-cursor 2639.136004
-marker 2639.335972
+zoom 0.000000 4429.498908 10u
+cursor 10999.651663
+marker 2750.218228
 
 ; visible top row signal index
-top 15
+top 5
 ; marker line index
-markerPos 42
+markerPos 20
 
 ; event list
 ; addEvent event_name event_expression
@@ -71,52 +71,67 @@ nalias PageMasterResp_txfhs_STATE		5'b01011		NULL
 nalias CONNECTIONnewmaster_STATE		5'b10101		NULL
 nalias PageSlaveResp_rxfhs_STATE		5'b01111		NULL
 
+aliasmapname div.cs
+nalias IDLE		2'b00		NULL
+nalias DIVON		2'b01		NULL
+nalias DIVEnd		2'b10		NULL
+
 addGroup "G1"
-activeDirFile "" "/home/jack/btbd/sim/bt_page.fsdb"
+activeDirFile "" "/home/jack/btbd/sim/bt.fsdb"
+addSignal -h 15 /testbench/bt_top_m/hopctrlwd_u/div_en_p
+aliasname div.cs
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/hopctrlwd_u/mod79_F/cs[1:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope dividend[24:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope op_dividend[50:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope dividend[24:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope divisor[6:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/hopctrlwd_u/F[6:0]
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/CLK[27:0]
+addSignal -h 15 -holdScope m_tslot_p
+addSignal -h 15 /testbench/bt_top_m/linkctrler_u/mpr
+addSignal -h 15 -holdScope page
 addSignal -h 15 /testbench/bt_top_m/bluetoothclk_u/m_conns_uncerWindow
 aliasname linkctrler.cs
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/linkctrler_u/cs[4:0]
-addSignal -h 15 -holdScope p_corre_threshold
-addSignal -h 15 /testbench/bt_top_m/linkctrler_u/correlator_u/corre_trgp
-addSignal -h 15 /testbench/bt_top_m/linkctrler_u/CLKE[1]
-addSignal -h 15 -holdScope m_tslot_p
-addSignal -h 15 -holdScope page
-addSignal -h 15 -holdScope tx_packet_st_p
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/hopkernal_u/fk[6:0]
+addSignal -h 15 -UNSIGNED -UDEC /testbench/bt_top_m/hopkernal_u/fk[6:0]
 addSignal -h 15 /testbench/bt_top_m/allbitp_u/headerbitp_u/connsnewmaster
-addSignal -h 15 /testbench/bt_top_m/linkctrler_u/pk_encode
-addSignal -h 15 -holdScope m_tslot_p
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/allbitp_u/headerbitp_u/txpktype[3:0]
-addSignal -h 15 /testbench/bt_top_m/allbitp_u/header_packet_period
-addSignal -h 15 /testbench/bt_top_m/linkctrler_u/tx_packet_st_p
-addSignal -h 15 /testbench/bt_top_m/allbitp_u/txbit
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/allbitp_u/headerbitp_u/regi_syncword_CAC[63:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/linkctrler_u/newconnectionTO_count[4:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/allbitp_u/headerbitp_u/txpk_lt_addr[2:0]
 addGroup "G2"
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/CLKN[27:0]
-addSignal -h 15 /testbench/bt_top_s/bluetoothclk_u/s_conns_uncerWindow
-addSignal -h 15 /testbench/bt_top_s/linkctrler_u/pk_encode
-addSignal -h 15 -holdScope s_tslot_p
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/bluetoothclk_u/CLK_slave[27:0]
 aliasname linkctrler.cs
-addSignal -h 15 -UNSIGNED -HEX -holdScope cs[4:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopkernal_u/fk[6:0]
-addSignal -h 15 /testbench/bt_top_s/allbitp_u/header_packet_period
-addSignal -h 15 -holdScope txheaderbit
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/headerbitp_u/syncword[63:0]
-addSignal -h 15 -holdScope conns
-addSignal -h 15 -UNSIGNED -HEX -holdScope txpktype[3:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope regi_packet_type[3:0]
-addSignal -h 15 /testbench/bt_top_s/txbit
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/cs[4:0]
+addSignal -h 15 -UNSIGNED -UDEC /testbench/bt_top_s/hopkernal_u/fk[6:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopctrlwd_u/counter_clkN1[4:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope CLKN_frozen[27:0]
+addSignal -h 15 /testbench/bt_top_s/bluetoothclk_u/corre_sync_p
+addSignal -h 15 -holdScope pssyncCLK_p
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopkernal_u/X[4:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope A[4:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope C[4:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope B[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope D[8:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope E[6:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope F[6:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope Fprime[6:0]
+addSignal -h 15 /testbench/bt_top_s/hopctrlwd_u/pstxid
+addSignal -h 15 /testbench/bt_top_s/hopkernal_u/Y1
+addSignal -h 15 -UNSIGNED -HEX -holdScope Y2[5:0]
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/rxbit
+addSignal -h 15 -holdScope txbit
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/headerbitp_u/tx_packet_st_p
+addSignal -h 15 /testbench/bt_top_s/linkctrler_u/s_corre
+addSignal -h 15 -holdScope rxispoll
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/headerbitp_u/rxisfhs
+addSignal -h 15 /testbench/bt_top_s/linkctrler_u/s_tslot_p
+addSignal -h 15 -holdScope lt_addressed
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/headerbitp_u/dec_lt_addr[2:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/ms_lt_addr[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope fhs_LT_ADDR[2:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/decFHS_u/Pbits_L2M[33:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope LAP_L2M[23:0]
 addGroup "G3"
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/bluetoothclk_u/CLKN_slave[27:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope regi_slave_offset[27:2]
-addSignal -h 15 -UNSIGNED -HEX -holdScope CLK_slave[27:0]
 addGroup "G4"
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/bitcount[12:0]
-addSignal -h 15 /testbench/bt_top_s/allbitp_u/pybitp_u/pypro_u/fec32bk_endp
-addSignal -h 15 -UNSIGNED -HEX -holdScope dec_bitcnt[3:0]
-addSignal -h 15 /testbench/bt_top_s/allbitp_u/pybitp_u/decFHS_u/dec_py_period
-addSignal -h 15 -UNSIGNED -HEX -holdScope bitcount[12:0]
 addGroup "G5"
 
 ; getSignalForm Scope Hierarchy Status

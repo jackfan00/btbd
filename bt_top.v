@@ -9,7 +9,7 @@ rxbsm_valid_p,
 regi_txcmd_p, regi_flushcmd_p, regi_LMPcmdfg,
 regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_interlace_offset, regi_page_k_nudge,
-regi_AFH_N,
+//regi_AFH_N,
 regi_isMaster,
 regi_GIAC_BD_ADDR_UAP, regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP,
 regi_GIAC_BD_ADDR_LAP, regi_paged_BD_ADDR_LAP, regi_master_BD_ADDR_LAP, regi_my_BD_ADDR_LAP,
@@ -28,14 +28,15 @@ regi_slave_SRmode,
 regi_scolink_num,
 regi_Page_Timeout,
 regi_m_uncerWinSize, regi_s_uncerWinSize,
+regi_AFH_mode,
 regi_AFH_channel_map,
-regi_AFH_modN,
+regi_AFH_N,
 regi_isMaxRand,
 regi_extendedInquiryResponse,
 regi_Tsco,
 regi_LT_ADDR, regi_mylt_address,
 regi_packet_type,
-regi_FLOW, regi_ARQN, regi_SEQN,
+//regi_FLOW, regi_ARQN, regi_SEQN,
 regi_payloadlen,
 regi_FHS_LT_ADDR,
 regi_myClass,
@@ -69,7 +70,7 @@ input rxbsm_valid_p;
 input regi_txcmd_p, regi_flushcmd_p, regi_LMPcmdfg;
 input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [4:0] regi_interlace_offset, regi_page_k_nudge;
-input [6:0] regi_AFH_N;
+//input [6:0] regi_AFH_N;
 input regi_isMaster;
 input [7:0] regi_GIAC_BD_ADDR_UAP, regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP;
 input [23:0] regi_GIAC_BD_ADDR_LAP, regi_paged_BD_ADDR_LAP, regi_master_BD_ADDR_LAP, regi_my_BD_ADDR_LAP;
@@ -90,14 +91,15 @@ input [1:0] regi_scolink_num;
 input [15:0] regi_Page_Timeout;
 input [8:0] regi_m_uncerWinSize;
 input [8:0] regi_s_uncerWinSize;
+input regi_AFH_mode;
 input [79:0] regi_AFH_channel_map;
-input [6:0] regi_AFH_modN;
+input [6:0] regi_AFH_N;
 input [9:0] regi_isMaxRand;
 input regi_extendedInquiryResponse;
 input [2:0] regi_Tsco;
 input [2:0] regi_LT_ADDR, regi_mylt_address;
 input [3:0] regi_packet_type;
-input regi_FLOW, regi_ARQN, regi_SEQN;
+//input regi_FLOW, regi_ARQN, regi_SEQN;
 input [9:0] regi_payloadlen;
 input [2:0] regi_FHS_LT_ADDR;
 input [23:0] regi_myClass;
@@ -153,14 +155,14 @@ wire [6:0] E, F, Fprime;
 wire Y1;
 wire [5:0] Y2;
 wire [79:0] regi_AFH_channel_map;
-wire [6:0] regi_AFH_modN;
+wire [6:0] regi_AFH_N;
 wire [6:0] fk;
 wire [63:0] syncinword;
 wire [6:0] whitening;
 wire py_period, daten, py_datvalid_p;
 wire pssyncCLK_p;
 wire lt_addressed;
-wire pstxid;
+wire pstxid, psrxfhs, psrxfhs_succ_p;
 
 
 bluetoothclk bluetoothclk_u(
@@ -212,6 +214,8 @@ hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
+.psrxfhs_succ_p       (psrxfhs_succ_p       ),
+.psrxfhs              (psrxfhs              ),
 .pstxid               (pstxid               ),
 .m_tslot_p            (m_tslot_p            ),
 .ms_tslot_p           (ms_tslot_p           ),
@@ -220,6 +224,7 @@ hopctrlwd hopctrlwd_u(
 .Atrain               (Atrain               ),
 .regi_interlace_offset(regi_interlace_offset),
 .regi_page_k_nudge    (regi_page_k_nudge    ),
+.regi_AFH_mode        (regi_AFH_mode        ),
 .regi_AFH_N           (regi_AFH_N           ),
 .ps                   (ps                   ), 
 .gips                 (gips                 ), 
@@ -269,7 +274,7 @@ hopkernal hopkernal_u(
 .Y1                  (Y1                  ),
 .Y2                  (Y2                  ),
 .regi_AFH_channel_map(regi_AFH_channel_map),
-.regi_AFH_modN       (regi_AFH_modN       ),
+.regi_AFH_N          (regi_AFH_N          ),
 .fk                  (fk                  )
 
 );
@@ -372,7 +377,8 @@ linkctrler linkctrler_u(
 .rxCAC                     (rxCAC                     ), 
 .prerx_trans               (prerx_trans               ),
 .LMP_c_slot                (LMP_c_slot                ),
-.pstxid                    (pstxid                    )
+.pstxid                    (pstxid                    ),
+.psrxfhs_succ_p            (psrxfhs_succ_p            )
 
 );
 
@@ -520,9 +526,9 @@ allbitp allbitp_u(
 .regi_mylt_address      (regi_mylt_address      ),  // slave LT_ADDR, assigned by master FHS
 .regi_FHS_LT_ADDR       (regi_FHS_LT_ADDR       ),  // master sent to slave LT_ADDR by FHS packet
 .regi_packet_type       (regi_packet_type       ),
-.regi_FLOW              (regi_FLOW              ), 
-.regi_ARQN              (regi_ARQN              ), 
-.regi_SEQN              (regi_SEQN              ),
+//.regi_FLOW              (regi_FLOW              ), 
+//.regi_ARQN              (regi_ARQN              ), 
+//.regi_SEQN              (regi_SEQN              ),
 .regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
 .regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),
 .Xprm                   (Xprm                   ),

@@ -56,7 +56,8 @@ pk_encode_1stslot,
 ms_txcmd_p,
 rxCAC, prerx_trans,
 LMP_c_slot,
-pstxid
+pstxid,
+psrxfhs_succ_p
 
 );
 
@@ -113,6 +114,7 @@ output ms_txcmd_p;
 output rxCAC, prerx_trans;
 output LMP_c_slot;
 output pstxid;
+output psrxfhs_succ_p;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -517,6 +519,7 @@ begin
 end
 
 //assign ps_N_incr_p = (ps_FHS_count_1us==11'd1249 & p_1us) ;
+
 assign ps_N_incr_p = pstxid ? ps_corr_halftslotdly_endp : (s_tslot_p & spr); // (CLKN[1] & s_tslot_p & spr);
 //
 // newconnectionTO
@@ -794,6 +797,8 @@ assign psrxfhs = (cs==PageSlaveResp_rxfhs_STATE) | (cs==PageSlaveResp_rxfhsdone_
 assign inquiryrxfhs = (cs==Inquiryrsp_STATE);
 
 assign pssyncCLK_p = (cs==PageSlaveResp_ackfhs_STATE) & s_tslot_p;
+
+assign psrxfhs_succ_p = (cs==PageSlaveResp_rxfhs_STATE) & corre_trgp;
 //
 
 assign tx_packet_st_p = 

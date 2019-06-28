@@ -23,7 +23,7 @@ regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_syncword_GIAC,
 regi_LT_ADDR, regi_mylt_address,
 regi_FHS_LT_ADDR,
 regi_packet_type,
-regi_FLOW, regi_ARQN, regi_SEQN,
+//regi_FLOW, regi_ARQN, regi_SEQN,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, 
 Xprm, Xir, Xprs,
 CLK,
@@ -90,7 +90,7 @@ input [63:0] regi_syncword_CAC, regi_syncword_DAC, regi_syncword_DIAC, regi_sync
 input [2:0] regi_LT_ADDR, regi_mylt_address;
 input [2:0] regi_FHS_LT_ADDR;
 input [3:0] regi_packet_type;
-input regi_FLOW, regi_ARQN, regi_SEQN;
+//input regi_FLOW, regi_ARQN, regi_SEQN;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP;
 input [4:0] Xprm, Xir, Xprs;
 input [27:0] CLK;
@@ -191,9 +191,9 @@ headerbitp headerbitp_u(
 .regi_LT_ADDR           (regi_LT_ADDR           ),
 .regi_mylt_address      (regi_mylt_address      ),
 .regi_packet_type       (regi_packet_type       ),
-.regi_FLOW              (regi_FLOW              ), 
-.regi_ARQN              (regi_ARQN              ), 
-.regi_SEQN              (regi_SEQN              ),
+//.regi_FLOW              (regi_FLOW              ), 
+//.regi_ARQN              (regi_ARQN              ), 
+//.regi_SEQN              (regi_SEQN              ),
 .regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
 .regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),
 .regi_my_BD_ADDR_UAP    (regi_my_BD_ADDR_UAP    ),

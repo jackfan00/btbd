@@ -5,12 +5,15 @@
 
 module hopctrlwd(
 clk_6M, rstz, p_033us,
+psrxfhs_succ_p,
+psrxfhs,
 pstxid,
 m_tslot_p, ms_tslot_p,
 ps_N_incr_p,
 pageAB_2Npage_count, 
 Atrain,
 regi_interlace_offset, regi_page_k_nudge,
+regi_AFH_mode,
 regi_AFH_N,
 ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns,
 prs_clock_frozen, prm_clock_frozen,
@@ -29,12 +32,15 @@ E, F, Fprime
 );
 
 input clk_6M, rstz, p_033us;
+input psrxfhs_succ_p;
+input psrxfhs;
 input pstxid;
 input m_tslot_p, ms_tslot_p;
 input ps_N_incr_p;
 input [3:0] pageAB_2Npage_count;
 input Atrain;
 input [4:0] regi_interlace_offset, regi_page_k_nudge;
+input regi_AFH_mode;
 input [6:0] regi_AFH_N;
 input ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
 input prs_clock_frozen, prm_clock_frozen;
@@ -84,6 +90,7 @@ begin
     end 
 end
 //
+
 reg [5:0] counter_clkN1;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -95,6 +102,8 @@ begin
     begin
      counter_clkN1 <= 5'h1;
     end 
+  else if (psrxfhs_succ_p)
+     counter_clkN1 <= {counter_clkN1[5:1],1'b0};
   else if (ps_N_incr_p)
     begin
      counter_clkN1 <= counter_clkN1+1'b1;
@@ -149,21 +158,21 @@ assign X = ({5{ps}}      & CLKN[16:12]) |    //page scan
            ({5{conns}}   & CLK[6:2]);     //connection state
            
 
-wire spr_Y = pstxid | counter_clkN1[0];
+wire spr_Y = pstxid | (psrxfhs ? 1'b0 : counter_clkN1[0]);
 
 assign Y1 =({1{page}}    & CLKE[1]) |
            ({1{inquiry}} & CLKN[1]) |
            ({1{mpr}}     & CLKE[1]) |   //master page respone
            ({1{spr}}     & spr_Y  ) |  //CLKN[1]) |   //slave page response
            ({1{ir}}      & 1'b1) |    //inquiry response
-           ({1{conns}}   & CLK[1]);     //connection state
+           ({1{conns}}   & (CLK[1]&(!regi_AFH_mode)) );     //connection state
 
 assign Y2 =({6{page}}    & {CLKE[1],5'b0}) |
            ({6{inquiry}} & {CLKN[1],5'b0}) |
            ({6{mpr}}     & {CLKE[1],5'b0}) |   //master page respone
            ({6{spr}}     & {spr_Y  ,5'b0}) |  //{CLKN[1],5'b0}) |   //slave page response
            ({6{ir}}      & {1'b1   ,5'b0}) |    //inquiry response
-           ({6{conns}}   & {CLK[1] ,5'b0});     //connection state
+           ({6{conns}}   & {(CLK[1]&(!regi_AFH_mode)) ,5'b0});     //connection state
 
 assign A = ({5{ps}}      & BD_ADDR[27:23]) |    //page scan
            ({5{gips}}    & BD_ADDR[27:23]) |  //generlized interlace page scan

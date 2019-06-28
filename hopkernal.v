@@ -13,7 +13,7 @@ E, F, Fprime,
 Y1,
 Y2,
 regi_AFH_channel_map,
-regi_AFH_modN,
+regi_AFH_N,
 fk
 
 );
@@ -28,7 +28,7 @@ input [6:0] E, F, Fprime;
 input Y1;
 input [5:0] Y2;
 input [79:0] regi_AFH_channel_map;
-input [6:0] regi_AFH_modN;
+input [6:0] regi_AFH_N;
 output [6:0] fk;
 
 // first addition mod 32
@@ -107,19 +107,19 @@ wire rfchused = regi_AFH_channel_map[adder2m79[6:0]];
 
 //
 // remap function
-// addition mod regi_AFH_modN, 20<N<79
+// addition mod regi_AFH_N, 20<N<79
 // Fprime < N
 
-wire [6:0] emN = {2'b0,E[6:0]} >= {regi_AFH_modN,2'b0}                 ? {2'b0,E[6:0]} - {regi_AFH_modN,2'b0} :
-                 {2'b0,E[6:0]} >= ({regi_AFH_modN,1'b0}+regi_AFH_modN) ? {2'b0,E[6:0]} - ({regi_AFH_modN,1'b0}+regi_AFH_modN) :
-                 {1'b0,E[6:0]} >= {regi_AFH_modN,1'b0}                 ? {1'b0,E[6:0]} - {regi_AFH_modN,1'b0} :
-                 E[6:0] >= regi_AFH_modN                              ? E[6:0]-regi_AFH_modN : E[6:0];
+wire [6:0] emN = {2'b0,E[6:0]} >= {regi_AFH_N,2'b0}                 ? {2'b0,E[6:0]} - {regi_AFH_N,2'b0} :
+                 {2'b0,E[6:0]} >= ({regi_AFH_N,1'b0}+regi_AFH_N) ? {2'b0,E[6:0]} - ({regi_AFH_N,1'b0}+regi_AFH_N) :
+                 {1'b0,E[6:0]} >= {regi_AFH_N,1'b0}                 ? {1'b0,E[6:0]} - {regi_AFH_N,1'b0} :
+                 E[6:0] >= regi_AFH_N                              ? E[6:0]-regi_AFH_N : E[6:0];
 //
-wire [7:0] tmp1N = emN + Fprime[6:0]; //should less than regi_AFH_modN*2
-wire [7:0] tmp1mN = tmp1N[7:0] >= regi_AFH_modN ? tmp1N[7:0]-regi_AFH_modN : tmp1N[7:0];  //should less than regi_AFH_modN
-wire [4:0] a7zmN = {2'b0,stage7_z[4:0]} >= regi_AFH_modN ? {2'b0,stage7_z[4:0]} - regi_AFH_modN : stage7_z[4:0];  
-wire [7:0] tmp2N = tmp1mN[6:0] + a7zmN + Y2;                                     //should less than regi_AFH_modN*2
-wire [6:0] adder2mN = tmp2N >= regi_AFH_modN ? tmp2N-regi_AFH_modN : tmp2N[6:0];
+wire [7:0] tmp1N = emN + Fprime[6:0]; //should less than regi_AFH_N*2
+wire [7:0] tmp1mN = tmp1N[7:0] >= regi_AFH_N ? tmp1N[7:0]-regi_AFH_N : tmp1N[7:0];  //should less than regi_AFH_N
+wire [4:0] a7zmN = {2'b0,stage7_z[4:0]} >= regi_AFH_N ? {2'b0,stage7_z[4:0]} - regi_AFH_N : stage7_z[4:0];  
+wire [7:0] tmp2N = tmp1mN[6:0] + a7zmN + Y2;                                     //should less than regi_AFH_N*2
+wire [6:0] adder2mN = tmp2N >= regi_AFH_N ? tmp2N-regi_AFH_N : tmp2N[6:0];
 
 wire [6:0] kprimem = adder2mN;
 //wire [8:0] kprimeall = E[6:0] + Fprime[6:0] + Y2 + stage7_z[4:0];
@@ -130,7 +130,7 @@ wire [6:0] kprimem = adder2mN;
 //.rstz     (rstz                       ),
 //.div_en_p (div_en_p                   ),
 //.dividend ({16'b0,kprimeall[8:0]}     ),
-//.divisor  (regi_AFH_modN[6:0]         ),
+//.divisor  (regi_AFH_N[6:0]         ),
 //.result_o ({kprimemodN[24:0],nc[24:0]})
 //);
 //wire [6:0] kprimem = kprimemodN[6:0]; //less than 79
