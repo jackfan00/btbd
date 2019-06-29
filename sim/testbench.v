@@ -1,6 +1,8 @@
 `timescale 1ns/10ps
 module testbench;
 
+
+
 reg m_clk_6M, m_rstz;
 reg s_clk_6M, s_rstz;
 reg [27:0] s_regi_slave_offset;
@@ -12,6 +14,19 @@ reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
 always #83.333 m_clk_6M = ~m_clk_6M;
 always #83.320 s_clk_6M = ~s_clk_6M;
 
+reg regi_cal_scwd_p;
+initial begin
+regi_cal_scwd_p=1'b0;
+wait(m_rstz==1'b1);
+#100;
+@(posedge m_clk_6M);
+#5;
+regi_cal_scwd_p=1'b1;
+@(posedge m_clk_6M);
+#5;
+regi_cal_scwd_p=1'b0;
+
+end
 
 wire m_txbit, s_txbit;
 wire m_rxbit, s_rxbit;
@@ -43,6 +58,8 @@ bt_top bt_top_m(
 .regi_interlace_offset       (5'd16),
 .regi_page_k_nudge           (5'd0), 
 .regi_isMaster               (1'b1),
+.regi_scwdLAP                (24'h0), 
+.regi_cal_scwd_p             (regi_cal_scwd_p),
 .regi_GIAC_BD_ADDR_UAP       (8'h0), 
 .regi_paged_BD_ADDR_UAP      (8'h47),   
 .regi_master_BD_ADDR_UAP     (8'h0),   //syncword = 64'h7e7041e34000000d, SPEC Vol2, PartG, 3.ACCESS CODE SAMPLE DATA

@@ -43,4 +43,5 @@ testbench.v
 ../pyrxscobufctrl.v
 ../arqflowctrl.v
 ../sram256x32_1p.v
+../swgen.v
 

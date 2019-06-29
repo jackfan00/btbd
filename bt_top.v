@@ -11,6 +11,7 @@ regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_interlace_offset, regi_page_k_nudge,
 //regi_AFH_N,
 regi_isMaster,
+regi_scwdLAP, regi_cal_scwd_p,
 regi_GIAC_BD_ADDR_UAP, regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP,
 regi_GIAC_BD_ADDR_LAP, regi_paged_BD_ADDR_LAP, regi_master_BD_ADDR_LAP, regi_my_BD_ADDR_LAP,
 regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot, 
@@ -72,6 +73,8 @@ input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [4:0] regi_interlace_offset, regi_page_k_nudge;
 //input [6:0] regi_AFH_N;
 input regi_isMaster;
+input [23:0] regi_scwdLAP;
+input regi_cal_scwd_p;
 input [7:0] regi_GIAC_BD_ADDR_UAP, regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP;
 input [23:0] regi_GIAC_BD_ADDR_LAP, regi_paged_BD_ADDR_LAP, regi_master_BD_ADDR_LAP, regi_my_BD_ADDR_LAP;
 input regi_PageScanEnable_oneshot, regi_PageScanCancel_oneshot;
@@ -576,9 +579,22 @@ allbitp allbitp_u(
 .regi_aclrxbufempty     (regi_aclrxbufempty     )
 );
 
+//
+//syncword generation
+//
+wire [33:0] swgenpbits;
+wire [63:0] swgenword;
+swgen swgen_u(
+.clk_6M         (clk_6M         ), 
+.rstz           (rstz           ),
+.regi_scwdLAP   (regi_scwdLAP   ),
+.regi_cal_scwd_p(regi_cal_scwd_p),
+//
+.pbits          (swgenpbits ),
+.pbitsready     (swgenpbitsready),
+.syncword       (swgenword      )
 
-
-
+);
 
 //
 
