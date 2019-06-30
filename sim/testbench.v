@@ -58,7 +58,7 @@ bt_top bt_top_m(
 .regi_interlace_offset       (5'd16),
 .regi_page_k_nudge           (5'd0), 
 .regi_isMaster               (1'b1),
-.regi_scwdLAP                (24'h0), 
+.regi_scwdLAP                (24'h9e8b33), 
 .regi_cal_scwd_p             (regi_cal_scwd_p),
 .regi_GIAC_BD_ADDR_UAP       (8'h0), 
 .regi_paged_BD_ADDR_UAP      (8'h47),   
