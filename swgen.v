@@ -51,7 +51,7 @@ begin
 end
 
 assign inbxor = {33{inb}} & gD[33:1];
-assign inb = x_bar[bitcnt] ^ pbits_lfsr[33] ;
+assign inb = x_bar[5'd29-bitcnt] ^ pbits_lfsr[33] ;
 //
 //
 always @(posedge clk_6M or negedge rstz)

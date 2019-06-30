@@ -6,7 +6,7 @@ viewPort 31 70 1143 630 220 139
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
-openDirFile -d / -i 0 "" "/home/jack/btbd/sim/bt.fsdb"
+openDirFile -d / -i 0 "" "/home/jack/work/btbd/sim/bt.fsdb"
 
 ; file time scale:
 ; fileTimeScale ### s|ms|us|ns|ps
@@ -18,14 +18,14 @@ signalSpacing 5
 windowTimeUnit 10us
 
 ; waveform viewport range
-zoom 2467.733220 2821.574548 10u
-cursor 2531.290411
-marker 2593.743268
+zoom 0.584264 0.751923 10u
+cursor 0.641641
+marker 0.141661
 
 ; visible top row signal index
-top 6
+top 47
 ; marker line index
-markerPos 24
+markerPos 64
 
 ; event list
 ; addEvent event_name event_expression
@@ -77,7 +77,7 @@ nalias DIVON		2'b01		NULL
 nalias DIVEnd		2'b10		NULL
 
 addGroup "G1"
-activeDirFile "" "/home/jack/btbd/sim/bt.fsdb"
+activeDirFile "" "/home/jack/work/btbd/sim/bt.fsdb"
 addSignal -h 15 /testbench/bt_top_m/hopctrlwd_u/div_en_p
 aliasname div.cs
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_m/hopctrlwd_u/mod79_F/cs[1:0]
@@ -135,6 +135,21 @@ addSignal -h 15 -UNSIGNED -HEX -holdScope fhs_LT_ADDR[2:0]
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/decFHS_u/Pbits_L2M[33:0]
 addSignal -h 15 -UNSIGNED -HEX -holdScope LAP_L2M[23:0]
 addGroup "G3"
+addSignal -h 15 /testbench/bt_top_m/swgen_u/clk_6M
+addSignal -h 15 -holdScope rstz
+addSignal -h 15 -UNSIGNED -HEX -holdScope regi_scwdLAP[23:0]
+addSignal -h 15 -holdScope regi_cal_scwd_p
+addSignal -h 15 -UNSIGNED -UDEC -holdScope bitcnt[4:0]
+addSignal -h 15 -holdScope inb
+addSignal -h 15 -holdScope shift_in
+addSignal -h 15 -UNSIGNED -HEX -holdScope pbits_lfsr[33:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope pDprime[33:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope pDprime[63:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope pbits[33:0]
+addSignal -h 15 -holdScope pbitsready
+addSignal -h 15 -UNSIGNED -HEX -holdScope syncword[63:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope dd1[34:0]
+addSignal -h 15 -UNSIGNED -OCT -holdScope gD[34:0]
 addGroup "G4"
 addGroup "G5"
 
