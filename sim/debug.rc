@@ -6,7 +6,7 @@ viewPort 31 70 1143 630 220 139
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
-openDirFile -d / -i 0 "" "/home/jack/work/btbd/sim/bt.fsdb"
+openDirFile -d / "" "/home/jack/work/btbd/sim/bt.fsdb"
 
 ; file time scale:
 ; fileTimeScale ### s|ms|us|ns|ps
@@ -18,14 +18,16 @@ signalSpacing 5
 windowTimeUnit 10us
 
 ; waveform viewport range
-zoom 0.584264 0.751923 10u
-cursor 0.641641
+zoom 0.000000 22235.497831 10u
+cursor 2647.434676
 marker 0.141661
 
+; user define markers
+; userMarker time_pos marker_name color linestyle
 ; visible top row signal index
-top 47
+top 5
 ; marker line index
-markerPos 64
+markerPos 29
 
 ; event list
 ; addEvent event_name event_expression
@@ -46,29 +48,29 @@ curSTATUS ByChange
 
 
 aliasmapname linkctrler.cs
-nalias InquiryScan_STATE		5'b00010		NULL
 nalias CONNECTIONPark_STATE		5'b01000		NULL
-nalias Page_STATE		5'b00011		NULL
-nalias CONNECTIONHold_STATE		5'b00110		NULL
-nalias Pagetmp_STATE		5'b11000		NULL
-nalias PageMasterResp_rxackfhs_STATE		5'b01100		NULL
+nalias InquiryScan_STATE		5'b00010		NULL
 nalias InquiryScantxFHS_STATE		5'b10010		NULL
-nalias CONNECTIONSniff_STATE		5'b00111		NULL
-nalias PageScan1more_STATE		5'b01101		NULL
-nalias PageSlaveResp_rxfhsdone_STATE		5'b11001		NULL
-nalias InquiryScantxExtIRP_STATE		5'b10011		NULL
+nalias PageMasterResp_rxackfhs_STATE		5'b01100		NULL
+nalias Pagetmp_STATE		5'b11000		NULL
+nalias CONNECTIONHold_STATE		5'b00110		NULL
+nalias Page_STATE		5'b00011		NULL
 nalias InquiryEIR_STATE		5'b10110		NULL
+nalias InquiryScantxExtIRP_STATE		5'b10011		NULL
+nalias PageSlaveResp_rxfhsdone_STATE		5'b11001		NULL
+nalias PageScan1more_STATE		5'b01101		NULL
+nalias CONNECTIONSniff_STATE		5'b00111		NULL
 nalias Inquiryintern_STATE		5'b10111		NULL
 nalias STANDBY_STATE		5'b00000		NULL
-nalias Inquiry_STATE		5'b00001		NULL
-nalias PageScan_STATE		5'b00100		NULL
 nalias PageSlaveResp_ackfhs_STATE		5'b10000		NULL
-nalias CONNECTIONnewslave_STATE		5'b10100		NULL
-nalias CONNECTIONActive_STATE		5'b00101		NULL
+nalias PageScan_STATE		5'b00100		NULL
+nalias Inquiry_STATE		5'b00001		NULL
 nalias InquiryScanRand_STATE		5'b10001		NULL
-nalias CONNECTIONnewmaster_STATE		5'b10101		NULL
-nalias PageMasterResp_txfhs_STATE		5'b01011		NULL
+nalias CONNECTIONActive_STATE		5'b00101		NULL
+nalias CONNECTIONnewslave_STATE		5'b10100		NULL
 nalias PageSlaveResp_txid_STATE		5'b01110		NULL
+nalias PageMasterResp_txfhs_STATE		5'b01011		NULL
+nalias CONNECTIONnewmaster_STATE		5'b10101		NULL
 nalias PageSlaveResp_rxfhs_STATE		5'b01111		NULL
 
 aliasmapname div.cs
@@ -103,37 +105,13 @@ aliasname linkctrler.cs
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/linkctrler_u/cs[4:0]
 addSignal -h 15 -UNSIGNED -UDEC /testbench/bt_top_s/hopkernal_u/fk[6:0]
 addSignal -h 15 /testbench/bt_top_s/linkctrler_u/s_tslot_p
-addSignal -h 15 -holdScope psrxfhs
-addSignal -h 15 -holdScope pstxid
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopctrlwd_u/counter_clkN1[5:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope counter_clkN1[5:1]
-addSignal -h 15 -UNSIGNED -HEX -holdScope CLKN_frozen[27:0]
-addSignal -h 15 /testbench/bt_top_s/bluetoothclk_u/corre_sync_p
-addSignal -h 15 -holdScope pssyncCLK_p
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/hopkernal_u/X[4:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope A[4:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope C[4:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope B[3:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope D[8:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope E[6:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope F[6:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope Fprime[6:0]
-addSignal -h 15 /testbench/bt_top_s/hopctrlwd_u/pstxid
-addSignal -h 15 /testbench/bt_top_s/hopkernal_u/Y1
-addSignal -h 15 -UNSIGNED -HEX -holdScope Y2[5:0]
 addSignal -h 15 /testbench/bt_top_s/allbitp_u/rxbit
 addSignal -h 15 -holdScope txbit
-addSignal -h 15 /testbench/bt_top_s/allbitp_u/headerbitp_u/tx_packet_st_p
-addSignal -h 15 /testbench/bt_top_s/linkctrler_u/s_corre
-addSignal -h 15 -holdScope rxispoll
-addSignal -h 15 /testbench/bt_top_s/allbitp_u/headerbitp_u/rxisfhs
-addSignal -h 15 /testbench/bt_top_s/linkctrler_u/s_tslot_p
-addSignal -h 15 -holdScope lt_addressed
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/headerbitp_u/dec_lt_addr[2:0]
 addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/ms_lt_addr[2:0]
 addSignal -h 15 -UNSIGNED -HEX -holdScope fhs_LT_ADDR[2:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/decFHS_u/Pbits_L2M[33:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope LAP_L2M[23:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/fhs_Pbits[33:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope fhs_LAP[23:0]
 addGroup "G3"
 addSignal -h 15 /testbench/bt_top_m/swgen_u/clk_6M
 addSignal -h 15 -holdScope rstz
@@ -142,14 +120,9 @@ addSignal -h 15 -holdScope regi_cal_scwd_p
 addSignal -h 15 -UNSIGNED -UDEC -holdScope bitcnt[4:0]
 addSignal -h 15 -holdScope inb
 addSignal -h 15 -holdScope shift_in
-addSignal -h 15 -UNSIGNED -HEX -holdScope pbits_lfsr[33:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope pDprime[33:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope pDprime[63:0]
 addSignal -h 15 -UNSIGNED -HEX -holdScope pbits[33:0]
 addSignal -h 15 -holdScope pbitsready
 addSignal -h 15 -UNSIGNED -HEX -holdScope syncword[63:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope dd1[34:0]
-addSignal -h 15 -UNSIGNED -OCT -holdScope gD[34:0]
 addGroup "G4"
 addGroup "G5"
 

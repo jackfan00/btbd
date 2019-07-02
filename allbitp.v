@@ -43,8 +43,8 @@ pybitcount,
 txbit, txbit_period,
 rxispoll,
 lt_addressed,
-fhs_Pbits_L2M,
-fhs_LAP_L2M,
+fhs_Pbits,
+fhs_LAP,
 fhs_EIR,
 fhs_SR,
 fhs_SP,
@@ -110,8 +110,8 @@ output [12:0] pybitcount;
 output txbit, txbit_period;
 output rxispoll;
 output lt_addressed;
-output [33:0] fhs_Pbits_L2M;
-output [23:0] fhs_LAP_L2M;
+output [33:0] fhs_Pbits;
+output [23:0] fhs_LAP;
 output        fhs_EIR;
 output [1:0]  fhs_SR;
 output [1:0]  fhs_SP;
@@ -134,8 +134,8 @@ wire py_st_p;
 wire [6:0] whitening;
 wire packet_BRmode, packet_DPSK;
 wire [1:0] dec_LLID;
-wire [33:0] fhs_Pbits_L2M;
-wire [23:0] fhs_LAP_L2M;
+wire [33:0] fhs_Pbits;
+wire [23:0] fhs_LAP;
 wire        fhs_EIR;
 wire [1:0]  fhs_SR;
 wire [1:0]  fhs_SP;
@@ -316,8 +316,8 @@ pybitp pybitp_u(
 .dec_crcgood            (dec_crcgood            ),
 .dec_LLID               (dec_LLID               ),
 .dec_pyFLOW             (dec_pyFLOW             ),
-.fhs_Pbits_L2M              (fhs_Pbits_L2M              ),
-.fhs_LAP_L2M                (fhs_LAP_L2M                ),
+.fhs_Pbits              (fhs_Pbits              ),
+.fhs_LAP                (fhs_LAP                ),
 .fhs_EIR                (fhs_EIR                ),
 .fhs_SR                 (fhs_SR                 ),
 .fhs_SP                 (fhs_SP                 ),

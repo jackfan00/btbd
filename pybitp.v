@@ -32,8 +32,8 @@ dec_pylenByte,
 dec_crcgood,
 dec_LLID,
 dec_pyFLOW,
-fhs_Pbits_L2M,
-fhs_LAP_L2M,
+fhs_Pbits,
+fhs_LAP,
 fhs_EIR,
 fhs_SR,
 fhs_SP,
@@ -85,8 +85,8 @@ output [9:0] dec_pylenByte;
 output dec_crcgood;
 output [1:0] dec_LLID;
 output dec_pyFLOW;
-output [33:0] fhs_Pbits_L2M;
-output [23:0] fhs_LAP_L2M;
+output [33:0] fhs_Pbits;
+output [23:0] fhs_LAP;
 output        fhs_EIR;
 output [1:0]  fhs_SR;
 output [1:0]  fhs_SP;
@@ -391,8 +391,8 @@ decFHS decFHS_u(
 .pydecdatout  (pydecdatout  ),
 .rxfhs        (rxfhs        ),
 //
-.Pbits_L2M        (fhs_Pbits_L2M        ),
-.LAP_L2M          (fhs_LAP_L2M          ),
+.Pbits        (fhs_Pbits        ),
+.LAP          (fhs_LAP          ),
 .EIR          (fhs_EIR          ),
 .SR           (fhs_SR           ),
 .SP           (fhs_SP           ),

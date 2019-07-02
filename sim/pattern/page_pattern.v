@@ -1,3 +1,52 @@
+reg [23:0] regi_paged_BD_ADDR_LAP ;
+reg [7:0] regi_paged_BD_ADDR_UAP ;
+reg [7:0] m_regi_my_BD_ADDR_UAP ;
+reg [23:0] m_regi_my_BD_ADDR_LAP ;
+//
+// Vol2 Part G, sample Data
+//syncword format
+//transmit from left(c0) to right
+//c0...c33,a0,a1,a2...a23,001101   if a23=0
+//c0...c33,a0,a1,a2...a23,110010   if a23=1
+reg [33:0] m_regi_my_syncword_c0c33 ; //LAP=ffffff,
+reg [33:0] m_regi_my_syncword_c33c0 ; //LAP=ffffff,
+reg [33:0] m_paged_syncword_c0c33   ; //LAP=0
+reg [33:0] m_paged_syncword_c33c0   ; //LAP=0
+reg [63:0] m_regi_syncword_CAC ; // 
+reg [63:0] m_regi_syncword_DAC ;  //
+reg [63:0] m_regi_syncword_DIAC ; //LAP=9E8B34
+//
+reg m_regi_AFH_mode ;  // each device have their own setting
+reg [6:0] m_regi_AFH_N ;
+reg [79:0] m_regi_AFH_channel_map ;
+reg [2:0] regi_LT_ADDR ;
+reg [3:0] m_regi_packet_type ;
+reg [9:0] m_regi_payloadlen ; //bytes
+reg [2:0] m_regi_FHS_LT_ADDR ;   //should match regi_LT_ADDR for testbench sim
+
+//
+//for slave
+reg [23:0] s_regi_my_BD_ADDR_LAP ;  //should match regi_paged_BD_ADDR_LAP
+reg [7:0] s_regi_my_BD_ADDR_UAP ;  //should match regi_paged_BD_ADDR_UAP
+reg [33:0] s_my_syncword_c0c33   ; //should match s_regi_my_BD_ADDR_LAP
+reg [33:0] s_my_syncword_c33c0   ; //
+ 
+reg regi_extendedInquiryResponse ; 
+reg [63:0] s_regi_syncword_CAC ; //LAP=ffffff, need match m_regi_my_BD_ADDR_LAP
+reg [63:0] s_regi_syncword_DAC ; //
+reg [63:0] s_regi_syncword_DIAC ; //LAP=9E8B34
+//
+reg s_regi_AFH_mode ;  // each device have their own setting
+reg [6:0] s_regi_AFH_N ;
+reg [79:0] s_regi_AFH_channel_map ;
+reg [3:0] s_regi_packet_type ;
+reg [9:0] s_regi_payloadlen ; //bytes
+reg [2:0] regi_mylt_address ;  //should match master's regi_LT_ADDR
+
+
+reg regi_InquiryEnable_oneshot, regi_PageEnable_oneshot, regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
+reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
+
 initial begin
 //
 $fsdbDumpfile("bt.fsdb");
@@ -6,18 +55,22 @@ $fsdbDumpvars;
 //for master
 regi_paged_BD_ADDR_LAP = 24'h0;
 regi_paged_BD_ADDR_UAP = 8'h47;
+m_regi_my_BD_ADDR_LAP = 24'hffffff;
 m_regi_my_BD_ADDR_UAP = 8'h0;
-m_regi_my_BD_ADDR_LAP = 24'h0;
 //
 // Vol2 Part G, sample Data
 //syncword format
 //transmit from left(c0) to right
 //c0...c33,a0,a1,a2...a23,001101   if a23=0
 //c0...c33,a0,a1,a2...a23,110010   if a23=1
-m_regi_syncword_CAC =  64'he758b5227ffffff2; //LAP=ffffff, need match m_regi_my_BD_ADDR_LAP
-m_regi_syncword_DAC =  64'h7e7041e34000000d; //LAP=0 , need match regi_paged_BD_ADDR_LAP
-m_regi_syncword_DIAC = 64'h28ed3c34cb345e72; //LAP=9E8B34
-m_regi_my_syncword =   34'h3f3820f1a; //LAP=0 , need match m_regi_my_BD_ADDR_LAP
+//m_regi_my_syncword_c0c33 =   34'he758b5224; //LAP=ffffff,
+m_regi_my_syncword_c33c0 =   34'h244ad1ae7; //LAP=ffffff,
+//m_paged_syncword_c0c33   =   34'h1f9c1078d; //LAP=0
+m_paged_syncword_c33c0   =   34'h2c7820e7e; //LAP=0
+m_regi_syncword_CAC =  {6'b010011,m_regi_my_BD_ADDR_UAP,m_regi_my_syncword_c33c0}; // 
+m_regi_syncword_DAC =  {6'b101100,regi_paged_BD_ADDR_LAP,m_paged_syncword_c33c0};  //
+//m_regi_syncword_DIAC = 64'h28ed3c34cb345e72; //LAP=9E8B34
+m_regi_syncword_DIAC   = 64'h4e7a2cd32c3cb714; //LAP=9E8B34
 //
 m_regi_AFH_mode = 1'b0;  // each device have their own setting
 m_regi_AFH_N = 7'd79;
@@ -31,11 +84,15 @@ m_regi_FHS_LT_ADDR = 4'd2;   //should match regi_LT_ADDR for testbench sim
 //for slave
 s_regi_my_BD_ADDR_LAP = 24'h0;  //should match regi_paged_BD_ADDR_LAP
 s_regi_my_BD_ADDR_UAP = 8'h47;  //should match regi_paged_BD_ADDR_UAP
+//s_my_syncword_c0c33   =   34'h1f9c1078d; //should match s_regi_my_BD_ADDR_LAP
+s_my_syncword_c33c0   =   34'h2c7820e7e; //
+
 regi_extendedInquiryResponse = 1'b0; 
-s_regi_syncword_CAC =  64'he758b5227ffffff2; //LAP=ffffff, need match m_regi_my_BD_ADDR_LAP
-s_regi_syncword_DAC =  64'h7e7041e34000000d; //LAP=0 , need match s_regi_my_BD_ADDR_LAP
-s_regi_syncword_DIAC = 64'h28ed3c34cb345e72; //LAP=9E8B34
-s_regi_my_syncword =   34'h3f3820f1a; //LAP=0 , need match s_regi_my_BD_ADDR_LAP
+s_regi_syncword_CAC =  m_regi_syncword_CAC; //LAP=ffffff, need match m_regi_my_BD_ADDR_LAP
+s_regi_syncword_DAC =  {6'b101100,s_regi_my_BD_ADDR_LAP,s_my_syncword_c33c0}; //
+//s_regi_syncword_DIAC = 64'h28ed3c34cb345e72; //LAP=9E8B34
+s_regi_syncword_DIAC   = 64'h4e7a2cd32c3cb714; //LAP=9E8B34
+
 //
 s_regi_AFH_mode = 1'b0;  // each device have their own setting
 s_regi_AFH_N = 7'd79;

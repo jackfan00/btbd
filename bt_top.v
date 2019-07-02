@@ -56,8 +56,8 @@ regi_fhsslave_offset,
 bsm_dout,
 regi_aclrxbufempty,
 fhs_LT_ADDR,
-fhs_Pbits_L2M,
-fhs_LAP_L2M
+fhs_Pbits,
+fhs_LAP
 );
 
 
@@ -121,8 +121,8 @@ output [27:2] regi_fhsslave_offset;
 output [31:0] bsm_dout ;
 output regi_aclrxbufempty;
 output [2:0]  fhs_LT_ADDR;
-output [33:0] fhs_Pbits_L2M;
-output [23:0] fhs_LAP_L2M;
+output [33:0] fhs_Pbits;
+output [23:0] fhs_LAP;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -559,8 +559,8 @@ allbitp allbitp_u(
 .txbit_period           (txbit_period           ),
 .rxispoll               (rxispoll               ),
 .lt_addressed           (lt_addressed           ),
-.fhs_Pbits_L2M              (fhs_Pbits_L2M              ),
-.fhs_LAP_L2M                (fhs_LAP_L2M                ),
+.fhs_Pbits              (fhs_Pbits              ),
+.fhs_LAP                (fhs_LAP                ),
 .fhs_EIR                (fhs_EIR                ),
 .fhs_SR                 (fhs_SR                 ),
 .fhs_SP                 (fhs_SP                 ),
