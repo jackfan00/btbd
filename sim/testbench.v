@@ -112,8 +112,8 @@ bt_top bt_top_m(
 .regi_SR                     (2'd0     ),
 .regi_EIR                    (1'b0     ),
 .regi_my_syncword            (m_regi_my_syncword_c33c0),   //
-.regi_txwhitening            (1'b1),
-.regi_rxwhitening            (1'b0),
+.regi_txwhitening            (m_regi_txwhitening),
+.regi_rxwhitening            (m_regi_rxwhitening),
 .rxbit                       (m_rxbit),
 //
 .txbit                       (m_txbit),
@@ -208,8 +208,8 @@ bt_top bt_top_s(
 .regi_SR                     (2'd0     ),
 .regi_EIR                    (1'b1     ),
 .regi_my_syncword            (s_my_syncword_c33c0),   //LAP=0
-.regi_txwhitening            (1'b0),
-.regi_rxwhitening            (1'b1),
+.regi_txwhitening            (s_regi_txwhitening),
+.regi_rxwhitening            (s_regi_rxwhitening),
 .rxbit                       (s_rxbit),
 //
 .txbit                       (s_txbit),

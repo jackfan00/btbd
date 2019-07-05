@@ -51,6 +51,7 @@ reg s_regi_rxwhitening ;
 reg regi_InquiryEnable_oneshot, regi_PageEnable_oneshot, regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
 reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
 
+// page initial begin block
 initial begin
 //
 $fsdbDumpfile("bt.fsdb");
@@ -60,7 +61,7 @@ $fsdbDumpvars;
 regi_paged_BD_ADDR_LAP = 24'h0;
 regi_paged_BD_ADDR_UAP = 8'h47;
 m_regi_my_BD_ADDR_LAP = 24'hffffff;
-m_regi_my_BD_ADDR_UAP = 8'h0;
+m_regi_my_BD_ADDR_UAP = 8'h47;
 //
 // Vol2 Part G, sample Data
 //syncword format
@@ -85,7 +86,6 @@ m_regi_payloadlen = 10'd0; //bytes
 m_regi_FHS_LT_ADDR = 4'd2;   //should match regi_LT_ADDR for testbench sim
 m_regi_txwhitening = 1'b1;
 m_regi_rxwhitening = 1'b0;
-
 //
 //for slave
 s_regi_my_BD_ADDR_LAP = 24'h0;  //should match regi_paged_BD_ADDR_LAP
@@ -147,3 +147,74 @@ regi_PageEnable_oneshot = 1'b0;
 //#2000000000;
 $finish;
 end
+
+//
+// conns initial begin block
+// SPEC Vol2 Part G , 6.1
+//
+reg [7:0] pyheader_l,pyheader_h;
+initial begin
+wait (bt_top_m.conns);
+wait (bt_top_m.linkctrler_u.cs==5'd5);
+//
+m_regi_txwhitening = 1'b0;
+m_regi_rxwhitening = 1'b0;
+s_regi_txwhitening = 1'b0;
+s_regi_rxwhitening = 1'b0;
+
+regi_LT_ADDR = 3'd2;
+m_regi_packet_type = 4'd4;
+m_regi_payloadlen = 10'd5; //bytes
+//
+pyheader_l = {m_regi_payloadlen[4:0], 1'b0, 2'b10};
+pyheader_h = {3'b0,m_regi_payloadlen[9:5]};
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, pyheader_l);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 8'h01);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 2, 8'h02);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 3, 8'h03);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 4, 8'h04);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 6, 8'h06);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 7, 8'h07);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 8, 8'h08);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 9, 8'h09);
+//
+m_txcmd;
+//
+end
+
+task m_txcmd;
+//
+@(posedge m_clk_6M);
+#10;
+bt_top_m.regi_txcmd_p=1'b1;
+@(posedge m_clk_6M);
+#10;
+bt_top_m.regi_txcmd_p=1'b0;
+//
+endtask;
+
+task m_bsm_wdat;
+output [7:0] o_adr;
+output [31:0] o_din;
+output o_we, o_cs;
+input [7:0] adr;
+input [31:0] din;
+
+reg [7:0] o_adr;
+reg [31:0] o_din;
+reg o_we, o_cs;
+//
+@(posedge m_clk_6M);
+#10;
+o_we = 1'b1;
+o_cs = 1'b1;
+o_adr = adr;
+o_din = din;
+@(posedge m_clk_6M);
+#10;
+o_we = 1'b0;
+o_cs = 1'b0;
+//
+endtask;
