@@ -115,7 +115,7 @@ assign pydecdatout = whiteout;
 wire [4:0] fec32rem, syndrome;  
 // fec32 
 wire loadfec32ini_p = py_st_p | fec32bk_endp;
-wire shiftfec32_in  = pk_encode ? py_period & daten : py_period;
+wire shiftfec32_in  = pk_encode ? py_period & daten : py_period|dec_py_period;
 wire shiftfec32_out = pk_encode ? py_period & (!daten) : 1'b0;
 wire fec32datvalid_p = py_datvalid_p;
 wire fec32_datin = pk_encode ? whiteout : rxbit;
@@ -206,7 +206,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      rxfec32buf <= 0;
-  else if (py_period & daten & py_datvalid_p)
+  else if ((py_period|dec_py_period) & daten & py_datvalid_p)
      rxfec32buf <= {rxfec32buf[8:0],rxbit};
 end
 

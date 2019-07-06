@@ -3,6 +3,7 @@
 //
 module pyrxaclbufctrl (
 clk_6M, rstz,
+pktype_data,
 //m_tslot_p, s_tslot_p, 
 pk_encode, dec_hecgood, dec_crcgood,
 //regi_isMaster,
@@ -19,6 +20,7 @@ regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
+input pktype_data;
 //input m_tslot_p, s_tslot_p;
 input pk_encode, dec_hecgood, dec_crcgood;
 //input regi_isMaster;
@@ -49,7 +51,7 @@ end
 wire [7:0]  u0_sram_a    = s1a ? lnctrl_addr : bsm_addr;
 wire [31:0] u0_sram_din  = s1a ? lnctrl_din  : 32'b0;
 wire        u0_sram_we   = s1a ? lnctrl_we   : 1'b0;
-wire        u0_sram_cs   = s1a ? lnctrl_cs   : bsm_cs;
+wire        u0_sram_cs   = s1a ? lnctrl_we   : bsm_cs;   //lnctrl cs is the same as we 
 
 reg [9:0] u0_length;
 always @(posedge clk_6M or negedge rstz)
@@ -72,7 +74,7 @@ sram256x32_1p sram256x32_1p_u0(
 wire [7:0]  u1_sram_a    = !s1a ? lnctrl_addr : bsm_addr;
 wire [31:0] u1_sram_din  = !s1a ? lnctrl_din  : 32'b0;
 wire        u1_sram_we   = !s1a ? lnctrl_we   : 1'b0;
-wire        u1_sram_cs   = !s1a ? lnctrl_cs   : bsm_cs;
+wire        u1_sram_cs   = !s1a ? lnctrl_we   : bsm_cs;   //lnctrl cs is the same as we 
 
 reg [9:0] u1_length;
 always @(posedge clk_6M or negedge rstz)
@@ -105,7 +107,7 @@ begin
      regi_aclrxbufempty <= 1'b1;
   else if (bsm_read_endp)
      regi_aclrxbufempty <= 1'b1;
-  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood)
+  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data)
      regi_aclrxbufempty <= 1'b0;
 end
 

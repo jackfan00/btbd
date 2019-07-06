@@ -32,9 +32,10 @@ wire [6:0] m_fk, s_fk;
 bt_top bt_top_m(
 .clk_6M                      (m_clk_6M               ), 
 .rstz                        (m_rstz                 ),
-.txbsmacl_addr               (), 
+.regi_chgbufcmd_p            (),
+.txbsmacl_addr               (), //o_adr), 
 .txbsmsco_addr               (),
-.txbsmacl_din                (), 
+.txbsmacl_din                (), //o_din), 
 .txbsmsco_din                (),
 .txbsmacl_we                 (), 
 .txbsmsco_we                 (), 
@@ -59,7 +60,7 @@ bt_top bt_top_m(
 .regi_cal_scwd_p             (regi_cal_scwd_p),
 .regi_GIAC_BD_ADDR_UAP       (8'h0), 
 .regi_paged_BD_ADDR_UAP      (regi_paged_BD_ADDR_UAP),   
-.regi_master_BD_ADDR_UAP     (8'h0),   //syncword = 64'h7e7041e34000000d, SPEC Vol2, PartG, 3.ACCESS CODE SAMPLE DATA
+.regi_master_BD_ADDR_UAP     (m_regi_my_BD_ADDR_UAP),   //for master, is regi_my_BD_ADDR_UAP
 .regi_my_BD_ADDR_UAP         (m_regi_my_BD_ADDR_UAP),
 .regi_GIAC_BD_ADDR_LAP       (24'h9E8B33), 
 .regi_paged_BD_ADDR_LAP      (regi_paged_BD_ADDR_LAP),  //24'h61650c), 
@@ -129,6 +130,7 @@ wire [2:0] fhs_LT_ADDR;
 bt_top bt_top_s(
 .clk_6M                      (s_clk_6M               ), 
 .rstz                        (s_rstz                 ),
+.regi_chgbufcmd_p            (),
 .txbsmacl_addr               (), 
 .txbsmsco_addr               (),
 .txbsmacl_din                (), 
@@ -154,7 +156,7 @@ bt_top bt_top_s(
 .regi_isMaster               (1'b0),
 .regi_GIAC_BD_ADDR_UAP       (8'h0), 
 .regi_paged_BD_ADDR_UAP      (8'h0),  //24'h61650c), 
-.regi_master_BD_ADDR_UAP     (8'h0),   //syncword = 64'h7e7041e34000000d, SPEC Vol2, PartG, 3.ACCESS CODE SAMPLE DATA
+.regi_master_BD_ADDR_UAP     (s_regi_master_BD_ADDR_UAP),   //syncword = 64'h7e7041e34000000d, SPEC Vol2, PartG, 3.ACCESS CODE SAMPLE DATA
 .regi_my_BD_ADDR_UAP         (s_regi_my_BD_ADDR_UAP),
 .regi_my_BD_ADDR_LAP         (s_regi_my_BD_ADDR_LAP),
 .regi_GIAC_BD_ADDR_LAP       (24'h9E8B33), 

@@ -1,3 +1,56 @@
+
+task m_txcmd;
+//
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.regi_txcmd_p=1'b1;
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.regi_txcmd_p=1'b0;
+//
+endtask;
+
+task m_chgbuf;
+//
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.regi_chgbufcmd_p=1'b1;
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.regi_chgbufcmd_p=1'b0;
+//
+endtask;
+
+
+task m_bsm_wdat;
+output [7:0] to_adr;
+output [31:0] to_din;
+output to_we;
+output to_cs;
+input [7:0] adr;
+input [31:0] din;
+
+//reg [7:0] to_adr;
+//reg [31:0] to_din;
+//reg to_we, to_cs;
+//
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.txbsmacl_we =1'b1;
+force bt_top_m.txbsmacl_cs =1'b1;
+//to_we = 1'b1;
+//to_cs = 1'b1;
+force bt_top_m.txbsmacl_addr = adr;
+force bt_top_m.txbsmacl_din = din;
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.txbsmacl_we =1'b0;
+force bt_top_m.txbsmacl_cs =1'b0;
+//to_we = 1'b0;
+//to_cs = 1'b0;
+//
+endtask;
+
 reg [23:0] regi_paged_BD_ADDR_LAP ;
 reg [7:0] regi_paged_BD_ADDR_UAP ;
 reg [7:0] m_regi_my_BD_ADDR_UAP ;
@@ -25,7 +78,7 @@ reg [9:0] m_regi_payloadlen ; //bytes
 reg [2:0] m_regi_FHS_LT_ADDR ;   //should match regi_LT_ADDR for testbench sim
 reg m_regi_txwhitening ;
 reg m_regi_rxwhitening ;
-
+reg m_regi_chgbufcmd_p;
 //
 //for slave
 reg [23:0] s_regi_my_BD_ADDR_LAP ;  //should match regi_paged_BD_ADDR_LAP
@@ -46,7 +99,8 @@ reg [9:0] s_regi_payloadlen ; //bytes
 reg [2:0] regi_mylt_address ;  //should match master's regi_LT_ADDR
 reg s_regi_txwhitening ;
 reg s_regi_rxwhitening ;
-
+reg s_regi_chgbufcmd_p;
+reg [7:0] s_regi_master_BD_ADDR_UAP;
 
 reg regi_InquiryEnable_oneshot, regi_PageEnable_oneshot, regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
 reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
@@ -80,14 +134,15 @@ m_regi_syncword_DIAC   = 64'h4e7a2cd32c3cb714; //LAP=9E8B34
 m_regi_AFH_mode = 1'b0;  // each device have their own setting
 m_regi_AFH_N = 7'd79;
 m_regi_AFH_channel_map = {16'hffff,16'hffff,16'hffff,16'hffff,16'hffff};
-regi_LT_ADDR = 3'd2;
+regi_LT_ADDR = 3'd3;
 m_regi_packet_type = 4'd4;
 m_regi_payloadlen = 10'd0; //bytes
-m_regi_FHS_LT_ADDR = 4'd2;   //should match regi_LT_ADDR for testbench sim
+m_regi_FHS_LT_ADDR = 4'd3;   //should match regi_LT_ADDR for testbench sim
 m_regi_txwhitening = 1'b1;
 m_regi_rxwhitening = 1'b0;
 //
 //for slave
+s_regi_master_BD_ADDR_UAP = 8'h47;  //should match m_regi_my_BD_ADDR_UAP
 s_regi_my_BD_ADDR_LAP = 24'h0;  //should match regi_paged_BD_ADDR_LAP
 s_regi_my_BD_ADDR_UAP = 8'h47;  //should match regi_paged_BD_ADDR_UAP
 //s_my_syncword_c0c33   =   34'h1f9c1078d; //should match s_regi_my_BD_ADDR_LAP
@@ -105,7 +160,7 @@ s_regi_AFH_N = 7'd79;
 s_regi_AFH_channel_map = {16'hffff,16'hffff,16'hffff,16'hffff,16'hffff};
 s_regi_packet_type = 4'd4;
 s_regi_payloadlen = 10'd0; //bytes
-regi_mylt_address = 3'd2;  //should match master's regi_LT_ADDR
+regi_mylt_address = 3'd3;  //should match master's regi_LT_ADDR
 s_regi_txwhitening = 1'b0;
 s_regi_rxwhitening = 1'b1;
 
@@ -152,6 +207,10 @@ end
 // conns initial begin block
 // SPEC Vol2 Part G , 6.1
 //
+reg [7:0] o_adr;
+reg [31:0] o_din;
+reg o_we, o_cs;
+
 reg [7:0] pyheader_l,pyheader_h;
 initial begin
 wait (bt_top_m.conns);
@@ -162,59 +221,27 @@ m_regi_rxwhitening = 1'b0;
 s_regi_txwhitening = 1'b0;
 s_regi_rxwhitening = 1'b0;
 
-regi_LT_ADDR = 3'd2;
+regi_LT_ADDR = 3'd3;
 m_regi_packet_type = 4'd4;
 m_regi_payloadlen = 10'd5; //bytes
 //
-pyheader_l = {m_regi_payloadlen[4:0], 1'b0, 2'b10};
+pyheader_l = {m_regi_payloadlen[4:0], 1'b1, 2'b10};
 pyheader_h = {3'b0,m_regi_payloadlen[9:5]};
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, pyheader_l);
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 8'h01);
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 2, 8'h02);
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 3, 8'h03);
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 4, 8'h04);
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, {8'h03,8'h02,8'h01,pyheader_l});
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 8'h01);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 2, 8'h02);
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 3, 8'h03);
+m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, {8'h05,8'h04});
+//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
+
 //m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
 //m_bsm_wdat(o_adr, o_din, o_we, o_cs, 6, 8'h06);
 //m_bsm_wdat(o_adr, o_din, o_we, o_cs, 7, 8'h07);
 //m_bsm_wdat(o_adr, o_din, o_we, o_cs, 8, 8'h08);
 //m_bsm_wdat(o_adr, o_din, o_we, o_cs, 9, 8'h09);
 //
+m_chgbuf;
+//
 m_txcmd;
 //
 end
-
-task m_txcmd;
-//
-@(posedge m_clk_6M);
-#10;
-bt_top_m.regi_txcmd_p=1'b1;
-@(posedge m_clk_6M);
-#10;
-bt_top_m.regi_txcmd_p=1'b0;
-//
-endtask;
-
-task m_bsm_wdat;
-output [7:0] o_adr;
-output [31:0] o_din;
-output o_we, o_cs;
-input [7:0] adr;
-input [31:0] din;
-
-reg [7:0] o_adr;
-reg [31:0] o_din;
-reg o_we, o_cs;
-//
-@(posedge m_clk_6M);
-#10;
-o_we = 1'b1;
-o_cs = 1'b1;
-o_adr = adr;
-o_din = din;
-@(posedge m_clk_6M);
-#10;
-o_we = 1'b0;
-o_cs = 1'b0;
-//
-endtask;

@@ -25,6 +25,7 @@ reg [9:0] m_regi_payloadlen ; //bytes
 reg [2:0] m_regi_FHS_LT_ADDR ;   //should match regi_LT_ADDR for testbench sim
 reg m_regi_txwhitening ;
 reg m_regi_rxwhitening ;
+reg m_regi_chgbufcmd_p;
 
 //
 //for slave
@@ -46,7 +47,8 @@ reg [9:0] s_regi_payloadlen ; //bytes
 reg [2:0] regi_mylt_address ;  //should match master's regi_LT_ADDR
 reg s_regi_txwhitening ;
 reg s_regi_rxwhitening ;
-
+reg s_regi_chgbufcmd_p;
+reg [7:0] s_regi_master_BD_ADDR_UAP;
 
 reg regi_InquiryEnable_oneshot, regi_PageEnable_oneshot, regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
 reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
@@ -88,6 +90,7 @@ m_regi_rxwhitening = 1'b0;
 
 //
 //for slave
+s_regi_master_BD_ADDR_UAP = 8'h0;  //should match m_regi_my_BD_ADDR_UAP
 s_regi_my_BD_ADDR_LAP = 24'h0;  //should match regi_paged_BD_ADDR_LAP
 s_regi_my_BD_ADDR_UAP = 8'h47;  //should match regi_paged_BD_ADDR_UAP
 //s_my_syncword_c0c33   =   34'h1f9c1078d; //should match s_regi_my_BD_ADDR_LAP

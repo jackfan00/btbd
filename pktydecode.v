@@ -1,5 +1,6 @@
 module pktydecode(
 clk_6M, rstz,
+pktype_data,
 ms_tslot_p,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
 pk_type,
@@ -16,6 +17,7 @@ allowedeSCOtype,
 extendslot
 );
 input clk_6M, rstz;
+input pktype_data;
 input ms_tslot_p;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
 input [3:0] pk_type;
@@ -133,7 +135,7 @@ begin
   packet_BRmode = 1'b1;
   packet_DPSK = 1'b1;
   occpuy_slots = 3'd1;
-  pylenbit = is_ACL ? {regi_payloadlen+1'b1, 3'b0} : {regi_payloadlen, 3'b0};
+  pylenbit = pktype_data ? {regi_payloadlen+1'b1, 3'b0} : {regi_payloadlen, 3'b0};
   case(pk_type)
     4'h0:         //NULL
       begin

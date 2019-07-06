@@ -1,5 +1,6 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
+pylenbit,
 ms_lt_addr,
 s_tslot_p, ms_tslot_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
@@ -22,7 +23,7 @@ dec_py_period,
 pk_encode,
 srctxpktype,
 txaclSEQN, txARQN,
-srcFLOW,
+srcFLOW, rspFLOW,
 rxbit,
 //
 guard_st_p, edrsync11_st_p, py_st_p,
@@ -42,6 +43,7 @@ dec_seqn
 );
 
 input clk_6M, rstz, p_1us;
+input [12:0] pylenbit;
 input [2:0] ms_lt_addr;
 input s_tslot_p, ms_tslot_p;
 input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
@@ -64,7 +66,8 @@ input dec_py_period;
 input pk_encode;
 input [3:0] srctxpktype;
 input [7:0] txaclSEQN, txARQN;
-input srcFLOW;
+input [7:0] srcFLOW;
+input rspFLOW;
 input rxbit;
 //
 output guard_st_p, edrsync11_st_p, py_st_p;
@@ -123,7 +126,10 @@ assign header_st_p = (all_bitcount==8'd71) & p_1us;
 assign guard_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd125) & p_1us;
 assign edrsync11_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd130) & p_1us;
 
-assign py_st_p = packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
+assign py_st_p = !(srcFLOW[ms_lt_addr]) & pk_encode ? 1'b0 :   // flow=STOP, dont send payload
+                 packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
+
+wire hec_endp = packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
 
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -168,7 +174,7 @@ wire [3:0] txpktype = mpr | istxfhs ? 4'b0010 :   //fhs
 wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : dec_lt_addr;
 wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
 wire txpk_arqn = conns ? txARQN[txpk_lt_addr] : 1'b0;
-wire txpk_flow = conns ? srcFLOW : 1'b1;
+wire txpk_flow = conns ? rspFLOW : 1'b1;
 wire [9:0] txpacket_header = {txpk_seqn,txpk_arqn,txpk_flow,txpktype,txpk_lt_addr};
 
 
@@ -203,7 +209,7 @@ headerpro headerpro_u(
 .header_st_p            (header_st_p            ), 
 .header_en              (header_en              ), 
 .hec_en                 (hec_en                 ),
-.py_st_p                (py_st_p                ),
+.hec_endp               (hec_endp               ),
 .fec31inc_p             (fec31inc_p             ),
 .py_period              (py_period              ), 
 .daten                  (daten                  ), 
@@ -229,7 +235,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      ckhec <= 0;
-  else if (py_st_p & p_1us & (!pk_encode))
+  else if (hec_endp & p_1us & (!pk_encode))
      ckhec <=  1'b1 ;
   else if (p_1us)
      ckhec <= 1'b0;
@@ -267,7 +273,7 @@ begin
      lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==ms_lt_addr) ;  //header good and match lt_address
 end
 
-
+wire headvalid_p = ckhec & p_1us & (hecrem==8'h0) & (dec_lt_addr==ms_lt_addr);
 
 reg [3:0] dec_pk_type;
 always @(posedge clk_6M or negedge rstz)
@@ -278,22 +284,38 @@ begin
      dec_pk_type <= {decodeout,dec_pk_type[3:1]};
 end
 
+reg [7:0] dec_flow_t, dec_arqn_t;
 reg [7:0] dec_flow, dec_arqn;
 reg dec_seqn;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     dec_flow <= 0;
+     dec_flow_t <= 8'hff;
   else if (header_bitcount==5'd7 & fec31inc_p & header_en & (!pk_encode))
-     dec_flow[dec_lt_addr] <= {decodeout};
+     dec_flow_t[dec_lt_addr] <= {decodeout};
 end
 
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     dec_arqn <= 0;
+     dec_arqn_t <= 0;
   else if (header_bitcount==5'd8 & fec31inc_p & header_en & (!pk_encode))
-     dec_arqn[dec_lt_addr] <= {decodeout};
+     dec_arqn_t[dec_lt_addr] <= {decodeout};
+end
+
+
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+      dec_flow <= 8'hff;
+      dec_arqn <= 0;
+    end  
+  else if (headvalid_p)
+    begin
+      dec_flow <= dec_flow_t;
+      dec_arqn <= dec_arqn_t;
+    end  
 end
 
 always @(posedge clk_6M or negedge rstz)

@@ -36,7 +36,9 @@ regi_Inquiry_Length, regi_Extended_Inquiry_Length,
 dec_iscanEIR,
 regi_isMaster,
 extendslot,
-m_acltxcmd_p, s_acltxcmd_p,
+//m_acltxcmd_p, 
+s_acltxcmd_p, 
+regi_txcmd_p,
 //
 ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns,
 ps_corre_sync_p, conns_corre_sync_p,
@@ -93,7 +95,9 @@ input [15:0] regi_Inquiry_Length, regi_Extended_Inquiry_Length;
 input dec_iscanEIR;
 input regi_isMaster;
 input extendslot;
-input m_acltxcmd_p, s_acltxcmd_p;
+//input m_acltxcmd_p;
+input s_acltxcmd_p;
+input regi_txcmd_p;
 //
 output ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
 output ps_corre_sync_p, conns_corre_sync_p;
@@ -137,7 +141,7 @@ wire newconnectionTO;
 wire inqExt_tslotdly_endp, inqExt_tslot2dly_endp;
 reg m_txcmd, s_txcmd;
 reg m_conns_1stslot, s_conns_1stslot;
-
+wire conns_tx_pac_st_p;
 
 parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_STATE=5'd3, PageScan_STATE=5'd4,
           CONNECTIONActive_STATE=5'd5, CONNECTIONHold_STATE=5'd6, CONNECTIONSniff_STATE=5'd7, CONNECTIONPark_STATE=5'd8,
@@ -817,6 +821,7 @@ assign tx_packet_st_p =
                      cs==PageMasterResp_rxackfhs_STATE & (!m_corre) ?  CLKE[1] & m_tslot_p & (!regi_pagetruncated) :  // re-transmit FHS ,master page response, 
                      cs==CONNECTIONnewmaster_STATE ? (!m_corre) & CLKE[1] & m_tslot_p :   // master send retry poll
                      cs==CONNECTIONnewslave_STATE  ? s_corre & rxispoll & s_tslot_p & lt_addressed :   // slave send null to ack poll
+                     conns ? conns_tx_pac_st_p :  //send acl packet
                      1'b0;
                       
 wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
@@ -831,19 +836,20 @@ wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
                    
 // txcmd_p : 
 //  Master : issue by mcu for new acl packet transmit,or by reserved-timeslot for sco packet transmit,  
-//  Slave  : issue in slave-to-master slot 
+//  Slave  : issue in slave-to-master slot or by mcu
 //
 wire m_scotxcmd_p = 1'b0; //for tmp
 wire s_scotxcmd_p = 1'b0; //for tmp
 
 
-assign ms_txcmd_p = regi_isMaster ? m_acltxcmd_p | m_scotxcmd_p : s_acltxcmd_p | s_scotxcmd_p;
+assign m_txcmd_p = regi_txcmd_p ; //| m_scotxcmd_p;
+assign s_txcmd_p = regi_txcmd_p ; //| s_scotxcmd_p;
 
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      m_txcmd <= 0;
-  else if (ms_txcmd_p)
+  else if (m_txcmd_p)
      m_txcmd <= 1'b1;
   else if (m_tslot_p & CLK[1])
      m_txcmd <= 1'b0;
@@ -854,14 +860,18 @@ begin
      m_conns_1stslot <= 0;
   else if (m_txcmd & m_tslot_p & CLK[1])
      m_conns_1stslot <= 1'b1;
+  else if (m_scotxcmd_p)
+     m_conns_1stslot <= 1'b1;
   else if (m_tslot_p)
      m_conns_1stslot <= 1'b0;
 end
+
+
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      s_txcmd <= 0;
-  else if (ms_txcmd_p)
+  else if (s_txcmd_p)
      s_txcmd <= 1'b1;
   else if (s_tslot_p & (!CLK[1]))
      s_txcmd <= 1'b0;
@@ -872,9 +882,14 @@ begin
      s_conns_1stslot <= 0;
   else if (s_txcmd & s_tslot_p & (!CLK[1]))
      s_conns_1stslot <= 1'b1;
+  else if (s_acltxcmd_p | s_scotxcmd_p)
+     s_conns_1stslot <= 1'b1;
   else if (s_tslot_p)
      s_conns_1stslot <= 1'b0;
 end
+
+assign conns_tx_pac_st_p = regi_isMaster ? (m_txcmd & m_tslot_p & CLK[1])                   | m_scotxcmd_p : 
+                                           (s_txcmd & s_tslot_p & (!CLK[1])) | s_acltxcmd_p | s_scotxcmd_p ;
  
 assign conns_1stslot = conns & (regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
 assign pk_encode = pk_encode_1stslot | extendslot;

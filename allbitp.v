@@ -1,5 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+regi_chgbufcmd_p,
 LMP_c_slot,
 rxCAC, prerx_trans,
 regi_txcmd_p, regi_flushcmd_p,  
@@ -54,9 +55,9 @@ fhs_CoD,
 fhs_LT_ADDR,
 fhs_CLK,
 fhs_PSM,
-rxpydin,
-rxpyadr,
-rxpydin_valid_p,
+//rxpydin,
+//rxpyadr,
+//rxpydin_valid_p,
 bsm_dout,
 extendslot,
 s_acltxcmd_p,
@@ -67,6 +68,7 @@ regi_aclrxbufempty
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input regi_chgbufcmd_p;
 input LMP_c_slot;
 input rxCAC, prerx_trans;
 input regi_txcmd_p, regi_flushcmd_p;
@@ -121,9 +123,9 @@ output [23:0] fhs_CoD;
 output [2:0]  fhs_LT_ADDR;
 output [27:2] fhs_CLK;
 output [2:0]  fhs_PSM;
-output [31:0] rxpydin;
-output [7:0] rxpyadr;
-output rxpydin_valid_p;
+//output [31:0] rxpydin;
+//output [7:0] rxpyadr;
+//output rxpydin_valid_p;
 output [31:0] bsm_dout ;
 output extendslot;
 output s_acltxcmd_p;
@@ -149,10 +151,15 @@ wire [9:0] dec_pylenByte;
 wire [3:0] dec_pk_type;
 wire [3:0] txpktype;
 wire [7:0] txaclSEQN, txARQN;
-wire srcFLOW;
+wire [7:0] srcFLOW;
 wire [3:0] srctxpktype;
 wire [2:0] dec_lt_addr;
 wire [7:0] dec_flow, dec_arqn;
+wire [31:0] rxpydin;
+wire [7:0] rxpyadr;
+wire pktype_data;
+wire [12:0] pylenbit;
+wire [2:0] occpuy_slots;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -163,6 +170,7 @@ headerbitp headerbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.pylenbit               (pylenbit               ),
 .ms_lt_addr             (ms_lt_addr             ),
 .s_tslot_p              (s_tslot_p              ),
 .ms_tslot_p             (ms_tslot_p             ),
@@ -210,6 +218,7 @@ headerbitp headerbitp_u(
 .txaclSEQN              (txaclSEQN              ), 
 .txARQN                 (txARQN                 ),
 .srcFLOW                (srcFLOW                ),
+.rspFLOW                (rspFLOW                ),
 .rxbit                  (rxbit                  ),
 
 //                (//                )          
@@ -238,32 +247,31 @@ wire [3:0] pk_type = pk_encode ? txpktype : dec_pk_type;
 
 wire [9:0] pylenB = pk_encode_1stslot ? regi_payloadlen : dec_pylenByte;
 
-wire [12:0] pylenbit;
-wire [2:0] occpuy_slots;
 pktydecode pktydecode_u(
-.clk_6M                 (clk_6M                 ), 
-.rstz                   (rstz                   ), 
-.ms_tslot_p     (ms_tslot_p     ),
-.is_BRmode      (is_BRmode      ), 
-.is_eSCO        (is_eSCO        ), 
-.is_SCO         (is_SCO         ), 
-.is_ACL         (is_ACL         ),
-.pk_type        (pk_type        ),
-.regi_payloadlen(pylenB         ),
-.conns_1stslot  (conns_1stslot  ),
+.clk_6M           (clk_6M           ), 
+.rstz             (rstz             ), 
+.pktype_data      (pktype_data      ),
+.ms_tslot_p       (ms_tslot_p       ),
+.is_BRmode        (is_BRmode        ), 
+.is_eSCO          (is_eSCO          ), 
+.is_SCO           (is_SCO           ), 
+.is_ACL           (is_ACL           ),
+.pk_type          (pk_type          ),
+.regi_payloadlen  (pylenB           ),
+.conns_1stslot    (conns_1stslot    ),
 .pk_encode_1stslot(pk_encode_1stslot),
 //             (//             )
-.pylenbit_f       (pylenbit       ),
-.occpuy_slots_f   (occpuy_slots   ),
-.fec31encode_f    (fec31encode    ), 
-.fec32encode_f    (fec32encode    ), 
-.crcencode_f      (crcencode      ), 
-.packet_BRmode_f  (packet_BRmode  ), 
-.packet_DPSK_f    (packet_DPSK    ),
-.BRss_f           (BRss           ),
-.existpyheader_f  (existpyheader  ),
-.allowedeSCOtype  (allowedeSCOtype),
-.extendslot       (extendslot     )
+.pylenbit_f       (pylenbit         ),
+.occpuy_slots_f   (occpuy_slots     ),
+.fec31encode_f    (fec31encode      ), 
+.fec32encode_f    (fec32encode      ), 
+.crcencode_f      (crcencode        ), 
+.packet_BRmode_f  (packet_BRmode    ), 
+.packet_DPSK_f    (packet_DPSK      ),
+.BRss_f           (BRss             ),
+.existpyheader_f  (existpyheader    ),
+.allowedeSCOtype  (allowedeSCOtype  ),
+.extendslot       (extendslot       )
 );
 
 //
@@ -329,7 +337,7 @@ pybitp pybitp_u(
 .fhs_PSM                (fhs_PSM                ),
 .rxpydin                (rxpydin                ),
 .rxpyadr                (rxpyadr                ),
-.rxpydin_valid_p        (rxpydin_valid_p        ),
+.rxpydin_valid_p_wr     (rxpydin_valid_p_wr     ),
 .py_endp                (py_endp                ),
 .dec_py_endp            (dec_py_endp            ),
 .py_datperiod           (py_datperiod           )
@@ -345,7 +353,7 @@ assign txbit_period = (header_packet_period | py_period) & pk_encode;
 //
 wire [31:0] rxlnctrl_din = rxpydin;
 wire [7:0]  rxlnctrl_addr = rxpyadr;
-wire rxlnctrl_we = rxpydin_valid_p;
+wire rxlnctrl_we = rxpydin_valid_p_wr;
 wire dec_LMPcmd = (dec_LLID==2'b11);
 //
 wire tx_reservedslot = 1'b0; //for tmp
@@ -356,6 +364,8 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.pktype_data     (pktype_data     ),
+.regi_chgbufcmd_p(regi_chgbufcmd_p),
 .LMP_c_slot      (LMP_c_slot      ),
 .dec_hecgood     (dec_hecgood     ), 
 .dec_crcgood     (dec_crcgood     ),
@@ -436,7 +446,9 @@ arqflowctrl arqflowctrl_u(
 .txaclSEQN          (txaclSEQN          ),
 .srctxpktype        (srctxpktype        ),
 .s_acltxcmd_p       (s_acltxcmd_p       ),
-.srcFLOW            (srcFLOW            )
+.srcFLOW            (srcFLOW            ),
+.rspFLOW            (rspFLOW            ),
+.pktype_data        (pktype_data        )
 
 );
 

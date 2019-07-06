@@ -1,5 +1,7 @@
 module bufctrl(
 clk_6M, rstz,
+pktype_data,
+regi_chgbufcmd_p,
 LMP_c_slot,
 dec_hecgood, dec_crcgood,
 dec_pylenByte,
@@ -28,6 +30,8 @@ regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
+input pktype_data;
+input regi_chgbufcmd_p;
 input LMP_c_slot;
 input dec_hecgood, dec_crcgood;
 input [9:0] dec_pylenByte;
@@ -96,12 +100,17 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      s1a <= 1'b0;
-  else if (dec_arqn[ms_lt_addr] & py_endp)  //receive ACK then switch to new data
+  else if (regi_chgbufcmd_p)  //receive ACK then switch to new data
      s1a <= ~s1a;
-  // change back to previous packet, if previous flow is STOP
-  // Vol2 PartB  4.5.3.2
-  else if ((dec_flow[ms_lt_addr] == 1'b0) & pk_encode & header_st_p)  
-     s1a <= ~s1a;
+
+//below switch condition is control by mcu 
+//mcu need to check arqn/flow to determine switch buffer or not (retransmit)    
+//////  else if (dec_arqn[ms_lt_addr] & py_endp)  //receive ACK then switch to new data
+//////     s1a <= ~s1a;
+//////  // change back to previous packet, if previous flow is STOP
+//////  // Vol2 PartB  4.5.3.2
+//////  else if ((dec_flow[ms_lt_addr] == 1'b0) & pk_encode & header_st_p)  
+//////     s1a <= ~s1a;
       
 end
 
@@ -151,6 +160,7 @@ wire rxlnctrlsco_cs = dec_py_period & ((!dec_LMP_c_slot) & rx_reservedslot);
 pyrxaclbufctrl pyrxaclbufctrl_u(
 .clk_6M        (clk_6M          ), 
 .rstz          (rstz            ),
+.pktype_data   (pktype_data     ),
 .pk_encode     (pk_encode       ), 
 .dec_hecgood   (dec_hecgood     ), 
 .dec_crcgood   (dec_crcgood     ),

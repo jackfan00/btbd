@@ -1,5 +1,6 @@
 module bt_top(
 clk_6M, rstz,
+regi_chgbufcmd_p,
 txbsmacl_addr, txbsmsco_addr,
 txbsmacl_din, txbsmsco_din,
 txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs,
@@ -62,6 +63,7 @@ fhs_LAP
 
 
 input clk_6M, rstz;
+input regi_chgbufcmd_p;
 input [7:0] txbsmacl_addr, txbsmsco_addr;
 input [31:0] txbsmacl_din, txbsmsco_din;
 input txbsmacl_we, txbsmsco_we, txbsmacl_cs, txbsmsco_cs;
@@ -342,7 +344,8 @@ linkctrler linkctrler_u(
 .dec_iscanEIR                (fhs_EIR                     ),
 .regi_isMaster               (regi_isMaster               ),
 .extendslot                  (extendslot                  ),
-.m_acltxcmd_p                (regi_txcmd_p                ),
+//.m_acltxcmd_p                (regi_txcmd_p                ),
+.regi_txcmd_p                (regi_txcmd_p                ),
 .s_acltxcmd_p                (s_acltxcmd_p                ),
 //
 //
@@ -476,6 +479,7 @@ end
 allbitp allbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
+.regi_chgbufcmd_p       (regi_chgbufcmd_p       ),
 .LMP_c_slot             (LMP_c_slot             ),
 .rxCAC                  (rxCAC                  ), 
 .prerx_trans            (prerx_trans            ),

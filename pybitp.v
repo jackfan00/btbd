@@ -45,7 +45,7 @@ fhs_CLK,
 fhs_PSM,
 rxpydin,
 rxpyadr,
-rxpydin_valid_p,
+rxpydin_valid_p_wr,
 py_endp,
 dec_py_endp,
 py_datperiod
@@ -98,7 +98,7 @@ output [27:2] fhs_CLK;
 output [2:0]  fhs_PSM;
 output [31:0] rxpydin;
 output [7:0] rxpyadr;
-output rxpydin_valid_p;
+output rxpydin_valid_p_wr;
 output py_endp;
 output dec_py_endp;
 output py_datperiod;
@@ -106,6 +106,8 @@ output py_datperiod;
 //
 reg py_period;
 wire fec32bk_endp;
+reg [12:0] bitcount;
+reg [12:0] dec_pybitcnt;
 
 wire [9:0] fec32decodeBus;
 
@@ -169,8 +171,8 @@ begin
      processlen <= processlen + 4'd10 ;
 end
 
-assign py_endp = (processlen >= payloadlen_crc) & fec32bk_endp;
-assign dec_py_endp = (processlen >= (payloadlen_crc+4'd10)) & fec32bk_endp;
+assign py_endp = fec32encode ? (processlen >= payloadlen_crc) & fec32bk_endp : (bitcount==(payloadlen_crc-1'b1)) & py_datvalid_p;
+assign dec_py_endp = fec32encode ? (processlen >= (payloadlen_crc+4'd10)) & fec32bk_endp : (dec_pybitcnt==(payloadlen_crc-1'b1)) & py_datvalid_p;
 
 reg [1:0] fec31count;
 always @(posedge clk_6M or negedge rstz)
@@ -185,7 +187,6 @@ end
 
 assign fec31inc_p = fec31count==2'd2 & py_datvalid_p;
 
-reg [12:0] bitcount;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -344,7 +345,6 @@ begin
 end
 
 reg dec_py_period_ext;
-reg [4:0] dec_pybitcnt;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -360,12 +360,25 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_py_period_ext <= 0;
-  else if (dec_py_endp & dec_pybitcnt!=5'd31)
+  else if (dec_py_endp & dec_pybitcnt[4:0]!=5'd31)
      dec_py_period_ext <= 1'b1;
-  else if (dec_pybitcnt==5'd31 & py_datvalid_p)
+  else if (dec_pybitcnt[4:0]==5'd31 & py_datvalid_p)
      dec_py_period_ext <= 1'b0 ;
 end
-assign rxpydin_valid_p = (dec_pybitcnt==5'd31) & py_datvalid_p;
+wire rxpydin_valid_p = (dec_pybitcnt[4:0]==5'd31) & py_datvalid_p;
+
+reg rxpydin_valid_p_d1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     rxpydin_valid_p_d1 <= 0;
+  else if (rxpydin_valid_p)
+     rxpydin_valid_p_d1 <= 1'b1;
+  else if (py_datvalid_p)
+     rxpydin_valid_p_d1 <= 1'b0 ;
+end
+
+assign rxpydin_valid_p_wr = rxpydin_valid_p_d1 & py_datvalid_p;
 
 reg [7:0] rxpyadr;
 always @(posedge clk_6M or negedge rstz)
@@ -374,7 +387,7 @@ begin
      rxpyadr <= 0;
   else if (dec_py_st_p)
      rxpyadr <= 0;
-  else if (rxpydin_valid_p)
+  else if (rxpydin_valid_p_wr)
      rxpyadr <= rxpyadr + 1'b1 ;
 end
 

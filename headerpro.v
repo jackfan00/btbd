@@ -8,7 +8,7 @@ pk_encode,
 regi_whitening,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP,
 mpr, ir, spr,
-header_st_p, header_en, hec_en, py_st_p,
+header_st_p, header_en, hec_en, hec_endp,
 fec31inc_p,
 py_period, daten, py_datvalid_p, dec_py_period,
 pkheader_bitin, dec_headerbit,
@@ -26,7 +26,7 @@ input pk_encode;
 input regi_whitening;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP;
 input mpr, ir, spr;
-input header_st_p, header_en, hec_en, py_st_p;
+input header_st_p, header_en, hec_en, hec_endp;
 input fec31inc_p;
 input py_period, daten, py_datvalid_p, dec_py_period;
 input pkheader_bitin, dec_headerbit;
@@ -68,13 +68,13 @@ hec hec_u(
 .hecrem    (hecrem    )
 );
 
-reg py_st_p_d1;
+reg hec_endp_d1;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     py_st_p_d1 <= 0;
+     hec_endp_d1 <= 0;
   else 
-     py_st_p_d1 <= py_st_p;
+     hec_endp_d1 <= hec_endp;
 end
 
 reg dec_hecgood;
@@ -82,7 +82,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_hecgood <= 0;
-  else if (py_st_p_d1 & (!pk_encode))
+  else if (hec_endp_d1 & (!pk_encode))
      dec_hecgood <= (hecrem==8'b0);
 end
 
