@@ -2,6 +2,16 @@
 module testbench;
 
 
+wire [7:0] m_regi_srcFLOW, s_regi_srcFLOW;
+wire [7:0] m_regi_txARQN, s_regi_txARQN;
+wire [3:0] m_regi_dec_pk_type;
+wire [2:0] m_regi_dec_lt_addr;
+wire [7:0] m_regi_dec_flow, m_regi_dec_arqn, m_regi_SEQN_old;
+wire       m_regi_dec_hecgood;
+wire [3:0] s_regi_dec_pk_type;
+wire [2:0] s_regi_dec_lt_addr;
+wire [7:0] s_regi_dec_flow, s_regi_dec_arqn, s_regi_SEQN_old;
+wire       s_regi_dec_hecgood;
 
 reg m_clk_6M, m_rstz;
 reg s_clk_6M, s_rstz;
@@ -119,7 +129,16 @@ bt_top bt_top_m(
 //
 .txbit                       (m_txbit),
 .fk                          (m_fk),
-.regi_aclrxbufempty          ()
+.regi_aclrxbufempty          (),
+.regi_srcFLOW                (m_regi_srcFLOW),
+.regi_txARQN                 (m_regi_txARQN),
+.regi_dec_pk_type            (m_regi_dec_pk_type       ),
+.regi_dec_lt_addr            (m_regi_dec_lt_addr       ),
+.regi_dec_flow               (m_regi_dec_flow          ), 
+.regi_dec_arqn               (m_regi_dec_arqn          ), 
+.regi_SEQN_old               (m_regi_SEQN_old          ),
+.regi_dec_hecgood            (m_regi_dec_hecgood       )
+
 
 );
 wire [27:2] regi_fhsslave_offset;
@@ -220,7 +239,16 @@ bt_top bt_top_s(
 .regi_aclrxbufempty          (),
 .fhs_LT_ADDR                 (fhs_LT_ADDR),
 .fhs_Pbits                   (fhs_Pbits),
-.fhs_LAP                     (fhs_LAP)
+.fhs_LAP                     (fhs_LAP),
+.regi_srcFLOW                (s_regi_srcFLOW),
+.regi_txARQN                 (s_regi_txARQN),
+.regi_dec_pk_type            (s_regi_dec_pk_type       ),
+.regi_dec_lt_addr            (s_regi_dec_lt_addr       ),
+.regi_dec_flow               (s_regi_dec_flow          ), 
+.regi_dec_arqn               (s_regi_dec_arqn          ), 
+.regi_SEQN_old               (s_regi_SEQN_old          ),
+.regi_dec_hecgood            (s_regi_dec_hecgood       )
+
 );
 
 

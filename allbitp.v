@@ -61,8 +61,12 @@ fhs_PSM,
 bsm_dout,
 extendslot,
 s_acltxcmd_p,
-regi_aclrxbufempty
-
+regi_aclrxbufempty,
+srcFLOW, txARQN,
+dec_pk_type,
+dec_lt_addr,
+dec_flow, dec_arqn, SEQN_old,
+dec_hecgood
 
 );
 
@@ -130,6 +134,12 @@ output [31:0] bsm_dout ;
 output extendslot;
 output s_acltxcmd_p;
 output regi_aclrxbufempty;
+output [7:0] srcFLOW, txARQN;
+output [3:0] dec_pk_type;
+output [2:0] dec_lt_addr;
+output [7:0] dec_flow, dec_arqn, SEQN_old;
+output dec_hecgood;
+
 //
 wire py_period, daten, dec_py_period;
 wire py_st_p;
@@ -413,6 +423,7 @@ wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.regi_chgbufcmd_p   (regi_chgbufcmd_p   ),
 .regi_isMaster      (regi_isMaster      ),
 .dec_py_endp        (dec_py_endp        ),
 .esco_LT_ADDR       (esco_LT_ADDR       ),
@@ -448,7 +459,8 @@ arqflowctrl arqflowctrl_u(
 .s_acltxcmd_p       (s_acltxcmd_p       ),
 .srcFLOW            (srcFLOW            ),
 .rspFLOW            (rspFLOW            ),
-.pktype_data        (pktype_data        )
+.pktype_data        (pktype_data        ),
+.SEQN_old           (SEQN_old           )
 
 );
 

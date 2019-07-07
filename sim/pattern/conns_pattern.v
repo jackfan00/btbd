@@ -10,23 +10,37 @@ force bt_top_m.regi_txcmd_p=1'b0;
 //
 endtask;
 
-task m_chgbuf;
+task chgbuf;
+input master;
 //
+if (master)
+begin
 @(posedge m_clk_6M);
 #10;
 force bt_top_m.regi_chgbufcmd_p=1'b1;
 @(posedge m_clk_6M);
 #10;
 force bt_top_m.regi_chgbufcmd_p=1'b0;
+end
+else
+begin
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.regi_chgbufcmd_p=1'b1;
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.regi_chgbufcmd_p=1'b0;
+end
 //
 endtask;
 
 
-task m_bsm_wdat;
+task bsm_wdat;
 output [7:0] to_adr;
 output [31:0] to_din;
 output to_we;
 output to_cs;
+input master;
 input [7:0] adr;
 input [31:0] din;
 
@@ -34,20 +48,32 @@ input [31:0] din;
 //reg [31:0] to_din;
 //reg to_we, to_cs;
 //
+if (master)
+begin
 @(posedge m_clk_6M);
 #10;
 force bt_top_m.txbsmacl_we =1'b1;
 force bt_top_m.txbsmacl_cs =1'b1;
-//to_we = 1'b1;
-//to_cs = 1'b1;
 force bt_top_m.txbsmacl_addr = adr;
 force bt_top_m.txbsmacl_din = din;
 @(posedge m_clk_6M);
 #10;
 force bt_top_m.txbsmacl_we =1'b0;
 force bt_top_m.txbsmacl_cs =1'b0;
-//to_we = 1'b0;
-//to_cs = 1'b0;
+end
+else
+begin
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.txbsmacl_we =1'b1;
+force bt_top_s.txbsmacl_cs =1'b1;
+force bt_top_s.txbsmacl_addr = adr;
+force bt_top_s.txbsmacl_din = din;
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.txbsmacl_we =1'b0;
+force bt_top_s.txbsmacl_cs =1'b0;
+end
 //
 endtask;
 
@@ -158,7 +184,7 @@ s_regi_syncword_DIAC   = 64'h4e7a2cd32c3cb714; //LAP=9E8B34
 s_regi_AFH_mode = 1'b0;  // each device have their own setting
 s_regi_AFH_N = 7'd79;
 s_regi_AFH_channel_map = {16'hffff,16'hffff,16'hffff,16'hffff,16'hffff};
-s_regi_packet_type = 4'd4;
+s_regi_packet_type = 4'd3;
 s_regi_payloadlen = 10'd0; //bytes
 regi_mylt_address = 3'd3;  //should match master's regi_LT_ADDR
 s_regi_txwhitening = 1'b0;
@@ -211,7 +237,7 @@ reg [7:0] o_adr;
 reg [31:0] o_din;
 reg o_we, o_cs;
 
-reg [7:0] pyheader_l,pyheader_h;
+reg [7:0] m_pyheader_l,m_pyheader_h;
 initial begin
 wait (bt_top_m.conns);
 wait (bt_top_m.linkctrler_u.cs==5'd5);
@@ -225,23 +251,38 @@ regi_LT_ADDR = 3'd3;
 m_regi_packet_type = 4'd4;
 m_regi_payloadlen = 10'd5; //bytes
 //
-pyheader_l = {m_regi_payloadlen[4:0], 1'b1, 2'b10};
-pyheader_h = {3'b0,m_regi_payloadlen[9:5]};
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, {8'h03,8'h02,8'h01,pyheader_l});
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 8'h01);
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 2, 8'h02);
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 3, 8'h03);
-m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, {8'h05,8'h04});
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
+m_pyheader_l = {m_regi_payloadlen[4:0], 1'b1, 2'b10};
+m_pyheader_h = {3'b0,m_regi_payloadlen[9:5]};
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 0, {8'h03,8'h02,8'h01,m_pyheader_l});
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h05,8'h04});
 
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 5, 8'h05);
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 6, 8'h06);
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 7, 8'h07);
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 8, 8'h08);
-//m_bsm_wdat(o_adr, o_din, o_we, o_cs, 9, 8'h09);
 //
-m_chgbuf;
+// retransmit or not
+if (m_regi_txARQN[regi_LT_ADDR])
+  chgbuf(1);
 //
 m_txcmd;
 //
+end
+
+
+//
+reg [7:0] s_pyheader_l,s_pyheader_h;
+initial begin
+wait (bt_top_s.linkctrler_u.cs==5'd5);
+//
+regi_mylt_address = 3'd3;
+s_regi_packet_type = 4'd3;
+s_regi_payloadlen = 10'd5; //bytes
+//
+s_pyheader_l = {s_regi_payloadlen[4:0], 1'b1, 2'b10};
+s_pyheader_h = {3'b0,s_regi_payloadlen[9:5]};
+bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h03,8'h02,8'h01,s_pyheader_l});
+bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04});
+
+// retransmit or not
+if (s_regi_txARQN[regi_mylt_address])
+  chgbuf(0);
+//
+// slave auto reponse
 end

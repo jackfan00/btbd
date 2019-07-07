@@ -3,6 +3,7 @@
 //
 module arqflowctrl(
 clk_6M, rstz,
+regi_chgbufcmd_p,
 regi_isMaster,
 dec_py_endp,
 esco_LT_ADDR,
@@ -32,11 +33,13 @@ srctxpktype,
 s_acltxcmd_p,
 srcFLOW,
 rspFLOW,
-pktype_data
+pktype_data,
+SEQN_old
 
 );
 
 input clk_6M, rstz;
+input regi_chgbufcmd_p;
 input regi_isMaster;
 input dec_py_endp;
 input [2:0] esco_LT_ADDR;
@@ -67,6 +70,7 @@ output s_acltxcmd_p;
 output [7:0] srcFLOW;
 output rspFLOW;
 output pktype_data;
+output [7:0] SEQN_old;
 
 wire dec_pktype_data, txpktype_data;
 reg [7:0] SEQN_old;
@@ -136,10 +140,11 @@ begin
      txaclSEQN <= 8'hff;
   else if (connsnewmaster | connsnewslave)
      txaclSEQN <= 8'hff;
-  else if (ms_txcmd_p)  // start tx cmd, from lnctrl
+  else if (regi_chgbufcmd_p)  // mcu check txARQN[LT_ADDR] to determine switch buffer or not
      txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
-  else if (pk_encode & txpktype_data & dec_arqn[ms_lt_addr] & header_st_p)
-     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
+// control by mcu     
+//  else if (pk_encode & txpktype_data & dec_arqn[ms_lt_addr] & header_st_p)
+//     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
 end
 
 wire eSCOwindow_endp = 1'b0; //for tmp

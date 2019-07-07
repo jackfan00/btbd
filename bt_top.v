@@ -58,7 +58,14 @@ bsm_dout,
 regi_aclrxbufempty,
 fhs_LT_ADDR,
 fhs_Pbits,
-fhs_LAP
+fhs_LAP,
+regi_srcFLOW,
+regi_txARQN,
+regi_dec_pk_type,
+regi_dec_lt_addr,
+regi_dec_flow, regi_dec_arqn, regi_SEQN_old,
+regi_dec_hecgood
+
 );
 
 
@@ -125,6 +132,12 @@ output regi_aclrxbufempty;
 output [2:0]  fhs_LT_ADDR;
 output [33:0] fhs_Pbits;
 output [23:0] fhs_LAP;
+output [7:0] regi_srcFLOW, regi_txARQN;
+output [3:0] regi_dec_pk_type;
+output [2:0] regi_dec_lt_addr;
+output [7:0] regi_dec_flow, regi_dec_arqn, regi_SEQN_old;
+output regi_dec_hecgood;
+
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -577,10 +590,18 @@ allbitp allbitp_u(
 //.rxpydin,
 //.rxpyadr,
 //.rxpydin_valid_p,
-.bsm_dout                (bsm_dout                ),
+.bsm_dout                (bsm_dout              ),
 .extendslot             (extendslot             ),
 .s_acltxcmd_p           (s_acltxcmd_p           ),
-.regi_aclrxbufempty     (regi_aclrxbufempty     )
+.regi_aclrxbufempty     (regi_aclrxbufempty     ),
+.srcFLOW                (regi_srcFLOW           ),
+.txARQN                 (regi_txARQN            ),
+.dec_pk_type            (regi_dec_pk_type       ),
+.dec_lt_addr            (regi_dec_lt_addr       ),
+.dec_flow               (regi_dec_flow          ), 
+.dec_arqn               (regi_dec_arqn          ), 
+.SEQN_old               (regi_SEQN_old          ),
+.dec_hecgood            (regi_dec_hecgood       )
 );
 
 //

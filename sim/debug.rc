@@ -2,11 +2,11 @@ Magic 271485
 Revision Verdi3_2013.07
 
 ; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
-viewPort 31 70 1143 630 220 139
+viewPort 31 70 1143 630 234 139
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
-openDirFile -d / "" "/home/jack/work/btbd/sim/bt.fsdb"
+openDirFile -d / -i 0 "" "/home/jack/work/btbd/sim/bt.fsdb"
 
 ; file time scale:
 ; fileTimeScale ### s|ms|us|ns|ps
@@ -18,16 +18,14 @@ signalSpacing 5
 windowTimeUnit 10us
 
 ; waveform viewport range
-zoom 0.000000 22235.497831 10u
-cursor 2647.434676
-marker 0.141661
+zoom 1557.586765 4613.383576 10u
+cursor 3085.864516
+marker 3085.364596
 
-; user define markers
-; userMarker time_pos marker_name color linestyle
 ; visible top row signal index
-top 5
+top 14
 ; marker line index
-markerPos 29
+markerPos 28
 
 ; event list
 ; addEvent event_name event_expression
@@ -107,22 +105,18 @@ addSignal -h 15 -UNSIGNED -UDEC /testbench/bt_top_s/hopkernal_u/fk[6:0]
 addSignal -h 15 /testbench/bt_top_s/linkctrler_u/s_tslot_p
 addSignal -h 15 /testbench/bt_top_s/allbitp_u/rxbit
 addSignal -h 15 -holdScope txbit
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/headerbitp_u/dec_lt_addr[2:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/ms_lt_addr[2:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope fhs_LT_ADDR[2:0]
-addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/fhs_Pbits[33:0]
-addSignal -h 15 -UNSIGNED -HEX -holdScope fhs_LAP[23:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/headerbitp_u/all_bitcount[7:0]
+addSignal -h 15 -UNSIGNED -HEX /testbench/bt_top_s/allbitp_u/pybitp_u/bitcount[12:0]
+addSignal -h 15 -holdScope daten
+addSignal -h 15 -holdScope py_period
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/headerbitp_u/header_en
+addSignal -h 15 -holdScope hec_en
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/bufctrl_u/pytxaclbufctrl_u/s1a
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/bufctrl_u/pyrxaclbufctrl_u/regi_aclrxbufempty
+addSignal -h 15 /testbench/bt_top_s/allbitp_u/headerbitp_u/txpk_flow
+addSignal -h 15 -holdScope txpk_arqn
+addSignal -h 15 /testbench/bt_top_s/regi_dec_hecgood
 addGroup "G3"
-addSignal -h 15 /testbench/bt_top_m/swgen_u/clk_6M
-addSignal -h 15 -holdScope rstz
-addSignal -h 15 -UNSIGNED -HEX -holdScope regi_scwdLAP[23:0]
-addSignal -h 15 -holdScope regi_cal_scwd_p
-addSignal -h 15 -UNSIGNED -UDEC -holdScope bitcnt[4:0]
-addSignal -h 15 -holdScope inb
-addSignal -h 15 -holdScope shift_in
-addSignal -h 15 -UNSIGNED -HEX -holdScope pbits[33:0]
-addSignal -h 15 -holdScope pbitsready
-addSignal -h 15 -UNSIGNED -HEX -holdScope syncword[63:0]
 addGroup "G4"
 addGroup "G5"
 

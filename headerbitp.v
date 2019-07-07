@@ -171,7 +171,10 @@ wire [3:0] txpktype = mpr | istxfhs ? 4'b0010 :   //fhs
                     connsnewmaster ? 4'b0001 :    //poll
                     connsnewslave ? 4'b0000 :    //null
                     conns ? srctxpktype : 4'b0; //regi_packet_type;
-wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : dec_lt_addr;
+
+// slave: should be response in next slot with current regi_mylt_address
+wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
+
 wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
 wire txpk_arqn = conns ? txARQN[txpk_lt_addr] : 1'b0;
 wire txpk_flow = conns ? rspFLOW : 1'b1;

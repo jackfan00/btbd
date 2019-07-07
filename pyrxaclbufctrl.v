@@ -100,15 +100,30 @@ wire [9:0] rxlenByte = s1a ? u1_length : u0_length;
 wire [7:0] endaddr = (rxlenByte[1:0]==2'b0) ? rxlenByte[9:2]-1'b1 : rxlenByte[9:2];
 assign bsm_read_endp = (bsm_addr >= endaddr) & bsm_valid_p;
 //
-reg regi_aclrxbufempty;
+reg u0empty;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     regi_aclrxbufempty <= 1'b1;
-  else if (bsm_read_endp)
-     regi_aclrxbufempty <= 1'b1;
-  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data)
-     regi_aclrxbufempty <= 1'b0;
+     u0empty <= 1'b1;
+  else if (bsm_read_endp & !s1a)
+     u0empty <= 1'b1;
+  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a)
+     u0empty <= 1'b0;
 end
+
+reg u1empty;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     u1empty <= 1'b1;
+  else if (bsm_read_endp & s1a)
+     u1empty <= 1'b1;
+  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a)
+     u1empty <= 1'b0;
+end
+
+
+assign regi_aclrxbufempty = u1empty | u0empty;
+
 
 endmodule
