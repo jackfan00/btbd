@@ -59,7 +59,11 @@ ms_txcmd_p,
 rxCAC, prerx_trans,
 LMP_c_slot,
 pstxid,
-psrxfhs_succ_p
+psrxfhs_succ_p,
+PageScanWindow_endp,
+InquiryScanWindow_endp,
+correWindow,
+corre_nottrg_p
 
 );
 
@@ -119,6 +123,10 @@ output rxCAC, prerx_trans;
 output LMP_c_slot;
 output pstxid;
 output psrxfhs_succ_p;
+output PageScanWindow_endp;
+output InquiryScanWindow_endp;
+output correWindow;
+output corre_nottrg_p;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -563,7 +571,8 @@ ps_ctrl ps_ctrl_u(
 //
 .PageScanWindow           (PageScanWindow           ),
 .pagerespTO               (ps_pagerespTO            ),
-.PageScanWindow1more      (PageScanWindow1more      )
+.PageScanWindow1more      (PageScanWindow1more      ),
+.PageScanWindow_endp      (PageScanWindow_endp      )
 );
 
 
@@ -609,7 +618,8 @@ is_ctrl is_ctrl_u(
 .is                    (is                    ), 
 .giis                  (giis                  ),
 //               
-.InquiryScanWindow     (InquiryScanWindow     )
+.InquiryScanWindow     (InquiryScanWindow     ),
+.InquiryScanWindow_endp(InquiryScanWindow_endp)
 );
 
 inquiry_ctrl inquiry_ctrl_u(
@@ -713,6 +723,8 @@ wire correWindow = page ? p_correWin :
 correlator correlator_u(
 .clk_6M                 (clk_6M                   ), 
 .rstz                   (rstz                     ), 
+.psrxfhs_st_p           (psrxfhs_st_p             ),
+.ps_pagerespTO          (ps_pagerespTO            ),
 .p_1us                  (p_1us                    ),
 .pk_encode              (pk_encode                ), 
 .conns                  (conns                    ),
@@ -728,7 +740,8 @@ correlator correlator_u(
 .rx_trailer_st_p        (raw_rx_trailer_st_p      ),
 .rxCAC                  (rxCAC                    ), 
 .prerx_trans            (prerx_trans              ),
-.psrxfhs_corwin         (psrxfhs_corwin           )
+.psrxfhs_corwin         (psrxfhs_corwin           ),
+.corre_nottrg_p         (corre_nottrg_p           )
 );
 
 always @(posedge clk_6M or negedge rstz)
@@ -803,6 +816,8 @@ assign inquiryrxfhs = (cs==Inquiryrsp_STATE);
 assign pssyncCLK_p = (cs==PageSlaveResp_ackfhs_STATE) & s_tslot_p;
 
 assign psrxfhs_succ_p = (cs==PageSlaveResp_rxfhs_STATE) & corre_trgp;
+
+assign psrxfhs_st_p = pstxid & ps_corr_halftslotdly_endp;
 //
 
 assign tx_packet_st_p = 

@@ -12,7 +12,8 @@ regi_isinterlace,
 regi_InquiryScanEnable,
 is, giis,
 //
-InquiryScanWindow
+InquiryScanWindow,
+InquiryScanWindow_endp
 );
 
 input clk_6M, rstz, tslot_p, p_1us;
@@ -24,6 +25,7 @@ input regi_InquiryScanEnable;
 input is, giis;
 //
 output InquiryScanWindow;
+output InquiryScanWindow_endp;
 
 
 wire [15:0] Tisinterval = regi_Tisinterval > 16'h1000 ? 16'h1000 : regi_Tisinterval;  // The inquiry scan interval shall be less than or equal to 2.56 s
@@ -71,9 +73,20 @@ wire InterInquiryScanWindow = (pswindow_counter_tslot < {Tiswindow,1'b0}) ;
 
 assign InquiryScanWindow_raw =  regi_isinterlace & (Tisinterval >= {Tiswindow,1'b0}) ? InterInquiryScanWindow : NorInquiryScanWindow;
 
-assign InquiryScanWindow = InquiryScanWindow_raw & regi_InquiryScanEnable;  //(is | giis) ;
+assign InquiryScanWindow_t = InquiryScanWindow_raw & regi_InquiryScanEnable;  //(is | giis) ;
 //
 
+reg InquiryScanWindow_d1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     InquiryScanWindow_d1 <= 0;
+  else 
+     InquiryScanWindow_d1 <= InquiryScanWindow_t;
+end
+
+assign InquiryScanWindow_endp = !InquiryScanWindow_t & InquiryScanWindow_d1;
+assign InquiryScanWindow = InquiryScanWindow_d1;
 
 
 endmodule

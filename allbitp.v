@@ -1,5 +1,8 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+corre_nottrg_p,
+correWindow,
+InquiryScanWindow_endp, p_correWin_endp, PageScanWindow_endp,
 regi_chgbufcmd_p,
 LMP_c_slot,
 rxCAC, prerx_trans,
@@ -13,7 +16,7 @@ rxbsmacl_cs, rxbsmsco_cs,
 rxbsm_valid_p,
 s_tslot_p, ms_tslot_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
-page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs,
+page, inquiry, is, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs,
 rx_trailer_st_p,
 tx_packet_st_p,
 regi_isMaster,
@@ -72,6 +75,9 @@ dec_hecgood
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input corre_nottrg_p;
+input correWindow;
+input InquiryScanWindow_endp, p_correWin_endp, PageScanWindow_endp;
 input regi_chgbufcmd_p;
 input LMP_c_slot;
 input rxCAC, prerx_trans;
@@ -85,7 +91,7 @@ input rxbsmacl_cs, rxbsmsco_cs;
 input rxbsm_valid_p;
 input s_tslot_p, ms_tslot_p;
 input pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
-input page, inquiry, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs;
+input page, inquiry, is, conns, ps, mpr, spr, ir, psrxfhs, inquiryrxfhs;
 input rx_trailer_st_p;
 input tx_packet_st_p;
 input regi_isMaster;
@@ -247,7 +253,9 @@ headerbitp headerbitp_u(
 .dec_arqn               (dec_arqn               ),
 .header_st_p            (header_st_p            ),
 .dec_hecgood            (dec_hecgood            ),
-.dec_seqn               (dec_seqn               )
+.dec_seqn               (dec_seqn               ),
+.headpacket_endp        (headpacket_endp        ),
+.hec_endp               (hec_endp               )
 
 );
 
@@ -291,6 +299,8 @@ pybitp pybitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.packet_BRmode          (packet_BRmode          ), 
+.packet_DPSK            (packet_DPSK            ),
 .mpr                    (mpr                    ),
 .ir                     (ir                     ),
 .spr                    (spr                    ),
@@ -350,7 +360,9 @@ pybitp pybitp_u(
 .rxpydin_valid_p_wr     (rxpydin_valid_p_wr     ),
 .py_endp                (py_endp                ),
 .dec_py_endp            (dec_py_endp            ),
-.py_datperiod           (py_datperiod           )
+.py_datperiod           (py_datperiod           ),
+.edrtailer              (edrtailer              ),
+.edrtailer_endp         (edrtailer_endp         )
 
 );
 
@@ -358,7 +370,45 @@ pybitp pybitp_u(
 assign txbit = header_packet_period & pk_encode ? txheaderbit :
                py_period & pk_encode     ? txpybit     : 1'b0;
 
-assign txbit_period = (header_packet_period | py_period) & pk_encode;
+
+assign txbit_period_endp = page | spr | inquiry ? headpacket_endp :      //ID
+                           packet_BRmode ? (pylenbit!=0 ? py_endp        : hec_endp):          //BR
+                                           (pylenbit!=0 ? edrtailer_endp : hec_endp);          //EDR
+
+//assign txbit_period = (header_packet_period | py_period) & pk_encode;
+reg txbit_period;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     txbit_period <= 0;
+  else if (tx_packet_st_p)
+     txbit_period <= 1'b1;
+  else if (txbit_period_endp)
+     txbit_period <= 1'b0;
+end
+
+
+assign rxbit_period_endp = //ps ? PageScanWindow_endp :   //
+                           page|inquiry|mpr ? p_correWin_endp :
+                           //psrxfhs ? py_endp :
+                           //is ? InquiryScanWindow_endp :      
+                           packet_BRmode ? corre_nottrg_p | (pylenbit!=0 ? py_endp        : hec_endp):          //BR
+                                           corre_nottrg_p | (pylenbit!=0 ? edrtailer_endp : hec_endp);          //EDR
+
+reg validdatwin;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     validdatwin <= 0;
+  else if (correWindow)
+     validdatwin <= 1'b1;
+  else if (corre_nottrg_p)
+     validdatwin <= 1'b0;
+  else if (rxbit_period_endp)
+     validdatwin <= 1'b0;
+end
+
+assign rxbit_period = page|inquiry|ps|is ? correWindow : validdatwin  ;
 
 //
 wire [31:0] rxlnctrl_din = rxpydin;

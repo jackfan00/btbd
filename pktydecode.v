@@ -140,17 +140,17 @@ begin
     4'h0:         //NULL
       begin
         pylenbit = 13'd0;
-        existpyheader = 1'b0;
+        existpyheader = 1'b1;
       end
     4'h1:         //POLL
       begin
         pylenbit = 13'd0;
-        existpyheader = 1'b0;
+        existpyheader = 1'b1;
       end
     4'h2:         //FHS
       begin
         pylenbit = 13'd144;
-        existpyheader = 1'b0;
+        existpyheader = 1'b1;
       end
     4'h3:       //DM1
       begin

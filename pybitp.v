@@ -1,5 +1,6 @@
 module pybitp(
 clk_6M, rstz, p_1us, 
+packet_BRmode, packet_DPSK,
 mpr, ir, spr, psrxfhs, inquiryrxfhs,
 py_st_p,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP,
@@ -48,11 +49,14 @@ rxpyadr,
 rxpydin_valid_p_wr,
 py_endp,
 dec_py_endp,
-py_datperiod
+py_datperiod,
+edrtailer,
+edrtailer_endp
 
 );
 
 input clk_6M, rstz, p_1us;
+input packet_BRmode, packet_DPSK;
 input mpr, ir, spr, psrxfhs, inquiryrxfhs;
 input py_st_p;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP;
@@ -102,6 +106,8 @@ output rxpydin_valid_p_wr;
 output py_endp;
 output dec_py_endp;
 output py_datperiod;
+output edrtailer;
+output edrtailer_endp;
 
 //
 reg py_period;
@@ -173,6 +179,29 @@ end
 
 assign py_endp = fec32encode ? (processlen >= payloadlen_crc) & fec32bk_endp : (bitcount==(payloadlen_crc-1'b1)) & py_datvalid_p;
 assign dec_py_endp = fec32encode ? (processlen >= (payloadlen_crc+4'd10)) & fec32bk_endp : (dec_pybitcnt==(payloadlen_crc-1'b1)) & py_datvalid_p;
+
+wire edrtailer_endp;
+reg edrtailer;
+reg [2:0] edrtailer_cnt;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     edrtailer <= 0;
+  else if (py_endp & !packet_BRmode )
+     edrtailer <= 1'b1;
+  else if (edrtailer_endp)
+     edrtailer <= 1'b0 ;
+end
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     edrtailer_cnt <= 0;
+  else if ((py_endp & !packet_BRmode) | py_period)
+     edrtailer_cnt <= 0;
+  else if (py_datvalid_p & edrtailer)
+     edrtailer_cnt <= edrtailer_cnt + 1'b1 ;
+end
+assign edrtailer_endp = packet_DPSK ? edrtailer_cnt==3'd3 : edrtailer_cnt==3'd5;
 
 reg [1:0] fec31count;
 always @(posedge clk_6M or negedge rstz)

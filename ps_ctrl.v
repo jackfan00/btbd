@@ -13,7 +13,8 @@ pstxid, ps_corr_halftslotdly_endp,
 //
 PageScanWindow,
 pagerespTO,
-PageScanWindow1more
+PageScanWindow1more,
+PageScanWindow_endp
 );
 
 input clk_6M, rstz, tslot_p, p_1us;
@@ -26,6 +27,7 @@ input pstxid, ps_corr_halftslotdly_endp;
 output PageScanWindow;
 output pagerespTO;
 output PageScanWindow1more;
+output PageScanWindow_endp;
 
 reg [15:0] pswindow_counter_tslot;
 always @(posedge clk_6M or negedge rstz)
@@ -48,8 +50,19 @@ wire InterPageScanWindow = (pswindow_counter_tslot < {regi_Tpswindow,1'b0}) ;
 
 assign PageScanWindow_raw =  regi_psinterlace & (regi_Tpsinterval >= {regi_Tpswindow,1'b0}) ? InterPageScanWindow : NorPageScanWindow;
 
-assign PageScanWindow = PageScanWindow_raw & PageScanEnable;  //(ps | gips) ;
+wire PageScanWindow_t = PageScanWindow_raw & PageScanEnable;  //(ps | gips) ;
 //
+reg PageScanWindow_d1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     PageScanWindow_d1 <= 0;
+  else 
+     PageScanWindow_d1 <= PageScanWindow_t;
+end
+
+assign PageScanWindow_endp = !PageScanWindow_t & PageScanWindow_d1;
+assign PageScanWindow = PageScanWindow_d1;
 
 reg [3:0] pagerespTO_count;
 always @(posedge clk_6M or negedge rstz)

@@ -18,7 +18,8 @@ m_tslot_p, s_tslot_p, p_1us, p_05us, p_033us,
 m_half_tslot_p, s_half_tslot_p,
 m_conns_uncerWindow, m_page_uncerWindow, spr_correWin, 
 s_conns_uncerWindow,
-regi_fhsslave_offset
+regi_fhsslave_offset,
+m_page_uncerWindow_endp
 
 );
 
@@ -39,6 +40,7 @@ output m_half_tslot_p, s_half_tslot_p;
 output m_conns_uncerWindow, m_page_uncerWindow, spr_correWin;
 output s_conns_uncerWindow;
 output [27:2] regi_fhsslave_offset;
+output m_page_uncerWindow_endp;
 
 wire [27:0] CLKR_master, CLKR_slave;
 wire [9:0] m_counter_1us, s_counter_1us;
@@ -137,6 +139,9 @@ begin
   else if (m_counter_1us == 10'd390 && CLKE_master[1] & page)
      m_page_uncerWindow <= 1'b0;
 end
+
+assign m_page_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKE_master[1] & (page|mpr) ) |
+                                 (m_counter_1us == 10'd390 && CLKE_master[1] & page) ;
 
 always @(posedge clk_6M or negedge rstz)
 begin

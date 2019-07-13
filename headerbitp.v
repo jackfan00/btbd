@@ -38,7 +38,9 @@ dec_lt_addr,
 dec_flow, dec_arqn,
 header_st_p,
 dec_hecgood,
-dec_seqn
+dec_seqn,
+headpacket_endp,
+hec_endp
 
 );
 
@@ -83,8 +85,10 @@ output [7:0] dec_flow, dec_arqn;
 output header_st_p;
 output dec_hecgood;
 output dec_seqn;
+output headpacket_endp;
+output hec_endp;
 
-wire packet_endp;
+wire headpacket_endp;
 reg header_packet_period;
 wire preamble_en, syncword_en, trailer_en, header_en, hec_en;
 wire [63:0] syncword;
@@ -100,7 +104,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      all_bitcount <= 8'hff;
-  else if ((packet_endp)  & p_1us)
+  else if ((headpacket_endp)  & p_1us)
      all_bitcount <= 8'hff;
   else if (rx_trailer_st_p & p_1us)
      all_bitcount <= 8'd69;
@@ -110,9 +114,9 @@ begin
      all_bitcount <= all_bitcount + 1'b1 ;
 end
 
-assign packet_endp = page ? all_bitcount==8'd67  :
-                   spr ? all_bitcount==8'd67 :
-                   inquiry ? all_bitcount==8'd67 : 
+assign headpacket_endp = page ? all_bitcount==8'd67  :  //ID
+                   spr ? all_bitcount==8'd67 :          //ID
+                   inquiry ? all_bitcount==8'd67 :      //ID
                    packet_BRmode ? all_bitcount==8'd125 :  // header(54)
                              all_bitcount==8'd141 ;  //EDR, guard(5)+sync(11)
                    
@@ -122,6 +126,7 @@ assign trailer_en = (all_bitcount>8'd67) & (all_bitcount<=8'd71) ;
 assign header_en = (all_bitcount>8'd71) & (all_bitcount<=8'd101);
 assign hec_en = (all_bitcount>8'd101) & (all_bitcount<=8'd125);
 
+
 assign header_st_p = (all_bitcount==8'd71) & p_1us;
 assign guard_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd125) & p_1us;
 assign edrsync11_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd130) & p_1us;
@@ -129,13 +134,15 @@ assign edrsync11_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd130) & p_1us;
 assign py_st_p = !(srcFLOW[ms_lt_addr]) & pk_encode ? 1'b0 :   // flow=STOP, dont send payload
                  packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
 
-wire hec_endp = packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
+//wire hec_endp = packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
+wire hec_endp = (all_bitcount==8'd125) & p_1us ;
+
 
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      header_packet_period <= 0;
-  else if (packet_endp & p_1us)
+  else if (headpacket_endp & p_1us)
      header_packet_period <= 0;
   else if (tx_packet_st_p & p_1us)
      header_packet_period <= 1'b1 ;
