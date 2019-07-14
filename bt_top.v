@@ -1,5 +1,6 @@
 module bt_top(
 clk_6M, rstz,
+regi_pllsetuptime,
 regi_chgbufcmd_p,
 txbsmacl_addr, txbsmsco_addr,
 txbsmacl_din, txbsmsco_din,
@@ -64,12 +65,15 @@ regi_txARQN,
 regi_dec_pk_type,
 regi_dec_lt_addr,
 regi_dec_flow, regi_dec_arqn, regi_SEQN_old,
-regi_dec_hecgood
+regi_dec_hecgood,
+txbit_period, txbit_period_endp,
+rxbit_period, rxbit_period_endp
 
 );
 
 
 input clk_6M, rstz;
+input [9:0] regi_pllsetuptime;
 input regi_chgbufcmd_p;
 input [7:0] txbsmacl_addr, txbsmsco_addr;
 input [31:0] txbsmacl_din, txbsmsco_din;
@@ -137,6 +141,8 @@ output [3:0] regi_dec_pk_type;
 output [2:0] regi_dec_lt_addr;
 output [7:0] regi_dec_flow, regi_dec_arqn, regi_SEQN_old;
 output regi_dec_hecgood;
+output txbit_period, txbit_period_endp;
+output rxbit_period, rxbit_period_endp;
 
 
 wire rxispoll;
@@ -181,11 +187,17 @@ wire py_period, daten, py_datvalid_p;
 wire pssyncCLK_p;
 wire lt_addressed;
 wire pstxid, psrxfhs, psrxfhs_succ_p;
+wire [5:0] counter_clkN1;
+wire [4:0] counter_clkE1;
+wire psackfhs, pagetmp, pagerxackfhs ;
+wire corre_threshold;
 
 
 bluetoothclk bluetoothclk_u(
 .clk_6M                  (clk_6M                  ), 
 .rstz                    (rstz                    ),
+.regi_isMaster           (regi_isMaster           ),
+.regi_pllsetuptime       (regi_pllsetuptime       ),
 .page                    (page                    ),
 .mpr                     (mpr                     ),
 .regi_esti_offset        (regi_esti_offset        ), 
@@ -219,7 +231,8 @@ bluetoothclk bluetoothclk_u(
 .spr_correWin            (spr_correWin            ), 
 .s_conns_uncerWindow     (s_conns_uncerWindow     ),
 .regi_fhsslave_offset    (regi_fhsslave_offset    ),
-.m_page_uncerWindow_endp (m_page_uncerWindow_endp )
+.m_page_uncerWindow_endp (m_page_uncerWindow_endp ),
+.fkset_p                 (fkset_p                 )
 
 );
 
@@ -228,11 +241,72 @@ wire [27:0] CLKN = regi_isMaster ? CLKN_master : CLKN_slave;
 wire [27:0] CLKE = CLKE_master;
 wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
 
+//
+wire [27:0] nxtCLK = CLK + 1'b1;
+wire [27:0] nxtCLKN = CLKN + 1'b1;
+wire [27:0] nxtCLKE = CLKE + 1'b1;
+wire [5:0] nxtcounter_clkN1 = counter_clkN1 + 1'b1;
+wire [4:0] nxtcounter_clkE1 = counter_clkE1 + 1'b1;
+wire [6:0] nxtfk;
+hopselection hopselection_u(
+.clk_6M               (clk_6M               ), 
+.rstz                 (rstz                 ), 
+.p_033us              (p_033us              ),
+.m_half_tslot_p       (m_half_tslot_p       ),
+.connsnewslave        (connsnewslave        ),
+.connsnewmaster       (connsnewmaster       ),
+.txbit_period         (txbit_period         ), 
+.rxbit_period         (rxbit_period         ),
+.fkset_p              (fkset_p              ),  // default 150us pll setup time
+.psackfhs             (psackfhs             ), 
+.pagetxfhs            (pagetxfhs            ), 
+.pagetmp              (pagetmp              ), 
+.pagerxackfhs         (pagerxackfhs         ),
+.corre_threshold      (corre_threshold      ),
+
+//.counter_clkN1        (nxtcounter_clkN1        ),  
+//.counter_clkE1        (nxtcounter_clkE1        ),       
+.psrxfhs_succ_p       (psrxfhs_succ_p       ),
+.psrxfhs              (psrxfhs              ),
+.pstxid               (pstxid               ),
+.m_tslot_p            (m_tslot_p            ),
+.ms_tslot_p           (ms_tslot_p           ),
+.ps_N_incr_p          (ps_N_incr_p          ),
+.pageAB_2Npage_count  (pageAB_2Npage_count  ), 
+.Atrain               (Atrain               ),
+.regi_interlace_offset(regi_interlace_offset),
+.regi_page_k_nudge    (regi_page_k_nudge    ),
+.regi_AFH_mode        (regi_AFH_mode        ),
+.regi_AFH_N           (regi_AFH_N           ),
+.regi_AFH_channel_map (regi_AFH_channel_map ),
+.ps                   (ps                   ), 
+.gips                 (gips                 ), 
+.is                   (is                   ), 
+.giis                 (giis                 ), 
+.page                 (page                 ), 
+.inquiry              (inquiry              ), 
+.mpr                  (mpr                  ), 
+.spr                  (spr                  ), 
+.ir                   (ir                   ), 
+.conns                (conns                ),
+.prs_clock_frozen     (prs_clock_frozen     ), 
+.prm_clock_frozen     (prm_clock_frozen     ),
+.CLK                  (CLK                  ), 
+.CLKE                 (CLKE                 ), 
+.CLKN                 (CLKN                 ), 
+.BD_ADDR              (hop_BD_ADDR          ),
+.counter_isFHS        (counter_isFHS        ),
+//
+.fk                   (nxtfk                     )
+);
+
 
 hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
+.counter_clkN1        (counter_clkN1        ),  
+.counter_clkE1        (counter_clkE1        ),       
 .psrxfhs_succ_p       (psrxfhs_succ_p       ),
 .psrxfhs              (psrxfhs              ),
 .pstxid               (pstxid               ),
@@ -303,6 +377,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.s_half_tslot_p              (s_half_tslot_p              ),
 .s_tslot_p                   (s_tslot_p                   ),
 .regi_LMPcmdfg               (regi_LMPcmdfg               ),
 .regi_pagetruncated          (regi_pagetruncated          ),
@@ -402,7 +477,13 @@ linkctrler linkctrler_u(
 .PageScanWindow_endp       (PageScanWindow_endp       ),
 .InquiryScanWindow_endp    (InquiryScanWindow_endp    ),
 .correWindow               (correWindow               ),
-.corre_nottrg_p            (corre_nottrg_p            )
+.corre_nottrg_p            (corre_nottrg_p            ),
+.counter_clkN1             (counter_clkN1             ),  
+.counter_clkE1             (counter_clkE1             ),
+.psackfhs                  (psackfhs                  ), 
+.pagetmp                   (pagetmp                   ), 
+.pagerxackfhs              (pagerxackfhs              ),
+.corre_threshold           (corre_threshold           )
 
 );
 
@@ -423,57 +504,7 @@ wire is_SCO    = pk_encode ? txis_SCO    : rxis_SCO;
 wire is_ACL    = pk_encode ? txis_ACL    : rxis_ACL;
 
 
-/////////////////////////////txallbit txallbit_u(
-/////////////////////////////.clk_6M                 (clk_6M                 ), 
-/////////////////////////////.rstz                   (rstz                   ), 
-/////////////////////////////.p_1us                  (p_1us                  ),
-/////////////////////////////.p_05us                 (p_05us                 ),
-/////////////////////////////.p_033us                (p_033us                ),
-/////////////////////////////.pagetxfhs              (pagetxfhs              ), 
-/////////////////////////////.connsnewmaster         (connsnewmaster         ),
-/////////////////////////////.page                   (page                   ), 
-/////////////////////////////.inquiry                (inquiry                ), 
-/////////////////////////////.conns                  (conns                  ), 
-/////////////////////////////.ps                     (ps                     ), 
-/////////////////////////////.mpr                    (mpr                    ), 
-/////////////////////////////.spr                    (spr                    ),
-/////////////////////////////.ir                     (ir                     ),
-/////////////////////////////.tx_packet_st_p         (tx_packet_st_p         ),
-/////////////////////////////.regi_txwhitening       (regi_txwhitening       ),
-/////////////////////////////.regi_payloadlen        (regi_payloadlen        ),
-/////////////////////////////.regi_inquiryDIAC       (regi_inquiryDIAC       ),
-/////////////////////////////.regi_syncword_CAC      (regi_syncword_CAC      ), 
-/////////////////////////////.regi_syncword_DAC      (regi_syncword_DAC      ), 
-/////////////////////////////.regi_syncword_DIAC     (regi_syncword_DIAC     ), 
-/////////////////////////////.regi_syncword_GIAC     (regi_syncword_GIAC     ),
-/////////////////////////////.regi_LT_ADDR           (regi_LT_ADDR           ),
-/////////////////////////////.regi_packet_type       (regi_packet_type       ),
-/////////////////////////////.regi_FLOW              (regi_FLOW              ), 
-/////////////////////////////.regi_ARQN              (regi_ARQN              ), 
-/////////////////////////////.regi_SEQN              (regi_SEQN              ),
-/////////////////////////////.regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
-/////////////////////////////.regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),
-/////////////////////////////.Xprm                   (Xprm                   ),
-/////////////////////////////.Xir                    (Xir                    ),
-/////////////////////////////.Xprs                   (Xprs                   ),
-/////////////////////////////.CLK                    (CLK                    ),
-/////////////////////////////.regi_FHS_LT_ADDR       (regi_FHS_LT_ADDR       ),
-/////////////////////////////.regi_myClass           (regi_myClass           ),
-/////////////////////////////.regi_my_BD_ADDR_NAP    (regi_my_BD_ADDR_NAP    ),
-/////////////////////////////.regi_my_BD_ADDR_UAP    (regi_my_BD_ADDR_UAP    ),
-/////////////////////////////.regi_SR                (regi_SR                ),
-/////////////////////////////.regi_EIR               (regi_EIR               ),
-/////////////////////////////.regi_my_BD_ADDR_LAP    (regi_my_BD_ADDR_LAP    ),
-/////////////////////////////.regi_my_syncword       (regi_my_syncword       ),
-/////////////////////////////.is_BRmode              (txis_BRmode            ), 
-/////////////////////////////.is_eSCO                (txis_eSCO              ), 
-/////////////////////////////.is_SCO                 (txis_SCO               ), 
-/////////////////////////////.is_ACL                 (txis_ACL               ),
-///////////////////////////////                                              
-/////////////////////////////.txbit                  (txbit                  ), 
-/////////////////////////////.txbit_period           (txbit_period           )
-/////////////////////////////
-/////////////////////////////);
+
 
 
 // re-sync
@@ -583,7 +614,6 @@ allbitp allbitp_u(
 .rxbit                  (rxbit_resync           ),
 //                                              
 .txbit                  (txbit                  ), 
-.txbit_period           (txbit_period           ),
 .rxispoll               (rxispoll               ),
 .lt_addressed           (lt_addressed           ),
 .fhs_Pbits              (fhs_Pbits              ),
@@ -611,7 +641,12 @@ allbitp allbitp_u(
 .dec_flow               (regi_dec_flow          ), 
 .dec_arqn               (regi_dec_arqn          ), 
 .SEQN_old               (regi_SEQN_old          ),
-.dec_hecgood            (regi_dec_hecgood       )
+.dec_hecgood            (regi_dec_hecgood       ),
+.txbit_period           (txbit_period           ), 
+.txbit_period_endp      (txbit_period_endp      ),
+.rxbit_period           (rxbit_period           ), 
+.rxbit_period_endp      (rxbit_period_endp      )
+
 );
 
 //

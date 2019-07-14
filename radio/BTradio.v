@@ -31,7 +31,7 @@ parameter PLL_SetUp_Time = 100000; // 100us
 //
 assign ttxbitout = txen ? txbitin : 1'bx;
 reg [6:0] stable_k;
-always @9posedge clk_6M or negedge rstz)
+always @(posedge clk_6M or negedge rstz)
   begin
     if (!rstz)
       stable_k = 0;

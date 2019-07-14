@@ -1,5 +1,7 @@
 testbench.v
 
+../radio/BTradio.v
+
 ../bt_top.v
 ../bluetoothclk.v
 ../hopctrlwd.v
@@ -44,4 +46,6 @@ testbench.v
 ../arqflowctrl.v
 ../sram256x32_1p.v
 ../swgen.v
+../hopselection.v
+../fkctrl.v
 

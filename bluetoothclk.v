@@ -4,6 +4,8 @@
 //
 module bluetoothclk(
 clk_6M, rstz,
+regi_isMaster,
+regi_pllsetuptime,
 page, mpr,
 regi_esti_offset, regi_time_base_offset, regi_slave_offset,
 regi_m_uncerWinSize, regi_s_uncerWinSize,
@@ -19,11 +21,14 @@ m_half_tslot_p, s_half_tslot_p,
 m_conns_uncerWindow, m_page_uncerWindow, spr_correWin, 
 s_conns_uncerWindow,
 regi_fhsslave_offset,
-m_page_uncerWindow_endp
+m_page_uncerWindow_endp,
+fkset_p
 
 );
 
 input clk_6M, rstz;
+input regi_isMaster;
+input [9:0] regi_pllsetuptime;
 input page, mpr;
 input [27:0] regi_esti_offset, regi_time_base_offset, regi_slave_offset;
 input [8:0] regi_m_uncerWinSize;
@@ -41,6 +46,7 @@ output m_conns_uncerWindow, m_page_uncerWindow, spr_correWin;
 output s_conns_uncerWindow;
 output [27:2] regi_fhsslave_offset;
 output m_page_uncerWindow_endp;
+output fkset_p;
 
 wire [27:0] CLKR_master, CLKR_slave;
 wire [9:0] m_counter_1us, s_counter_1us;
@@ -109,7 +115,7 @@ begin
   if (!rstz)
      regi_fhsslave_offset <= 0;
   else if (pssyncCLK_p)  
-     regi_fhsslave_offset <= fhs_CLK[27:2]-CLKN_slave[27:2]+1'b1;
+     regi_fhsslave_offset <= fhs_CLK[27:2]-CLKN_slave[27:2]; //+1'b1;
 end
 
 assign CLKR_slave = s_BTCLK;
@@ -129,19 +135,19 @@ begin
   if (!rstz)
      m_page_uncerWindow <= 0;
 //first ID
-  else if (m_counter_1us == 10'd615 && (!CLKE_master[1]) & (page|mpr))   
+  else if (m_counter_1us == 10'd615 && (!CLKE_master[1]) & (page|mpr) & p_1us)   
      m_page_uncerWindow <= 1'b1;
-  else if (m_counter_1us == 10'd78 && CLKE_master[1] & (page|mpr) )
+  else if (m_counter_1us == 10'd78 && CLKE_master[1] & (page|mpr) & p_1us)
      m_page_uncerWindow <= 1'b0;
 //second ID
-  else if (m_counter_1us == 10'd302 && CLKE_master[1] & page)   
+  else if (m_counter_1us == 10'd302 && CLKE_master[1] & page & p_1us)   
      m_page_uncerWindow <= 1'b1;
-  else if (m_counter_1us == 10'd390 && CLKE_master[1] & page)
+  else if (m_counter_1us == 10'd390 && CLKE_master[1] & page & p_1us)
      m_page_uncerWindow <= 1'b0;
 end
 
-assign m_page_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKE_master[1] & (page|mpr) ) |
-                                 (m_counter_1us == 10'd390 && CLKE_master[1] & page) ;
+assign m_page_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKE_master[1] & (page|mpr) & p_1us) |
+                                 (m_counter_1us == 10'd390 && CLKE_master[1] & page & p_1us) ;
 
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -149,9 +155,9 @@ begin
      m_conns_uncerWindow <= 0;
   else if (regi_m_uncerWinSize > 10'd312 )
      m_conns_uncerWindow <= 1'b1;     
-  else if (m_counter_1us == (10'd625 - regi_m_uncerWinSize) && (!CLK_master[1]) )   
+  else if (m_counter_1us == (10'd625 - regi_m_uncerWinSize) && (!CLK_master[1]) & p_1us)   
      m_conns_uncerWindow <= 1'b1;
-  else if (m_counter_1us == (10'd68+regi_m_uncerWinSize) && CLK_master[1])
+  else if (m_counter_1us == (10'd68+regi_m_uncerWinSize) && CLK_master[1] & p_1us)
      m_conns_uncerWindow <= 1'b0;
 end
 
@@ -162,9 +168,9 @@ begin
      s_conns_uncerWindow <= 0;
   else if (regi_s_uncerWinSize > 10'd312 )
      s_conns_uncerWindow <= 1'b1;     
-  else if (s_counter_1us == (10'd625 - regi_s_uncerWinSize) && (CLK_slave[1]) )   
+  else if (s_counter_1us == (10'd625 - regi_s_uncerWinSize) && (CLK_slave[1]) & p_1us)   
      s_conns_uncerWindow <= 1'b1;
-  else if (s_counter_1us == (10'd68+regi_s_uncerWinSize) && (!CLK_slave[1]))
+  else if (s_counter_1us == (10'd68+regi_s_uncerWinSize) && (!CLK_slave[1]) & p_1us)
      s_conns_uncerWindow <= 1'b0;
 end
 
@@ -175,10 +181,16 @@ begin
      spr_correWin <= 0;
   else if (regi_s_uncerWinSize > 10'd312 )
      spr_correWin <= 1'b1;     
-  else if (s_counter_1us == (10'd625 - regi_s_uncerWinSize) && (CLKN_slave[1]) )   
+  else if (s_counter_1us == (10'd625 - regi_s_uncerWinSize) && (CLKN_slave[1]) & p_1us)   
      spr_correWin <= 1'b1;
-  else if (s_counter_1us == (10'd68+regi_s_uncerWinSize) && (!CLKN_slave[1]))
+  else if (s_counter_1us == (10'd68+regi_s_uncerWinSize) && (!CLKN_slave[1]) & p_1us)
      spr_correWin <= 1'b0;
 end
+
+wire [9:0] counter_1us = regi_isMaster ? m_counter_1us : s_counter_1us;
+wire [9:0] comp1 = 10'd312-regi_pllsetuptime;
+wire [9:0] comp2 = 10'd624-regi_pllsetuptime;
+
+assign fkset_p = ((counter_1us == comp1) | (counter_1us == comp2)) & p_1us;
 
 endmodule

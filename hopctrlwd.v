@@ -5,6 +5,7 @@
 
 module hopctrlwd(
 clk_6M, rstz, p_033us,
+counter_clkN1, counter_clkE1,
 psrxfhs_succ_p,
 psrxfhs,
 pstxid,
@@ -32,6 +33,8 @@ E, F, Fprime
 );
 
 input clk_6M, rstz, p_033us;
+input [5:0] counter_clkN1;
+input [4:0] counter_clkE1;
 input psrxfhs_succ_p;
 input psrxfhs;
 input pstxid;
@@ -91,41 +94,41 @@ begin
 end
 //
 
-reg [5:0] counter_clkN1;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-    begin
-     counter_clkN1 <= 0;
-    end 
-  else if (!spr)  //slave page response
-    begin
-     counter_clkN1 <= 5'h1;
-    end 
-  else if (psrxfhs_succ_p)
-     counter_clkN1 <= {counter_clkN1[5:1],1'b0};
-  else if (ps_N_incr_p)
-    begin
-     counter_clkN1 <= counter_clkN1+1'b1;
-    end 
-end
+/////////reg [5:0] counter_clkN1;
+/////////always @(posedge clk_6M or negedge rstz)
+/////////begin
+/////////  if (!rstz)
+/////////    begin
+/////////     counter_clkN1 <= 0;
+/////////    end 
+/////////  else if (!spr)  //slave page response
+/////////    begin
+/////////     counter_clkN1 <= 5'h1;
+/////////    end 
+/////////  else if (psrxfhs_succ_p)
+/////////     counter_clkN1 <= {counter_clkN1[5:1],1'b0};
+/////////  else if (ps_N_incr_p)
+/////////    begin
+/////////     counter_clkN1 <= counter_clkN1+1'b1;
+/////////    end 
+/////////end
 
-reg [4:0] counter_clkE1;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-    begin
-     counter_clkE1 <= 0;
-    end 
-  else if (!mpr)  //master page response
-    begin
-     counter_clkE1 <= 5'd1;
-    end 
-  else if (CLKE[1] & m_tslot_p)
-    begin
-     counter_clkE1 <= counter_clkE1+1'b1;
-    end 
-end
+////////reg [4:0] counter_clkE1;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////    begin
+////////     counter_clkE1 <= 0;
+////////    end 
+////////  else if (!mpr)  //master page response
+////////    begin
+////////     counter_clkE1 <= 5'd1;
+////////    end 
+////////  else if (CLKE[1] & m_tslot_p)
+////////    begin
+////////     counter_clkE1 <= counter_clkE1+1'b1;
+////////    end 
+////////end
 
 //
 //assign k_nudge = during_first_2Npage ? 2'd0  : 2'd2;

@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+s_half_tslot_p,
 regi_LMPcmdfg,
 regi_pagetruncated,
 regi_InquiryEnable_oneshot,  regi_PageEnable_oneshot, 
@@ -63,11 +64,15 @@ psrxfhs_succ_p,
 PageScanWindow_endp,
 InquiryScanWindow_endp,
 correWindow,
-corre_nottrg_p
+corre_nottrg_p,
+counter_clkN1, counter_clkE1,
+psackfhs, pagetmp, pagerxackfhs,
+corre_threshold
 
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input s_half_tslot_p;
 input regi_LMPcmdfg;
 input regi_pagetruncated;
 input regi_InquiryEnable_oneshot,  regi_PageEnable_oneshot;
@@ -127,6 +132,11 @@ output PageScanWindow_endp;
 output InquiryScanWindow_endp;
 output correWindow;
 output corre_nottrg_p;
+output [5:0] counter_clkN1;
+output [4:0] counter_clkE1;
+output psackfhs, pagetmp, pagerxackfhs ;
+output corre_threshold;
+
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -459,6 +469,43 @@ begin
      counter_isFHS <= counter_isFHS+1'b1;
     end 
 end
+
+reg [5:0] counter_clkN1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     counter_clkN1 <= 0;
+    end 
+  else if (!spr)  //slave page response
+    begin
+     counter_clkN1 <= 6'h1;
+    end 
+  else if (psrxfhs_succ_p)
+     counter_clkN1 <= {counter_clkN1[5:1],1'b0};
+  else if (ps_N_incr_p)
+    begin
+     counter_clkN1 <= counter_clkN1+1'b1;
+    end 
+end
+
+reg [4:0] counter_clkE1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     counter_clkE1 <= 0;
+    end 
+  else if (!mpr)  //master page response
+    begin
+     counter_clkE1 <= 5'd1;
+    end 
+  else if (CLKE[1] & m_tslot_p)
+    begin
+     counter_clkE1 <= counter_clkE1+1'b1;
+    end 
+end
+
 
 wire corre_trgp;
 assign ps_corre_sync_p = corre_trgp & (ps|spr);
@@ -798,7 +845,11 @@ assign spr = (cs==PageSlaveResp_txid_STATE) | (cs==PageSlaveResp_rxfhs_STATE) | 
 
 assign ir = (cs==InquiryScantxFHS_STATE) | (cs==InquiryScantxExtIRP_STATE) | (cs==Inquiryrsp_STATE) | (cs==InquiryEIR_STATE);
 
+assign pagetmp = (cs==Pagetmp_STATE);
+
 assign pagetxfhs = (cs==PageMasterResp_txfhs_STATE);
+
+assign pagerxackfhs = (cs==PageMasterResp_rxackfhs_STATE);
 
 assign istxfhs = (cs==InquiryScantxFHS_STATE);
 
@@ -809,11 +860,13 @@ assign conns = (cs==CONNECTIONActive_STATE) | connsnewslave | connsnewmaster;
 
 assign pstxid = (cs==PageSlaveResp_txid_STATE);
 
+assign psackfhs = (cs==PageSlaveResp_ackfhs_STATE);
+
 assign psrxfhs = (cs==PageSlaveResp_rxfhs_STATE) | (cs==PageSlaveResp_rxfhsdone_STATE);
 
 assign inquiryrxfhs = (cs==Inquiryrsp_STATE);
 
-assign pssyncCLK_p = (cs==PageSlaveResp_ackfhs_STATE) & s_tslot_p;
+assign pssyncCLK_p = (cs==PageSlaveResp_ackfhs_STATE) & s_half_tslot_p;//s_tslot_p;
 
 assign psrxfhs_succ_p = (cs==PageSlaveResp_rxfhs_STATE) & corre_trgp;
 

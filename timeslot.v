@@ -38,7 +38,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      BTCLK <= 0;
-  else if (pssyncCLK_p | corre_sync_p)
+  else if (pssyncCLK_p)
+     BTCLK <= {BTCLK[27:2], 2'b11}; //1'b0, 1'b0};
+  else if (corre_sync_p)
      BTCLK <= {BTCLK[27:2], 1'b0, 1'b0};
   else if (half_tslot_p || tslot_p)
      BTCLK <= BTCLK + 1'b1;

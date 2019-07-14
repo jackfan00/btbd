@@ -42,6 +42,7 @@ wire [6:0] m_fk, s_fk;
 bt_top bt_top_m(
 .clk_6M                      (m_clk_6M               ), 
 .rstz                        (m_rstz                 ),
+.regi_pllsetuptime           (10'd150                ), // 150us
 .regi_chgbufcmd_p            (),
 .txbsmacl_addr               (), //o_adr), 
 .txbsmsco_addr               (),
@@ -137,10 +138,34 @@ bt_top bt_top_m(
 .regi_dec_flow               (m_regi_dec_flow          ), 
 .regi_dec_arqn               (m_regi_dec_arqn          ), 
 .regi_SEQN_old               (m_regi_SEQN_old          ),
-.regi_dec_hecgood            (m_regi_dec_hecgood       )
-
+.regi_dec_hecgood            (m_regi_dec_hecgood       ),
+.txbit_period                (m_txbit_period             ), 
+.txbit_period_endp           (m_txbit_period_endp        ),
+.rxbit_period                (m_rxbit_period             ), 
+.rxbit_period_endp           (m_rxbit_period_endp        )
 
 );
+wire m_loadfreq_p = (m_txbit_period_endp & m_txbit_period) |
+                  (m_rxbit_period_endp & m_rxbit_period) ;
+
+BTradio m_BTradio(
+.clk_6M     (m_clk_6M     ), 
+.rstz       (m_rstz       ),
+.txbitin    (m_txbit    ), 
+.rxbitin    (m_rxbit    ),
+.txen       (m_txbit_period       ), 
+.rxen       (m_rxbit_period       ),
+.k          (m_fk          ), 
+.rxk        (s_fk        ),
+.loadfreq_p (m_loadfreq_p ),
+//         (//         )
+.txbitout   (   ), 
+.rxbitout   (   ),
+.stable_k   (   )
+
+);
+
+
 wire [27:2] regi_fhsslave_offset;
 wire [33:0] fhs_Pbits;
 wire [23:0] fhs_LAP;
@@ -149,6 +174,7 @@ wire [2:0] fhs_LT_ADDR;
 bt_top bt_top_s(
 .clk_6M                      (s_clk_6M               ), 
 .rstz                        (s_rstz                 ),
+.regi_pllsetuptime           (10'd150                ), // 150us
 .regi_chgbufcmd_p            (),
 .txbsmacl_addr               (), 
 .txbsmsco_addr               (),
@@ -247,10 +273,33 @@ bt_top bt_top_s(
 .regi_dec_flow               (s_regi_dec_flow          ), 
 .regi_dec_arqn               (s_regi_dec_arqn          ), 
 .regi_SEQN_old               (s_regi_SEQN_old          ),
-.regi_dec_hecgood            (s_regi_dec_hecgood       )
+.regi_dec_hecgood            (s_regi_dec_hecgood       ),
+.txbit_period                (s_txbit_period             ), 
+.txbit_period_endp           (s_txbit_period_endp        ),
+.rxbit_period                (s_rxbit_period             ), 
+.rxbit_period_endp           (s_rxbit_period_endp        )
 
 );
 
+wire s_loadfreq_p = (s_txbit_period_endp & s_txbit_period) |
+                  (s_rxbit_period_endp & s_rxbit_period) ;
+
+BTradio s_BTradio(
+.clk_6M     (s_clk_6M     ), 
+.rstz       (s_rstz       ),
+.txbitin    (s_txbit    ), 
+.rxbitin    (s_rxbit    ),
+.txen       (s_txbit_period       ), 
+.rxen       (s_rxbit_period       ),
+.k          (s_fk          ), 
+.rxk        (m_fk        ),
+.loadfreq_p (s_loadfreq_p ),
+//         (//         )
+.txbitout   (   ), 
+.rxbitout   (   ),
+.stable_k   (   )
+
+);
 
 assign m_rxbit = m_fk==s_fk ? s_txbit : 1'bx;
 assign s_rxbit = m_fk==s_fk ? m_txbit : 1'bx;
