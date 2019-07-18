@@ -67,7 +67,9 @@ regi_dec_lt_addr,
 regi_dec_flow, regi_dec_arqn, regi_SEQN_old,
 regi_dec_hecgood,
 txbit_period, txbit_period_endp,
-rxbit_period, rxbit_period_endp
+rxbit_period, rxbit_period_endp,
+nxtfk,
+fk_chg_p, fk_chg_p_ff
 
 );
 
@@ -143,6 +145,8 @@ output [7:0] regi_dec_flow, regi_dec_arqn, regi_SEQN_old;
 output regi_dec_hecgood;
 output txbit_period, txbit_period_endp;
 output rxbit_period, rxbit_period_endp;
+output [6:0] nxtfk;
+output fk_chg_p, fk_chg_p_ff;
 
 
 wire rxispoll;
@@ -248,10 +252,13 @@ wire [27:0] nxtCLKE = CLKE + 1'b1;
 wire [5:0] nxtcounter_clkN1 = counter_clkN1 + 1'b1;
 wire [4:0] nxtcounter_clkE1 = counter_clkE1 + 1'b1;
 wire [6:0] nxtfk;
+wire scancase_fk_chg_p;
+
 hopselection hopselection_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
+.scancase_fk_chg_p    (scancase_fk_chg_p    ),
 .m_half_tslot_p       (m_half_tslot_p       ),
 .connsnewslave        (connsnewslave        ),
 .connsnewmaster       (connsnewmaster       ),
@@ -297,7 +304,10 @@ hopselection hopselection_u(
 .BD_ADDR              (hop_BD_ADDR          ),
 .counter_isFHS        (counter_isFHS        ),
 //
-.fk                   (nxtfk                     )
+.fk                   (nxtfk                ),
+.fk_chg_p             (fk_chg_p             ),
+.fk_chg_p_ff          (fk_chg_p_ff          ),
+.fk_pstxid            (fk_pstxid            )
 );
 
 
@@ -377,6 +387,9 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.rxisfhs                     (rxisfhs                     ), 
+.dec_crcgood             (dec_crcgood             ),
+.dec_hecgood                 (regi_dec_hecgood            ), 
 .s_half_tslot_p              (s_half_tslot_p              ),
 .s_tslot_p                   (s_tslot_p                   ),
 .regi_LMPcmdfg               (regi_LMPcmdfg               ),
@@ -483,7 +496,8 @@ linkctrler linkctrler_u(
 .psackfhs                  (psackfhs                  ), 
 .pagetmp                   (pagetmp                   ), 
 .pagerxackfhs              (pagerxackfhs              ),
-.corre_threshold           (corre_threshold           )
+.corre_threshold           (corre_threshold           ),
+.scancase_fk_chg_p         (scancase_fk_chg_p         )
 
 );
 
@@ -531,6 +545,7 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.fk_pstxid              (fk_pstxid              ),
 .corre_nottrg_p         (corre_nottrg_p         ),
 .correWindow            (correWindow            ),
 .InquiryScanWindow_endp (InquiryScanWindow_endp ),
@@ -645,7 +660,9 @@ allbitp allbitp_u(
 .txbit_period           (txbit_period           ), 
 .txbit_period_endp      (txbit_period_endp      ),
 .rxbit_period           (rxbit_period           ), 
-.rxbit_period_endp      (rxbit_period_endp      )
+.rxbit_period_endp      (rxbit_period_endp      ),
+.rxisfhs                (rxisfhs                ), 
+.dec_crcgood        (dec_crcgood        )
 
 );
 

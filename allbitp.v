@@ -1,5 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+fk_pstxid,
 corre_nottrg_p,
 correWindow,
 InquiryScanWindow_endp, p_correWin_endp, PageScanWindow_endp,
@@ -71,12 +72,14 @@ dec_lt_addr,
 dec_flow, dec_arqn, SEQN_old,
 dec_hecgood,
 txbit_period, txbit_period_endp,
-rxbit_period, rxbit_period_endp
+rxbit_period, rxbit_period_endp,
+rxisfhs, dec_crcgood
 
 );
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input fk_pstxid;
 input corre_nottrg_p;
 input correWindow;
 input InquiryScanWindow_endp, p_correWin_endp, PageScanWindow_endp;
@@ -149,6 +152,7 @@ output [7:0] dec_flow, dec_arqn, SEQN_old;
 output dec_hecgood;
 output txbit_period, txbit_period_endp;
 output rxbit_period, rxbit_period_endp;
+output rxisfhs, dec_crcgood;
 
 //
 wire py_period, daten, dec_py_period;
@@ -259,7 +263,8 @@ headerbitp headerbitp_u(
 .dec_hecgood            (dec_hecgood            ),
 .dec_seqn               (dec_seqn               ),
 .headpacket_endp        (headpacket_endp        ),
-.hec_endp               (hec_endp               )
+.hec_endp               (hec_endp               ),
+.rxisfhs                (rxisfhs                )
 
 );
 
@@ -414,7 +419,7 @@ begin
      validdatwin <= 1'b0;
 end
 
-assign rxbit_period = page|inquiry|ps|is|mpr ? correWindow : validdatwin  ;
+assign rxbit_period = page|inquiry| (ps & (!fk_pstxid)) |is|mpr ? correWindow : validdatwin  ;
 
 //
 wire [31:0] rxlnctrl_din = rxpydin;

@@ -40,7 +40,8 @@ header_st_p,
 dec_hecgood,
 dec_seqn,
 headpacket_endp,
-hec_endp
+hec_endp,
+rxisfhs
 
 );
 
@@ -87,6 +88,8 @@ output dec_hecgood;
 output dec_seqn;
 output headpacket_endp;
 output hec_endp;
+output rxisfhs;
+
 
 wire headpacket_endp;
 reg header_packet_period;

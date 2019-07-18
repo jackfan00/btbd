@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+rxisfhs, dec_hecgood, dec_crcgood,
 s_half_tslot_p,
 regi_LMPcmdfg,
 regi_pagetruncated,
@@ -67,11 +68,13 @@ correWindow,
 corre_nottrg_p,
 counter_clkN1, counter_clkE1,
 psackfhs, pagetmp, pagerxackfhs,
-corre_threshold
+corre_threshold,
+scancase_fk_chg_p
 
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input rxisfhs, dec_hecgood, dec_crcgood;
 input s_half_tslot_p;
 input regi_LMPcmdfg;
 input regi_pagetruncated;
@@ -136,7 +139,7 @@ output [5:0] counter_clkN1;
 output [4:0] counter_clkE1;
 output psackfhs, pagetmp, pagerxackfhs ;
 output corre_threshold;
-
+output scancase_fk_chg_p;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -311,7 +314,7 @@ begin
       begin        
         if (ps_pagerespTO)
           ns = PageScan1more_STATE;
-        else if (ps_corre_threshold ) //& s_tslot_p) 
+        else if (ps_corre_threshold & rxisfhs & dec_hecgood & dec_crcgood) //& s_tslot_p) 
           ns = PageSlaveResp_rxfhsdone_STATE;
       end  
     PageSlaveResp_rxfhsdone_STATE:   // tmp for transit to PageSlaveResp_ackfhs_STATE
@@ -984,5 +987,19 @@ begin
   else if (ms_tslot_p)
      LMP_c_slot <= 1'b0 ;
 end
+
+//
+wire scancase = ps | is | gips | giis;
+
+reg [1:0] scancase_ff;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     scancase_ff <= 0;
+  else 
+     scancase_ff <= {scancase_ff[0],scancase};
+end
+
+assign scancase_fk_chg_p = scancase_ff[0] & (!scancase_ff[1]);
 
 endmodule

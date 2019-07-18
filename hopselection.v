@@ -1,5 +1,6 @@
 module hopselection(
 clk_6M, rstz, p_033us,
+scancase_fk_chg_p,
 m_half_tslot_p,
 connsnewslave, connsnewmaster,
 txbit_period, rxbit_period,
@@ -23,10 +24,13 @@ prs_clock_frozen, prm_clock_frozen,
 CLK, CLKE, CLKN, BD_ADDR,
 counter_isFHS,
 //
-fk
+fk,
+fk_chg_p, fk_chg_p_ff,
+fk_pstxid
 );
 
 input clk_6M, rstz, p_033us;
+input scancase_fk_chg_p;
 input m_half_tslot_p;
 input connsnewslave, connsnewmaster;
 
@@ -54,7 +58,8 @@ input [27:0] CLK, CLKE, CLKN, BD_ADDR;
 input [4:0] counter_isFHS;
 //
 output [6:0] fk;
-
+output fk_chg_p, fk_chg_p_ff;
+output fk_pstxid;
 
 wire [4:0] Xprm, Xir, Xprs;
 wire [4:0] X;
@@ -146,6 +151,7 @@ hopkernal hopkernal_u(
 fkctrl fkctrl_u(
 .clk_6M         (clk_6M         ), 
 .rstz           (rstz           ),
+.scancase_fk_chg_p(scancase_fk_chg_p),
 .m_half_tslot_p (m_half_tslot_p ),
 .mpr            (mpr            ),
 .m_tslot_p      (m_tslot_p      ),
@@ -175,7 +181,9 @@ fkctrl fkctrl_u(
 .fk_connsnewmaster(fk_connsnewmaster),
 .fk_pagetxfhs    (fk_pagetxfhs    ),
 .fk_pagerxackfhs (fk_pagerxackfhs ),
-.fk_spr          (fk_spr          )
+.fk_spr          (fk_spr          ),
+.fk_chg_p        (fk_chg_p        ),
+.fk_chg_p_ff     (fk_chg_p_ff     )
 
 
 );

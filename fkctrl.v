@@ -4,6 +4,7 @@
 
 module fkctrl(
 clk_6M, rstz,
+scancase_fk_chg_p,
 m_half_tslot_p,
 mpr,
 m_tslot_p,
@@ -22,11 +23,13 @@ fk_psackfhs,
 fk_connsnewslave, fk_connsnewmaster,
 fk_pagetxfhs,
 fk_pagerxackfhs,
-fk_spr
+fk_spr,
+fk_chg_p, fk_chg_p_ff
 
 );
 
 input clk_6M, rstz;
+input scancase_fk_chg_p;
 input m_half_tslot_p;
 input mpr;
 input m_tslot_p;
@@ -46,11 +49,22 @@ output fk_connsnewslave, fk_connsnewmaster;
 output fk_pagetxfhs;
 output fk_pagerxackfhs;
 output fk_spr;
+output fk_chg_p, fk_chg_p_ff;
 
 assign fk_spr = fk_pstxid | fk_psrxfhs | fk_psackfhs;
 
 
-wire fk_chg_p = (!(txbit_period | rxbit_period)) & fkset_p;
+wire fk_chg_p = ((!(txbit_period | rxbit_period)) & fkset_p); // | scancase_fk_chg_p;
+
+reg fk_chg_p_ff;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     fk_chg_p_ff <= 0;
+  else 
+     fk_chg_p_ff <= fk_chg_p | scancase_fk_chg_p;
+end
+
 
 reg fk_pstxid;
 always @(posedge clk_6M or negedge rstz)

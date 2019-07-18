@@ -38,6 +38,7 @@ end
 wire m_txbit, s_txbit;
 wire m_rxbit, s_rxbit;
 wire [6:0] m_fk, s_fk;
+wire [6:0] m_nxtfk, s_nxtfk;
 
 bt_top bt_top_m(
 .clk_6M                      (m_clk_6M               ), 
@@ -142,26 +143,32 @@ bt_top bt_top_m(
 .txbit_period                (m_txbit_period             ), 
 .txbit_period_endp           (m_txbit_period_endp        ),
 .rxbit_period                (m_rxbit_period             ), 
-.rxbit_period_endp           (m_rxbit_period_endp        )
+.rxbit_period_endp           (m_rxbit_period_endp        ),
+.nxtfk                       (m_nxtfk                    ),
+.fk_chg_p                    (m_fk_chg_p                 ),
+.fk_chg_p_ff                 (m_fk_chg_p_ff              )
 
 );
-wire m_loadfreq_p = (m_txbit_period_endp & m_txbit_period) |
-                  (m_rxbit_period_endp & m_rxbit_period) ;
+
+wire m_radio_txbit, s_radio_txbit;
+wire [6:0] m_radio_txfk, s_radio_txfk;
+//wire m_loadfreq_p = (m_txbit_period_endp & m_txbit_period) |
+//                  (m_rxbit_period_endp & m_rxbit_period) ;
 
 BTradio m_BTradio(
 .clk_6M     (m_clk_6M     ), 
 .rstz       (m_rstz       ),
 .txbitin    (m_txbit    ), 
-.rxbitin    (m_rxbit    ),
+.rxbitin    (s_radio_txbit    ),
 .txen       (m_txbit_period       ), 
 .rxen       (m_rxbit_period       ),
-.k          (m_fk          ), 
-.rxk        (s_fk        ),
-.loadfreq_p (m_loadfreq_p ),
+.lc_fk      (m_nxtfk          ), 
+.rxfk       (s_radio_txfk        ),
+.loadfreq_p (m_fk_chg_p_ff ),
 //         (//         )
-.txbitout   (   ), 
-.rxbitout   (   ),
-.stable_k   (   )
+.txbitout   (m_radio_txbit   ), 
+.rxbitout   (m_rxbit   ),
+.txfk       (m_radio_txfk   )
 
 );
 
@@ -277,31 +284,34 @@ bt_top bt_top_s(
 .txbit_period                (s_txbit_period             ), 
 .txbit_period_endp           (s_txbit_period_endp        ),
 .rxbit_period                (s_rxbit_period             ), 
-.rxbit_period_endp           (s_rxbit_period_endp        )
+.rxbit_period_endp           (s_rxbit_period_endp        ),
+.nxtfk                       (s_nxtfk                    ),
+.fk_chg_p                    (s_fk_chg_p                 ),
+.fk_chg_p_ff                 (s_fk_chg_p_ff              )
 
 );
 
-wire s_loadfreq_p = (s_txbit_period_endp & s_txbit_period) |
-                  (s_rxbit_period_endp & s_rxbit_period) ;
+//wire s_loadfreq_p = (s_txbit_period_endp & s_txbit_period) |
+//                  (s_rxbit_period_endp & s_rxbit_period) ;
 
 BTradio s_BTradio(
 .clk_6M     (s_clk_6M     ), 
 .rstz       (s_rstz       ),
 .txbitin    (s_txbit    ), 
-.rxbitin    (s_rxbit    ),
+.rxbitin    (m_radio_txbit    ),
 .txen       (s_txbit_period       ), 
 .rxen       (s_rxbit_period       ),
-.k          (s_fk          ), 
-.rxk        (m_fk        ),
-.loadfreq_p (s_loadfreq_p ),
+.lc_fk      (s_nxtfk          ), 
+.rxfk       (m_radio_txfk        ),
+.loadfreq_p (s_fk_chg_p_ff ),
 //         (//         )
-.txbitout   (   ), 
-.rxbitout   (   ),
-.stable_k   (   )
+.txbitout   (s_radio_txbit   ), 
+.rxbitout   (s_rxbit   ),
+.txfk       (s_radio_txfk   )
 
 );
 
-assign m_rxbit = m_fk==s_fk ? s_txbit : 1'bx;
-assign s_rxbit = m_fk==s_fk ? m_txbit : 1'bx;
+//assign m_rxbit = m_fk==s_fk ? s_txbit : 1'bx;
+//assign s_rxbit = m_fk==s_fk ? m_txbit : 1'bx;
 
 endmodule
