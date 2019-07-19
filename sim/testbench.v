@@ -92,7 +92,7 @@ bt_top bt_top_m(
 .regi_Tisinterval            (16'h1000),   //2.56s), 
 .regi_Tiswindow              (16'h0012),   //11.25ms),
 .regi_correthreshold         (6'd60),   // allow 4 bit error
-.regi_pagetruncated          (1'b0),
+.regi_pagetruncated          (m_regi_pagetruncated),
 .regi_psinterlace            (1'b0), 
 .regi_isinterlace            (1'b0),
 .regi_inquiryDIAC            (1'b0),
@@ -201,7 +201,7 @@ bt_top bt_top_s(
 .regi_LMPcmdfg               (1'b0),
 
 .regi_esti_offset            (28'd0),  //s_regi_esti_offset     ), 
-.regi_time_base_offset       ({15'b0,1'b1,12'b0}),  //s_regi_time_base_offset), 
+.regi_time_base_offset       ({15'b0,s_pscase,12'b0}),  //s_regi_time_base_offset), 
 .regi_slave_offset           ({regi_fhsslave_offset,2'b0}),  //s_regi_slave_offset    ),
 .regi_interlace_offset       (5'd16),
 .regi_page_k_nudge           (5'd0), 

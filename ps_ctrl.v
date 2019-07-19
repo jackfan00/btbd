@@ -38,8 +38,8 @@ begin
      pswindow_counter_tslot <= 0;
   else if (pswindow_counter_tslot==regi_Tpsinterval)
      pswindow_counter_tslot <= 0;
-  else if (pagerespTO)
-     pswindow_counter_tslot <= 0;
+//  else if (pagerespTO)
+//     pswindow_counter_tslot <= 0;
   else if (tslot_p)
      pswindow_counter_tslot <= pswindow_counter_tslot + 1'b1;
 end

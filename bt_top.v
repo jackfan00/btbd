@@ -246,19 +246,23 @@ wire [27:0] CLKE = CLKE_master;
 wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
 
 //
-wire [27:0] nxtCLK = CLK + 1'b1;
-wire [27:0] nxtCLKN = CLKN + 1'b1;
-wire [27:0] nxtCLKE = CLKE + 1'b1;
-wire [5:0] nxtcounter_clkN1 = counter_clkN1 + 1'b1;
-wire [4:0] nxtcounter_clkE1 = counter_clkE1 + 1'b1;
+//wire [27:0] nxtCLK = CLK + 1'b1;
+//wire [27:0] nxtCLKN = CLKN + 1'b1;
+//wire [27:0] nxtCLKE = CLKE + 1'b1;
+//wire [5:0] nxtcounter_clkN1 = counter_clkN1 + 1'b1;
+//wire [4:0] nxtcounter_clkE1 = counter_clkE1 + 1'b1;
 wire [6:0] nxtfk;
-wire scancase_fk_chg_p;
+wire scancase;
+wire fk_page;
+wire ps_pagerespTO;
 
 hopselection hopselection_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
-.scancase_fk_chg_p    (scancase_fk_chg_p    ),
+.ps_pagerespTO        (ps_pagerespTO        ),
+.fk_page              (fk_page              ),
+.scancase             (scancase             ),
 .m_half_tslot_p       (m_half_tslot_p       ),
 .connsnewslave        (connsnewslave        ),
 .connsnewmaster       (connsnewmaster       ),
@@ -315,8 +319,9 @@ hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
+.mpr_Y                (CLKE[1]              ),  // debug
 .counter_clkN1        (counter_clkN1        ),  
-.counter_clkE1        (counter_clkE1        ),       
+.counter_clkE1        ({counter_clkE1[4:0],1'b0}        ),       
 .psrxfhs_succ_p       (psrxfhs_succ_p       ),
 .psrxfhs              (psrxfhs              ),
 .pstxid               (pstxid               ),
@@ -497,7 +502,9 @@ linkctrler linkctrler_u(
 .pagetmp                   (pagetmp                   ), 
 .pagerxackfhs              (pagerxackfhs              ),
 .corre_threshold           (corre_threshold           ),
-.scancase_fk_chg_p         (scancase_fk_chg_p         )
+.scancase                  (scancase                  ),
+.fk_page                   (fk_page                   ),
+.ps_pagerespTO             (ps_pagerespTO             )
 
 );
 
@@ -662,7 +669,7 @@ allbitp allbitp_u(
 .rxbit_period           (rxbit_period           ), 
 .rxbit_period_endp      (rxbit_period_endp      ),
 .rxisfhs                (rxisfhs                ), 
-.dec_crcgood        (dec_crcgood        )
+.dec_crcgood            (dec_crcgood            )
 
 );
 

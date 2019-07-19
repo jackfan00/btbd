@@ -77,6 +77,7 @@ end
 //
 endtask;
 
+reg m_regi_pagetruncated;
 reg [23:0] regi_paged_BD_ADDR_LAP ;
 reg [7:0] regi_paged_BD_ADDR_UAP ;
 reg [7:0] m_regi_my_BD_ADDR_UAP ;
@@ -139,6 +140,7 @@ $fsdbDumpfile("bt.fsdb");
 $fsdbDumpvars;
 // parameter setting
 //for master
+m_regi_pagetruncated = 1'b0;
 regi_paged_BD_ADDR_LAP = 24'h0;
 regi_paged_BD_ADDR_UAP = 8'h47;
 m_regi_my_BD_ADDR_LAP = 24'hffffff;

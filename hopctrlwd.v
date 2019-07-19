@@ -5,6 +5,7 @@
 
 module hopctrlwd(
 clk_6M, rstz, p_033us,
+mpr_Y,
 counter_clkN1, counter_clkE1,
 psrxfhs_succ_p,
 psrxfhs,
@@ -33,8 +34,9 @@ E, F, Fprime
 );
 
 input clk_6M, rstz, p_033us;
+input mpr_Y;
 input [5:0] counter_clkN1;
-input [4:0] counter_clkE1;
+input [5:0] counter_clkE1;
 input psrxfhs_succ_p;
 input psrxfhs;
 input pstxid;
@@ -140,7 +142,7 @@ wire [4:0] Xp = CLKE[16:12] + k_offset + k_nudge + xpt ;  // mod 32
 wire [4:0] Xprs = CLKN_frozen[16:12] + counter_clkN1[5:1];
 
 wire [3:0] xprmt = {CLKE_frozen[4:2],CLKE_frozen[0]} - CLKE_frozen[16:12];
-wire [4:0] Xprm = CLKE_frozen[16:12] + k_offset_frozen + k_nudge_frozen + xprmt + counter_clkE1;
+wire [4:0] Xprm = CLKE_frozen[16:12] + k_offset_frozen + k_nudge_frozen + xprmt + counter_clkE1[5:1];
 
 wire [3:0] xit = {CLKN[4:2],CLKN[0]} - CLKN[16:12];
 wire [4:0] Xi = CLKN[16:12] + k_offset + k_nudge + xit ;
@@ -163,16 +165,18 @@ assign X = ({5{ps}}      & CLKN[16:12]) |    //page scan
 
 wire spr_Y = pstxid | (psrxfhs ? 1'b0 : counter_clkN1[0]);
 
+//wire mpr_Y = counter_clkE1[0];
+
 assign Y1 =({1{page}}    & CLKE[1]) |
            ({1{inquiry}} & CLKN[1]) |
-           ({1{mpr}}     & CLKE[1]) |   //master page respone
+           ({1{mpr}}     & mpr_Y  ) |  //CLKE[1]) |   //master page respone
            ({1{spr}}     & spr_Y  ) |  //CLKN[1]) |   //slave page response
            ({1{ir}}      & 1'b1) |    //inquiry response
            ({1{conns}}   & (CLK[1]&(!regi_AFH_mode)) );     //connection state
 
 assign Y2 =({6{page}}    & {CLKE[1],5'b0}) |
            ({6{inquiry}} & {CLKN[1],5'b0}) |
-           ({6{mpr}}     & {CLKE[1],5'b0}) |   //master page respone
+           ({6{mpr}}     & {mpr_Y  ,5'b0}) |  //{CLKE[1],5'b0}) |   //master page respone
            ({6{spr}}     & {spr_Y  ,5'b0}) |  //{CLKN[1],5'b0}) |   //slave page response
            ({6{ir}}      & {1'b1   ,5'b0}) |    //inquiry response
            ({6{conns}}   & {(CLK[1]&(!regi_AFH_mode)) ,5'b0});     //connection state

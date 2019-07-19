@@ -4,7 +4,11 @@
 
 module fkctrl(
 clk_6M, rstz,
-scancase_fk_chg_p,
+psrxfhs_succ_p,
+fk_page,
+page,
+ps_pagerespTO,
+scancase,
 m_half_tslot_p,
 mpr,
 m_tslot_p,
@@ -23,13 +27,17 @@ fk_psackfhs,
 fk_connsnewslave, fk_connsnewmaster,
 fk_pagetxfhs,
 fk_pagerxackfhs,
-fk_spr,
+fk_spr, fk_mpr,
 fk_chg_p, fk_chg_p_ff
 
 );
 
 input clk_6M, rstz;
-input scancase_fk_chg_p;
+input psrxfhs_succ_p;
+input fk_page;
+input page;
+input ps_pagerespTO;
+input scancase;
 input m_half_tslot_p;
 input mpr;
 input m_tslot_p;
@@ -41,20 +49,26 @@ input ps, pstxid, psrxfhs, psackfhs, pagetxfhs, pagetmp, pagerxackfhs ;
 input corre_threshold;
 //
 output [5:0] counter_clkN1;
-output [4:0] counter_clkE1;
+output [5:0] counter_clkE1;
 output fk_pstxid;
 output fk_psrxfhs;
 output fk_psackfhs;
 output fk_connsnewslave, fk_connsnewmaster;
 output fk_pagetxfhs;
 output fk_pagerxackfhs;
-output fk_spr;
+output fk_spr, fk_mpr;
 output fk_chg_p, fk_chg_p_ff;
 
 assign fk_spr = fk_pstxid | fk_psrxfhs | fk_psackfhs;
 
+assign fk_mpr = fk_pagetxfhs | fk_pagerxackfhs;
+
 
 wire fk_chg_p = ((!(txbit_period | rxbit_period)) & fkset_p); // | scancase_fk_chg_p;
+
+wire psrxfhs_fk_chg_p = fk_psrxfhs & fkset_p;
+
+wire scancase_fk_chg_p = (scancase) & fkset_p;
 
 reg fk_chg_p_ff;
 always @(posedge clk_6M or negedge rstz)
@@ -62,7 +76,7 @@ begin
   if (!rstz)
      fk_chg_p_ff <= 0;
   else 
-     fk_chg_p_ff <= fk_chg_p | scancase_fk_chg_p;
+     fk_chg_p_ff <= fk_chg_p | scancase_fk_chg_p | psrxfhs_fk_chg_p;
 end
 
 
@@ -84,7 +98,7 @@ begin
      fk_psrxfhs <= 0;
   else if (pstxid & fk_chg_p)
      fk_psrxfhs <= 1'b1;
-  else if (psrxfhs & corre_threshold & fk_chg_p)
+  else if ((psrxfhs & corre_threshold & fk_chg_p) | ps_pagerespTO)
      fk_psrxfhs <= 1'b0;
 end
 
@@ -118,7 +132,7 @@ begin
      fk_pagetxfhs <= 0;
   else if ( (pagetmp & fk_chg_p) | (pagerxackfhs & !corre_threshold & fk_chg_p) )
      fk_pagetxfhs <= 1'b1;
-  else if (pagetxfhs & fk_chg_p)
+  else if ((pagetxfhs & fk_chg_p) | fk_page)
      fk_pagetxfhs <= 1'b0;
 end
 
@@ -138,14 +152,14 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      fk_connsnewmaster <= 0;
-  else if (pagerxackfhs & m_half_tslot_p)  // advance to half tslot
+  else if (pagerxackfhs & corre_threshold & m_half_tslot_p)  // advance to half tslot
      fk_connsnewmaster <= 1'b1;
-  else if (connsnewmaster & fk_chg_p & CLK[0])  // conns use CLK
+  else if ((connsnewmaster & fk_chg_p & CLK[0]) | page ) // conns use CLK
      fk_connsnewmaster <= 1'b0;
 end
 //
 //
-wire ps_N_incr_p = (pstxid & fk_chg_p) | ((psrxfhs|psackfhs) & fk_chg_p & CLKN[0]);
+wire ps_N_incr_p = (pstxid & fk_chg_p) | ((psrxfhs|psackfhs) & fkset_p & CLKN[0]);
 
 reg [5:0] counter_clkN1;
 always @(posedge clk_6M or negedge rstz)
@@ -158,26 +172,28 @@ begin
     begin
      counter_clkN1 <= 6'h1;
     end 
-//  else if (psrxfhs_succ_p)
-//     counter_clkN1 <= {counter_clkN1[5:1],1'b0};
+  else if (psrxfhs_succ_p)
+     counter_clkN1 <= {counter_clkN1[5:1],1'b0};
   else if (ps_N_incr_p)
     begin
      counter_clkN1 <= counter_clkN1+1'b1;
     end 
 end
 
-reg [4:0] counter_clkE1;
+wire page_N_incr_p = fk_chg_p & CLKE[0] & (pagetxfhs | pagerxackfhs);
+
+reg [5:0] counter_clkE1;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
     begin
      counter_clkE1 <= 0;
     end 
-  else if (!mpr)  //master page response
+  else if (!fk_mpr)  //master page response
     begin
-     counter_clkE1 <= 5'd0;
+     counter_clkE1 <= 6'd0;
     end 
-  else if (CLKE[1] & m_tslot_p)
+  else if (page_N_incr_p) //(CLKE[1] & m_tslot_p)
     begin
      counter_clkE1 <= counter_clkE1+1'b1;
     end 

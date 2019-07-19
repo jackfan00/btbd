@@ -1,6 +1,8 @@
 module hopselection(
 clk_6M, rstz, p_033us,
-scancase_fk_chg_p,
+ps_pagerespTO,
+fk_page,
+scancase,
 m_half_tslot_p,
 connsnewslave, connsnewmaster,
 txbit_period, rxbit_period,
@@ -30,7 +32,9 @@ fk_pstxid
 );
 
 input clk_6M, rstz, p_033us;
-input scancase_fk_chg_p;
+input ps_pagerespTO;
+input fk_page;
+input scancase;
 input m_half_tslot_p;
 input connsnewslave, connsnewmaster;
 
@@ -40,7 +44,7 @@ input psackfhs, pagetxfhs, pagetmp, pagerxackfhs ;
 input corre_threshold;
 
 wire [5:0] counter_clkN1;
-wire [4:0] counter_clkE1;
+wire [5:0] counter_clkE1;
 input psrxfhs_succ_p;
 input psrxfhs;
 input pstxid;
@@ -80,6 +84,7 @@ hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
+.mpr_Y                (counter_clkE1[0]     ),
 .counter_clkN1        (counter_clkN1        ),  
 .counter_clkE1        (counter_clkE1        ),       
 .psrxfhs_succ_p       (psrxfhs_succ_p       ),
@@ -98,9 +103,9 @@ hopctrlwd hopctrlwd_u(
 .gips                 (gips                 ), 
 .is                   (is                   ), 
 .giis                 (giis                 ), 
-.page                 (page                 ), 
+.page                 (fk_page                 ), 
 .inquiry              (inquiry              ), 
-.mpr                  (mpr                  ), 
+.mpr                  (fk_mpr                  ), 
 .spr                  (fk_spr                  ), 
 .ir                   (ir                   ), 
 .conns                (fk_conns                ),
@@ -151,7 +156,11 @@ hopkernal hopkernal_u(
 fkctrl fkctrl_u(
 .clk_6M         (clk_6M         ), 
 .rstz           (rstz           ),
-.scancase_fk_chg_p(scancase_fk_chg_p),
+.psrxfhs_succ_p (psrxfhs_succ_p ),
+.fk_page        (fk_page        ),
+.page           (page           ),
+.ps_pagerespTO  (ps_pagerespTO  ),
+.scancase       (scancase       ),
 .m_half_tslot_p (m_half_tslot_p ),
 .mpr            (mpr            ),
 .m_tslot_p      (m_tslot_p      ),
@@ -182,6 +191,7 @@ fkctrl fkctrl_u(
 .fk_pagetxfhs    (fk_pagetxfhs    ),
 .fk_pagerxackfhs (fk_pagerxackfhs ),
 .fk_spr          (fk_spr          ),
+.fk_mpr          (fk_mpr          ),
 .fk_chg_p        (fk_chg_p        ),
 .fk_chg_p_ff     (fk_chg_p_ff     )
 

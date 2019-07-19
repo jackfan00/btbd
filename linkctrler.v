@@ -69,7 +69,9 @@ corre_nottrg_p,
 counter_clkN1, counter_clkE1,
 psackfhs, pagetmp, pagerxackfhs,
 corre_threshold,
-scancase_fk_chg_p
+scancase,
+fk_page,
+ps_pagerespTO
 
 );
 
@@ -139,7 +141,9 @@ output [5:0] counter_clkN1;
 output [4:0] counter_clkE1;
 output psackfhs, pagetmp, pagerxackfhs ;
 output corre_threshold;
-output scancase_fk_chg_p;
+output scancase;
+output fk_page;
+output ps_pagerespTO;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -830,6 +834,8 @@ end
 assign rx_trailer_st_p = raw_rx_trailer_st_p & (spr | conns | inquiry);
 //
 
+assign fk_page = (cs == Page_STATE);
+
 assign page = (cs == Page_STATE) | (cs == Pagetmp_STATE) ;
 
 assign ps =  (cs==PageScan_STATE) | (cs==PageScan1more_STATE);
@@ -989,7 +995,7 @@ begin
 end
 
 //
-wire scancase = ps | is | gips | giis;
+assign scancase = ps | is | gips | giis;
 
 reg [1:0] scancase_ff;
 always @(posedge clk_6M or negedge rstz)
@@ -1000,6 +1006,6 @@ begin
      scancase_ff <= {scancase_ff[0],scancase};
 end
 
-assign scancase_fk_chg_p = scancase_ff[0] & (!scancase_ff[1]);
+wire scancase_fk_chg_p = scancase_ff[0] & (!scancase_ff[1]);
 
 endmodule
