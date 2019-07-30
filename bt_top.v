@@ -69,7 +69,8 @@ regi_dec_hecgood,
 txbit_period, txbit_period_endp,
 rxbit_period, rxbit_period_endp,
 nxtfk,
-fk_chg_p, fk_chg_p_ff
+fk_chg_p, fk_chg_p_ff,
+regi_s_slot_offset
 
 );
 
@@ -147,7 +148,7 @@ output txbit_period, txbit_period_endp;
 output rxbit_period, rxbit_period_endp;
 output [6:0] nxtfk;
 output fk_chg_p, fk_chg_p_ff;
-
+output [9:0] regi_s_slot_offset;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -236,7 +237,8 @@ bluetoothclk bluetoothclk_u(
 .s_conns_uncerWindow     (s_conns_uncerWindow     ),
 .regi_fhsslave_offset    (regi_fhsslave_offset    ),
 .m_page_uncerWindow_endp (m_page_uncerWindow_endp ),
-.fkset_p                 (fkset_p                 )
+.fkset_p                 (fkset_p                 ),
+.regi_s_slot_offset      (regi_s_slot_offset      )
 
 );
 
@@ -504,7 +506,8 @@ linkctrler linkctrler_u(
 .corre_threshold           (corre_threshold           ),
 .scancase                  (scancase                  ),
 .fk_page                   (fk_page                   ),
-.ps_pagerespTO             (ps_pagerespTO             )
+.ps_pagerespTO             (ps_pagerespTO             ),
+.regi_txdatready           (regi_txdatready           )
 
 );
 
@@ -552,6 +555,7 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.regi_txdatready        (regi_txdatready        ),
 .fk_pstxid              (fk_pstxid              ),
 .corre_nottrg_p         (corre_nottrg_p         ),
 .correWindow            (correWindow            ),

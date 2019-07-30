@@ -1,5 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+regi_txdatready,
 fk_pstxid,
 corre_nottrg_p,
 correWindow,
@@ -79,6 +80,7 @@ rxisfhs, dec_crcgood
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input regi_txdatready;
 input fk_pstxid;
 input corre_nottrg_p;
 input correWindow;
@@ -435,6 +437,9 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.regi_txdatready (regi_txdatready ),
+.hec_endp        (hec_endp        ), 
+.tx_packet_st_p  (tx_packet_st_p  ),
 .pktype_data     (pktype_data     ),
 .regi_chgbufcmd_p(regi_chgbufcmd_p),
 .LMP_c_slot      (LMP_c_slot      ),

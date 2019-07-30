@@ -22,7 +22,8 @@ m_conns_uncerWindow, m_page_uncerWindow, spr_correWin,
 s_conns_uncerWindow,
 regi_fhsslave_offset,
 m_page_uncerWindow_endp,
-fkset_p
+fkset_p,
+regi_s_slot_offset
 
 );
 
@@ -47,6 +48,7 @@ output s_conns_uncerWindow;
 output [27:2] regi_fhsslave_offset;
 output m_page_uncerWindow_endp;
 output fkset_p;
+output [9:0] regi_s_slot_offset;
 
 wire [27:0] CLKR_master, CLKR_slave;
 wire [9:0] m_counter_1us, s_counter_1us;
@@ -81,7 +83,7 @@ timeslot timeslot_m(
 .BTCLK                (m_BTCLK              ),
 .tslot_p              (m_tslot_p            ), 
 .half_tslot_p         (m_half_tslot_p       ),
-.counter_1us          (m_counter_1us        )
+.offcounter_1us          (m_counter_1us        )
 );
 
 assign CLKR_master = m_BTCLK;
@@ -106,7 +108,8 @@ timeslot timeslot_s(
 .BTCLK                (s_BTCLK              ),
 .tslot_p              (s_tslot_p            ), 
 .half_tslot_p         (s_half_tslot_p       ),
-.counter_1us          (s_counter_1us        )
+.offcounter_1us          (s_counter_1us        ),
+.regi_slot_offset     (regi_s_slot_offset   )
 
 );
 reg [27:2] regi_fhsslave_offset;

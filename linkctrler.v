@@ -71,7 +71,8 @@ psackfhs, pagetmp, pagerxackfhs,
 corre_threshold,
 scancase,
 fk_page,
-ps_pagerespTO
+ps_pagerespTO,
+regi_txdatready
 
 );
 
@@ -144,6 +145,7 @@ output corre_threshold;
 output scancase;
 output fk_page;
 output ps_pagerespTO;
+output regi_txdatready;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -965,7 +967,21 @@ begin
      s_conns_1stslot <= 1'b0;
 end
 
-assign conns_tx_pac_st_p = regi_isMaster ? (m_txcmd & m_tslot_p & CLK[1])                   | m_scotxcmd_p : 
+// mcu set, clear automatically when txacl
+wire regw_txdatready_p;
+wire m_acltx_p;
+reg regi_txdatready;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     regi_txdatready <= 0;
+  else if (regw_txdatready_p)
+     regi_txdatready <= 1'b1;
+  else if (m_acltx_p)
+     regi_txdatready <= 1'b0;
+end
+assign m_acltx_p = regi_txdatready & m_tslot_p & CLK[1];
+assign conns_tx_pac_st_p = regi_isMaster ? (m_txcmd & m_tslot_p & CLK[1])    | m_acltx_p    | m_scotxcmd_p : 
                                            (s_txcmd & s_tslot_p & (!CLK[1])) | s_acltxcmd_p | s_scotxcmd_p ;
  
 assign conns_1stslot = conns & (regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
