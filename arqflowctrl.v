@@ -3,6 +3,8 @@
 //
 module arqflowctrl(
 clk_6M, rstz,
+regi_txdatready,
+ms_TXslot_endp, ms_RXslot_endp,
 regi_chgbufcmd_p,
 regi_isMaster,
 dec_py_endp,
@@ -10,7 +12,7 @@ esco_LT_ADDR,
 rxCAC,
 is_eSCO,
 dec_hecgood, dec_micgood,
-connsnewmaster, connsnewslave,
+conns, connsnewmaster, connsnewslave,
 ms_lt_addr,
 ms_tslot_p, s_tslot_p,
 pk_encode,
@@ -30,15 +32,18 @@ regi_aclrxbufempty,
 txARQN,
 txaclSEQN,
 srctxpktype,
-s_acltxcmd_p,
+ms_acltxcmd_p,
 srcFLOW,
 rspFLOW,
 pktype_data,
-SEQN_old
+SEQN_old,
+sendnewpy, sendoldpy, send0py
 
 );
 
 input clk_6M, rstz;
+input regi_txdatready;
+input ms_TXslot_endp, ms_RXslot_endp;
 input regi_chgbufcmd_p;
 input regi_isMaster;
 input dec_py_endp;
@@ -46,7 +51,7 @@ input [2:0] esco_LT_ADDR;
 input rxCAC;
 input is_eSCO;
 input dec_hecgood, dec_micgood;
-input connsnewmaster, connsnewslave;
+input conns, connsnewmaster, connsnewslave;
 input [2:0] ms_lt_addr;
 input ms_tslot_p, s_tslot_p;
 input pk_encode;
@@ -66,11 +71,12 @@ input regi_aclrxbufempty;
 output [7:0] txARQN;
 output [7:0] txaclSEQN;
 output [3:0] srctxpktype;
-output s_acltxcmd_p;
+output ms_acltxcmd_p;
 output [7:0] srcFLOW;
 output rspFLOW;
 output pktype_data;
 output [7:0] SEQN_old;
+output sendnewpy, sendoldpy, send0py;
 
 wire dec_pktype_data, txpktype_data;
 reg [7:0] SEQN_old;
@@ -87,7 +93,7 @@ wire dec_flow_device = dec_flow[dec_lt_addr];
 //source control
 //
 
-assign srctxpktype = dec_flow_device ? regi_packet_type : 4'b0 ;
+assign srctxpktype = dec_flow_device & regi_txdatready ? regi_packet_type : 4'b0 ;
 wire aclpacket = srctxpktype==4'h3 | srctxpktype==4'h4 | srctxpktype==4'h8 | srctxpktype==4'h9 | 
                  srctxpktype==4'ha | srctxpktype==4'hb | srctxpktype==4'he | srctxpktype==4'hf;
 wire srcFLOW_t = dec_flow_device | !prerx_trans | !dec_crcgood | !aclpacket;
@@ -109,29 +115,33 @@ end
 //
 assign txpktype_data = txpktype==4'h3 | txpktype==4'h4 | txpktype==4'h8 | txpktype==4'ha | txpktype==4'hb | txpktype==4'he | txpktype==4'hf;
 
-reg flushcmd_trg, flushcmd;
+////////reg flushcmd_trg, flushcmd;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     flushcmd_trg <= 1'b0;
+////////  else if (regi_flushcmd_p)
+////////     flushcmd_trg <= 1'b1;
+////////  else if (ms_tslot_p)  
+////////     flushcmd_trg <= 1'b0 ;
+////////end
+
+wire regw_flushcmd = 1'b0;//for tmp
+reg flushcmd_flag;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     flushcmd_trg <= 1'b0;
-  else if (regi_flushcmd_p)
-     flushcmd_trg <= 1'b1;
-  else if (ms_tslot_p)  
-     flushcmd_trg <= 1'b0 ;
+     flushcmd_flag <= 1'b0;
+  else if (regw_flushcmd)
+     flushcmd_flag <= 1'b1;
+  else if (ms_TXslot_endp)  
+     flushcmd_flag <= 1'b0 ;
 end
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     flushcmd <= 1'b0;
-  else if (flushcmd_trg & ms_tslot_p)
-     flushcmd <= 1'b1;
-  else if (dec_arqn[ms_lt_addr])  
-     flushcmd <= 1'b0 ;
-end
-//wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
-wire sendnewpy = pk_encode & (!txpktype_data | (txpktype_data & dec_arqn[ms_lt_addr]));
-wire sendoldpy = pk_encode &  txpktype_data & !dec_arqn[ms_lt_addr] & !flushcmd;
-wire send0cpy  = pk_encode &  txpktype_data & !dec_arqn[ms_lt_addr] &  flushcmd;  // 0 length continue ACL-U packet
+
+// Spec : Figure 7.15
+assign sendnewpy = conns & (!txpktype_data | (txpktype_data & dec_arqn[ms_lt_addr]));
+assign sendoldpy = conns &  txpktype_data & !dec_arqn[ms_lt_addr] & !flushcmd_flag;
+assign send0py   = conns &  txpktype_data & !dec_arqn[ms_lt_addr] &  flushcmd_flag;  // 0 length continue ACL-U packet
 
 reg [7:0] txaclSEQN;
 always @(posedge clk_6M or negedge rstz)
@@ -140,11 +150,11 @@ begin
      txaclSEQN <= 8'hff;
   else if (connsnewmaster | connsnewslave)
      txaclSEQN <= 8'hff;
-  else if (regi_chgbufcmd_p)  // mcu check txARQN[LT_ADDR] to determine switch buffer or not
-     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
-// control by mcu     
-//  else if (pk_encode & txpktype_data & dec_arqn[ms_lt_addr] & header_st_p)
+//  else if (regi_chgbufcmd_p)  // mcu check dec_arqn[ms_lt_addr] to determine switch buffer or not
 //     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
+// Spec : Figure 7.15
+  else if (pk_encode & txpktype_data & dec_arqn[ms_lt_addr] & header_st_p)
+     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
 end
 
 wire eSCOwindow_endp = 1'b0; //for tmp
@@ -165,7 +175,7 @@ end
 // Vol2 PartB Figure 7.12
 //
 wire fail1 = !rxCAC | !dec_hecgood;
-wire fail2 = !lt_addressed;
+wire fail2 = (!fail1) & !lt_addressed;
 wire esco_addressed = dec_lt_addr == esco_LT_ADDR;
 assign dec_pktype_data = dec_pktype==4'h3 | dec_pktype==4'h4 | dec_pktype==4'h8 | dec_pktype==4'ha | dec_pktype==4'hb | dec_pktype==4'he | dec_pktype==4'hf;
 wire dec_pktype_kk = dec_pktype==4'h0 | dec_pktype==4'h1 | dec_pktype==4'h9 | dec_pktype==4'h5 | (dec_pktype==4'h6 & !is_eSCO) | (dec_pktype==4'h7 & !is_eSCO);
@@ -217,19 +227,20 @@ wire [7:0] reg_wdata=8'h0; //for tmp
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     SEQN_old <= 8'hff;
+     SEQN_old <= 8'h0;  //ff
   // mcu overwrite, EX:eSCO link setup
   else if (reg_wr_sqen)
      SEQN_old <= reg_wdata;
-  else if (connsnewmaster)
-     SEQN_old[ms_lt_addr] <= 1'b1;
-  else if (connsnewslave)
-     SEQN_old[ms_lt_addr] <= 1'b1;
-  else if (accept_aclpyload & dec_py_endp_d1)
+//  else if (connsnewmaster)
+//     SEQN_old[ms_lt_addr] <= 1'b1;
+//  else if (connsnewslave)
+//     SEQN_old[ms_lt_addr] <= 1'b1;
+  else if (accept_aclpyload & ms_RXslot_endp) //dec_py_endp_d1)
      SEQN_old[dec_lt_addr] <= dec_seqn ;
 end
 
-
+// RX slot ARQ scheme
+// SPEC Vol 2, Part B, Sec 7.6, Figure 7.12 7.13
 reg [7:0] txARQN;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -244,34 +255,44 @@ begin
   // slave initial ARN=NAK   
   else if (connsnewslave)
      txARQN[ms_lt_addr] <= 1'b0;
-  //
      
-  //
+  // Spec Figure 7.12
+  else if ((fail1|fail2) & ms_RXslot_endp & regi_isMaster)
+     txARQN[ms_lt_addr] <= 1'b0;
+  else if (fail1 & ms_RXslot_endp & !regi_isMaster)
+     txARQN <= 8'b0;
+// keep previous ack value
+//  else if (fail2 & ms_RXslot_endp & !regi_isMaster)
+//     txARQN <= txARQN;
+     
+// sco
   else if ((accept_eSCOpyload|ignore_eSCOpyload) & eSCOwindow)
      txARQN[dec_lt_addr] <= 1'b1 ;
   else if (reject_eSCOpyload & eSCOwindow)
      txARQN[dec_lt_addr] <= 1'b0 ;
-//
-  else if ((accept_aclpyload | ignore_aclpyload) & dec_py_endp_d1)
+// acl
+  else if ((accept_aclpyload | ignore_aclpyload) & ms_RXslot_endp) //dec_py_endp_d1)
      txARQN[dec_lt_addr] <= 1'b1 ;
-  else if ((reject_aclpyload | fail1 | (fail2 & regi_isMaster) ) & dec_py_endp_d1)
+  else if ((reject_aclpyload ) & ms_RXslot_endp) //dec_py_endp_d1)
      txARQN[dec_lt_addr] <= 1'b0 ;
 end
 
 // receive packet from master
-reg s_acltxcmd;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     s_acltxcmd <= 0;
-  else if ((accept_aclpyload | ignore_aclpyload) & dec_py_endp_d1 & !regi_isMaster)
-     s_acltxcmd <= 1'b1 ;
-  else if (s_tslot_p)
-     s_acltxcmd <= 1'b0 ;
-end
+//////reg s_acltxcmd;
+//////always @(posedge clk_6M or negedge rstz)
+//////begin
+//////  if (!rstz)
+//////     s_acltxcmd <= 0;
+//////  else if ((accept_aclpyload | ignore_aclpyload) & dec_py_endp_d1 & !regi_isMaster)
+//////     s_acltxcmd <= 1'b1 ;
+//////  else if (s_tslot_p)
+//////     s_acltxcmd <= 1'b0 ;
+//////end
 
-assign s_acltxcmd_p =  s_acltxcmd & s_tslot_p;
+//Spec : Figure 7.12, 7.13
+wire reserved_slot = 1'b0; //for tmp
+assign ms_acltxcmd_p = fail1 & (!reserved_slot) ? 1'b0 : 
+                       fail2 & (!regi_isMaster) ? 1'b0 : ms_RXslot_endp;  //s_acltxcmd & s_tslot_p;
                       
-
 
 endmodule

@@ -4,6 +4,9 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+py_endp,
+ms_RXslot_endp,
+ms_acltxcmd_p,
 rxisfhs, dec_hecgood, dec_crcgood,
 s_half_tslot_p,
 regi_LMPcmdfg,
@@ -37,9 +40,9 @@ regi_Ninquiry,
 regi_Inquiry_Length, regi_Extended_Inquiry_Length,
 dec_iscanEIR,
 regi_isMaster,
-extendslot,
+txextendslot,
 //m_acltxcmd_p, 
-s_acltxcmd_p, 
+//s_acltxcmd_p, 
 regi_txcmd_p,
 //
 ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns,
@@ -55,7 +58,7 @@ rx_trailer_st_p,
 pagetxfhs, istxfhs, connsnewmaster, connsnewslave,
 pk_encode,
 pssyncCLK_p,
-conns_1stslot,
+conns_tx1stslot,
 pk_encode_1stslot,
 ms_txcmd_p,
 rxCAC, prerx_trans,
@@ -77,6 +80,9 @@ regi_txdatready
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input py_endp;
+input ms_RXslot_endp;
+input ms_acltxcmd_p;
 input rxisfhs, dec_hecgood, dec_crcgood;
 input s_half_tslot_p;
 input regi_LMPcmdfg;
@@ -109,9 +115,9 @@ input [9:0] regi_Ninquiry;
 input [15:0] regi_Inquiry_Length, regi_Extended_Inquiry_Length;
 input dec_iscanEIR;
 input regi_isMaster;
-input extendslot;
+input txextendslot;
 //input m_acltxcmd_p;
-input s_acltxcmd_p;
+//input s_acltxcmd_p;
 input regi_txcmd_p;
 //
 output ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -127,7 +133,7 @@ output rx_trailer_st_p;
 output pagetxfhs, istxfhs, connsnewmaster, connsnewslave;
 output pk_encode;
 output pssyncCLK_p;
-output conns_1stslot;
+output conns_tx1stslot;
 output pk_encode_1stslot;
 output ms_txcmd_p;
 output rxCAC, prerx_trans;
@@ -769,12 +775,12 @@ wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DA
                        InquiryScanWindow | inquiry ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
                        conns ? regi_syncword_CAC : 64'b0 ;
                        
-wire correWindow = page ? p_correWin :
+wire correWindow = page | inquiry ? p_correWin :
                    ps ? PageScanWindow :
                    spr ? spr_correWin | psrxfhs_corwin :
                    mpr ? mpr_correWin :
                    is ? InquiryScanWindow :
-                   conns | inquiry ? ConnsWindow : 1'b0;
+                   conns ? ConnsWindow : 1'b0;
 //
 correlator correlator_u(
 .clk_6M                 (clk_6M                   ), 
@@ -907,7 +913,7 @@ wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
                    spr ? (cs==PageSlaveResp_txid_STATE) | (cs==PageSlaveResp_ackfhs_STATE) :
                    //conns ? (regi_isMaster ? !CLK[1] : CLK[1]) :
                    connsnewmaster | connsnewslave ? (regi_isMaster ? !CLK[1] : CLK[1]) :
-                   conns ? (regi_isMaster ? m_conns_1stslot : s_conns_1stslot) :
+                   conns ? conns_tx1stslot : //(regi_isMaster ? m_conns_1stslot : s_conns_1stslot) :
                    inquiry ? !CLKN[1] :
                    cs==InquiryScantxFHS_STATE ? 1'b1 :
                    cs==InquiryScantxExtIRP_STATE ? 1'b1 : 
@@ -920,56 +926,74 @@ wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
 wire m_scotxcmd_p = 1'b0; //for tmp
 wire s_scotxcmd_p = 1'b0; //for tmp
 
+wire s_1st_resp_p = connsnewslave & s_corre & rxispoll & s_tslot_p & lt_addressed;
 
-assign m_txcmd_p = regi_txcmd_p ; //| m_scotxcmd_p;
-assign s_txcmd_p = regi_txcmd_p ; //| s_scotxcmd_p;
+//assign m_txcmd_p = regi_txcmd_p ; //| m_scotxcmd_p;
+//assign s_txcmd_p = regi_txcmd_p ; //| s_scotxcmd_p;
 
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      m_txcmd <= 0;
-  else if (m_txcmd_p)
+  else if (regi_txcmd_p)
      m_txcmd <= 1'b1;
   else if (m_tslot_p & CLK[1])
      m_txcmd <= 1'b0;
 end
+assign m_txcmd_p = m_txcmd & m_tslot_p & CLK[1];
+
+////////// m_acltx_p : automatically send next pyload cmd
+////////wire m_acltx_p;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     m_conns_1stslot <= 0;
+////////  else if (m_txcmd & m_tslot_p & CLK[1])
+////////     m_conns_1stslot <= 1'b1;
+////////  else if (m_acltx_p | m_scotxcmd_p)
+////////     m_conns_1stslot <= 1'b1;
+////////  else if (m_tslot_p)
+////////     m_conns_1stslot <= 1'b0;
+////////end
+////////
+////////
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     s_txcmd <= 0;
+////////  else if (s_txcmd_p)
+////////     s_txcmd <= 1'b1;
+////////  else if (s_tslot_p & (!CLK[1]))
+////////     s_txcmd <= 1'b0;
+////////end
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     s_conns_1stslot <= 0;
+////////  else if (s_txcmd & s_tslot_p & (!CLK[1]))
+////////     s_conns_1stslot <= 1'b1;
+////////  else if (s_acltxcmd_p | s_scotxcmd_p)
+////////     s_conns_1stslot <= 1'b1;
+////////  else if (s_tslot_p)
+////////     s_conns_1stslot <= 1'b0;
+////////end
+
+reg ms_conns_tx1stslot;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     m_conns_1stslot <= 0;
-  else if (m_txcmd & m_tslot_p & CLK[1])
-     m_conns_1stslot <= 1'b1;
-  else if (m_scotxcmd_p)
-     m_conns_1stslot <= 1'b1;
-  else if (m_tslot_p)
-     m_conns_1stslot <= 1'b0;
+     ms_conns_tx1stslot <= 0;
+  else if (ms_RXslot_endp | m_txcmd_p)  //ms_acltxcmd_p | m_txcmd_p)  //master mcu trigger first tx after page completed 
+     ms_conns_tx1stslot <= 1'b1;
+  else if (s_1st_resp_p)  //slave response(tx) 1st packet 
+     ms_conns_tx1stslot <= 1'b1;
+  else if (ms_tslot_p)
+     ms_conns_tx1stslot <= 1'b0;
 end
 
-
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     s_txcmd <= 0;
-  else if (s_txcmd_p)
-     s_txcmd <= 1'b1;
-  else if (s_tslot_p & (!CLK[1]))
-     s_txcmd <= 1'b0;
-end
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     s_conns_1stslot <= 0;
-  else if (s_txcmd & s_tslot_p & (!CLK[1]))
-     s_conns_1stslot <= 1'b1;
-  else if (s_acltxcmd_p | s_scotxcmd_p)
-     s_conns_1stslot <= 1'b1;
-  else if (s_tslot_p)
-     s_conns_1stslot <= 1'b0;
-end
 
 // mcu set, clear automatically when txacl
 wire regw_txdatready_p;
-wire m_acltx_p;
 reg regi_txdatready;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -977,15 +1001,17 @@ begin
      regi_txdatready <= 0;
   else if (regw_txdatready_p)
      regi_txdatready <= 1'b1;
-  else if (m_acltx_p)
+  else if (pk_encode & py_endp) //conns_tx_pac_st_p)
      regi_txdatready <= 1'b0;
 end
-assign m_acltx_p = regi_txdatready & m_tslot_p & CLK[1];
-assign conns_tx_pac_st_p = regi_isMaster ? (m_txcmd & m_tslot_p & CLK[1])    | m_acltx_p    | m_scotxcmd_p : 
-                                           (s_txcmd & s_tslot_p & (!CLK[1])) | s_acltxcmd_p | s_scotxcmd_p ;
+//assign m_acltx_p = regi_txdatready & ms_RXslot_endp;//m_tslot_p & CLK[1];
+//assign conns_tx_pac_st_p = regi_isMaster ? (m_txcmd & m_tslot_p & CLK[1])    | m_acltx_p    | m_scotxcmd_p : 
+//                                           (s_txcmd & s_tslot_p & (!CLK[1])) | s_acltxcmd_p | s_scotxcmd_p ;
+
+assign conns_tx_pac_st_p = ms_acltxcmd_p | m_txcmd_p | s_1st_resp_p; // from arqflowctrl.v
  
-assign conns_1stslot = conns & (regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
-assign pk_encode = pk_encode_1stslot | extendslot;
+assign conns_tx1stslot = conns & ms_conns_tx1stslot;//(regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
+assign pk_encode = pk_encode_1stslot | txextendslot;
 
 reg LMPcmd;
 always @(posedge clk_6M or negedge rstz)

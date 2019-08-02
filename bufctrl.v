@@ -1,5 +1,6 @@
 module bufctrl(
 clk_6M, rstz,
+sendnewpy,
 regi_txdatready,
 hec_endp, tx_packet_st_p,
 pktype_data,
@@ -32,6 +33,7 @@ regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
+input sendnewpy;
 input regi_txdatready;
 input hec_endp, tx_packet_st_p;
 input pktype_data;
@@ -101,16 +103,16 @@ assign lnctrl_txpybitin = lnctrl_bufpacket[pybitcount[4:0]];
 //
 //determine whether can tx next pyload or not 
 //
-reg [7:0] cantxnxtpy;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     cantxnxtpy <= 0;
-  else if (dec_arqn[ms_lt_addr] & dec_flow[ms_lt_addr] & & dec_hecgood & hec_endp & (!pk_encode))  
-     cantxnxtpy[ms_lt_addr] <= 1'b1;
-  else if (hec_endp)
-     cantxnxtpy[ms_lt_addr] <= 1'b0;  
-end
+////////reg [7:0] cantxnxtpy;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     cantxnxtpy <= 0;
+////////  else if (dec_arqn[ms_lt_addr] & dec_flow[ms_lt_addr] & & dec_hecgood & hec_endp & (!pk_encode))  
+////////     cantxnxtpy[ms_lt_addr] <= 1'b1;
+////////  else if (hec_endp)
+////////     cantxnxtpy[ms_lt_addr] <= 1'b0;  
+////////end
 
 reg s1a;
 always @(posedge clk_6M or negedge rstz)
@@ -120,7 +122,8 @@ begin
   else if (regi_chgbufcmd_p)  //switch condition is control by mcu for 1st packet 
      s1a <= ~s1a;
 //after mcu write tx data to sram, mcu set ready flag, then BB_LC tx   
-  else if (cantxnxtpy[ms_lt_addr] & regi_txdatready & tx_packet_st_p)
+//  else if (cantxnxtpy[ms_lt_addr] & regi_txdatready & tx_packet_st_p)
+  else if (sendnewpy & regi_txdatready & tx_packet_st_p)
      s1a <= ~s1a;
 //
 //  mcu must write next pyload before

@@ -18,22 +18,53 @@ begin
 @(posedge m_clk_6M);
 #10;
 force bt_top_m.regi_chgbufcmd_p=1'b1;
+//force bt_top_m.linkctrler_u.regw_txdatready_p=1'b1;
 @(posedge m_clk_6M);
 #10;
 force bt_top_m.regi_chgbufcmd_p=1'b0;
+//force bt_top_m.linkctrler_u.regw_txdatready_p=1'b0;
 end
 else
 begin
 @(posedge s_clk_6M);
 #10;
 force bt_top_s.regi_chgbufcmd_p=1'b1;
+//force bt_top_s.linkctrler_u.regw_txdatready_p=1'b1;
 @(posedge s_clk_6M);
 #10;
 force bt_top_s.regi_chgbufcmd_p=1'b0;
+//force bt_top_s.linkctrler_u.regw_txdatready_p=1'b0;
 end
 //
 endtask;
 
+task newdatready;
+input master;
+//
+if (master)
+begin
+@(posedge m_clk_6M);
+#10;
+//force bt_top_m.regi_chgbufcmd_p=1'b1;
+force bt_top_m.linkctrler_u.regw_txdatready_p=1'b1;
+@(posedge m_clk_6M);
+#10;
+//force bt_top_m.regi_chgbufcmd_p=1'b0;
+force bt_top_m.linkctrler_u.regw_txdatready_p=1'b0;
+end
+else
+begin
+@(posedge s_clk_6M);
+#10;
+//force bt_top_s.regi_chgbufcmd_p=1'b1;
+force bt_top_s.linkctrler_u.regw_txdatready_p=1'b1;
+@(posedge s_clk_6M);
+#10;
+//force bt_top_s.regi_chgbufcmd_p=1'b0;
+force bt_top_s.linkctrler_u.regw_txdatready_p=1'b0;
+end
+//
+endtask;
 
 task bsm_wdat;
 output [7:0] to_adr;
@@ -263,7 +294,10 @@ bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h05,8'h04});
 //
 // retransmit or not
 if (m_regi_srcFLOW[regi_LT_ADDR])
-  chgbuf(1);
+  begin
+    chgbuf(1);
+    newdatready(1);
+  end  
 //
 m_txcmd;
 //
@@ -286,7 +320,10 @@ bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04});
 
 // retransmit or not
 if (s_regi_srcFLOW[regi_mylt_address])
-  chgbuf(0);
+  begin
+    chgbuf(0);
+    newdatready(0);
+  end
 //
 // slave auto reponse
 end

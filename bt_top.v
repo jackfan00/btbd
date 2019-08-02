@@ -162,7 +162,7 @@ wire [23:0] fhs_CoD;
 
 wire [27:2] fhs_CLK;
 wire [2:0]  fhs_PSM;
-wire s_acltxcmd_p;
+wire ms_acltxcmd_p;
 
 wire [27:0] hop_BD_ADDR = 
                           is | giis | ir | inquiry ? {regi_GIAC_BD_ADDR_UAP[3:0], regi_GIAC_BD_ADDR_LAP}  :
@@ -394,8 +394,10 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.py_endp                     (py_endp                     ),
+.ms_RXslot_endp              (ms_RXslot_endp              ),
 .rxisfhs                     (rxisfhs                     ), 
-.dec_crcgood             (dec_crcgood             ),
+.dec_crcgood                 (dec_crcgood                 ),
 .dec_hecgood                 (regi_dec_hecgood            ), 
 .s_half_tslot_p              (s_half_tslot_p              ),
 .s_tslot_p                   (s_tslot_p                   ),
@@ -452,10 +454,10 @@ linkctrler linkctrler_u(
 .regi_Extended_Inquiry_Length(regi_Extended_Inquiry_Length),
 .dec_iscanEIR                (fhs_EIR                     ),
 .regi_isMaster               (regi_isMaster               ),
-.extendslot                  (extendslot                  ),
+.txextendslot                  (txextendslot                  ),
 //.m_acltxcmd_p                (regi_txcmd_p                ),
 .regi_txcmd_p                (regi_txcmd_p                ),
-.s_acltxcmd_p                (s_acltxcmd_p                ),
+.ms_acltxcmd_p                (ms_acltxcmd_p                ),
 //
 //
 .ps                        (ps                        ), 
@@ -486,7 +488,7 @@ linkctrler linkctrler_u(
 .connsnewslave             (connsnewslave             ),
 .pk_encode                 (pk_encode                 ),
 .pssyncCLK_p               (pssyncCLK_p               ),
-.conns_1stslot             (conns_1stslot             ),
+.conns_tx1stslot             (conns_tx1stslot             ),
 .pk_encode_1stslot         (pk_encode_1stslot         ),
 .ms_txcmd_p                (ms_txcmd_p                ),
 .rxCAC                     (rxCAC                     ), 
@@ -634,7 +636,7 @@ allbitp allbitp_u(
 .is_SCO                 (is_SCO                 ), 
 .is_ACL                 (is_ACL                 ),
 .pk_encode              (pk_encode              ),
-.conns_1stslot          (conns_1stslot          ),
+.conns_tx1stslot          (conns_tx1stslot          ),
 .pk_encode_1stslot      (pk_encode_1stslot      ),
 //.bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit_resync           ),
@@ -657,8 +659,8 @@ allbitp allbitp_u(
 //.rxpyadr,
 //.rxpydin_valid_p,
 .bsm_dout                (bsm_dout              ),
-.extendslot             (extendslot             ),
-.s_acltxcmd_p           (s_acltxcmd_p           ),
+.txextendslot             (txextendslot             ),
+.ms_acltxcmd_p           (ms_acltxcmd_p           ),
 .regi_aclrxbufempty     (regi_aclrxbufempty     ),
 .srcFLOW                (regi_srcFLOW           ),
 .txARQN                 (regi_txARQN            ),
@@ -673,7 +675,9 @@ allbitp allbitp_u(
 .rxbit_period           (rxbit_period           ), 
 .rxbit_period_endp      (rxbit_period_endp      ),
 .rxisfhs                (rxisfhs                ), 
-.dec_crcgood            (dec_crcgood            )
+.dec_crcgood            (dec_crcgood            ),
+.ms_RXslot_endp         (ms_RXslot_endp         ),
+.py_endp                (py_endp                )
 
 );
 

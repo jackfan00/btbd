@@ -19,7 +19,7 @@ reg s_clk_6M, s_rstz;
 `include "tp.v"
 
 always #83.333 m_clk_6M = ~m_clk_6M;
-always #83.320 s_clk_6M = ~s_clk_6M;
+always #83.333 s_clk_6M = ~s_clk_6M;
 
 reg regi_cal_scwd_p;
 initial begin

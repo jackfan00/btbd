@@ -5,7 +5,7 @@ ms_tslot_p,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
 pk_type,
 regi_payloadlen,
-conns_1stslot,
+conns_tx1stslot,
 pk_encode_1stslot,
 //
 pylenbit_f,
@@ -14,7 +14,9 @@ fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f,
 BRss_f,
 existpyheader_f,
 allowedeSCOtype,
-extendslot
+txextendslot, rxextendslot,
+ms_TXslot_endp, ms_RXslot_endp
+
 );
 input clk_6M, rstz;
 input pktype_data;
@@ -22,7 +24,7 @@ input ms_tslot_p;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
 input [3:0] pk_type;
 input [9:0] regi_payloadlen;
-input conns_1stslot;
+input conns_tx1stslot;
 input pk_encode_1stslot;
 //
 output [12:0] pylenbit_f;
@@ -31,7 +33,8 @@ output fec31encode_f, fec32encode_f, crcencode_f, packet_BRmode_f, packet_DPSK_f
 output BRss_f;
 output existpyheader_f;
 output allowedeSCOtype;
-output extendslot;
+output txextendslot, rxextendslot;
+output ms_TXslot_endp, ms_RXslot_endp;
 //
 //
 wire BRss;
@@ -88,21 +91,21 @@ assign       BRss_f = BRss;
 assign       existpyheader_f = existpyheader;
 
 
-reg extendslot;
-reg [2:0] extendslotcnt;
+reg txextendslot;
+reg [2:0] txextendslotcnt;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
     begin
-     extendslotcnt <= 3'd2;
+     txextendslotcnt <= 3'd2;
     end 
-  else if (conns_1stslot)
+  else if (conns_tx1stslot)
     begin
-     extendslotcnt <= 3'd2;
+     txextendslotcnt <= 3'd2;
     end 
-  else if (ms_tslot_p & extendslot)
+  else if (ms_tslot_p & txextendslot)
     begin
-     extendslotcnt <= extendslotcnt+1'b1;
+     txextendslotcnt <= txextendslotcnt+1'b1;
     end 
 end
 
@@ -110,18 +113,71 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
     begin
-     extendslot <= 0;
+     txextendslot <= 0;
     end 
-  else if (conns_1stslot & ms_tslot_p & (occpuy_slots>3'd1))
+  else if (conns_tx1stslot & ms_tslot_p & (occpuy_slots>3'd1))
     begin
-     extendslot <= 1'b1;
+     txextendslot <= 1'b1;
     end 
-  else if (ms_tslot_p & (occpuy_slots==extendslotcnt))
+  else if (ms_tslot_p & (occpuy_slots==txextendslotcnt))
     begin
-     extendslot <= 1'b0;
+     txextendslot <= 1'b0;
     end 
 end
 
+assign ms_TXslot_endp = (occpuy_slots>3'd1) ? ms_tslot_p & (occpuy_slots==txextendslotcnt) : conns_tx1stslot & ms_tslot_p;
+
+//
+reg conns_rx1stslot;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     conns_rx1stslot <= 0;
+  else if (ms_TXslot_endp)  
+     conns_rx1stslot <= 1'b1;
+  else if (ms_tslot_p)
+     conns_rx1stslot <= 1'b0;
+end
+
+//
+//
+reg rxextendslot;
+reg [2:0] rxextendslotcnt;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     rxextendslotcnt <= 3'd2;
+    end 
+  else if (conns_rx1stslot)
+    begin
+     rxextendslotcnt <= 3'd2;
+    end 
+  else if (ms_tslot_p & rxextendslot)
+    begin
+     rxextendslotcnt <= rxextendslotcnt+1'b1;
+    end 
+end
+
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     rxextendslot <= 0;
+    end 
+  else if (conns_rx1stslot & ms_tslot_p & (occpuy_slots>3'd1))
+    begin
+     rxextendslot <= 1'b1;
+    end 
+  else if (ms_tslot_p & (occpuy_slots==rxextendslotcnt))
+    begin
+     rxextendslot <= 1'b0;
+    end 
+end
+
+assign ms_RXslot_endp = (occpuy_slots>3'd1) ? ms_tslot_p & (occpuy_slots==rxextendslotcnt) : conns_rx1stslot & ms_tslot_p;
+
+//
 assign allowedeSCOtype = pk_type==4'd0 | pk_type==4'd1 | pk_type==4'd6 | pk_type==4'd7 | pk_type==4'hc | pk_type==4'hd;
 
 //

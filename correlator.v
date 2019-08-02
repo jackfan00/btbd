@@ -100,7 +100,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      rxCAC <= 1'b0;
-  else if (corre_trgp & p_1us & !pk_encode & conns)  
+  else if (corre_trgp & p_1us & !pk_encode & conns & correWindow)  
      rxCAC <= 1'b1;     
   else if (pk_encode)  
      rxCAC <= 1'b0;

@@ -41,7 +41,7 @@ regi_EIR,
 regi_my_BD_ADDR_LAP,
 regi_my_syncword,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
-pk_encode, conns_1stslot, pk_encode_1stslot,
+pk_encode, conns_tx1stslot, pk_encode_1stslot,
 //bufpacketin,
 rxbit,
 //
@@ -64,8 +64,8 @@ fhs_PSM,
 //rxpyadr,
 //rxpydin_valid_p,
 bsm_dout,
-extendslot,
-s_acltxcmd_p,
+txextendslot,
+ms_acltxcmd_p,
 regi_aclrxbufempty,
 srcFLOW, txARQN,
 dec_pk_type,
@@ -74,7 +74,9 @@ dec_flow, dec_arqn, SEQN_old,
 dec_hecgood,
 txbit_period, txbit_period_endp,
 rxbit_period, rxbit_period_endp,
-rxisfhs, dec_crcgood
+rxisfhs, dec_crcgood,
+ms_RXslot_endp,
+py_endp
 
 );
 
@@ -121,7 +123,7 @@ input regi_EIR;
 input [23:0] regi_my_BD_ADDR_LAP;
 input [33:0] regi_my_syncword;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
-input pk_encode, conns_1stslot, pk_encode_1stslot;
+input pk_encode, conns_tx1stslot, pk_encode_1stslot;
 //input bufpacketin;
 input rxbit;
 //
@@ -144,8 +146,8 @@ output [2:0]  fhs_PSM;
 //output [7:0] rxpyadr;
 //output rxpydin_valid_p;
 output [31:0] bsm_dout ;
-output extendslot;
-output s_acltxcmd_p;
+output txextendslot;
+output ms_acltxcmd_p;
 output regi_aclrxbufempty;
 output [7:0] srcFLOW, txARQN;
 output [3:0] dec_pk_type;
@@ -155,6 +157,8 @@ output dec_hecgood;
 output txbit_period, txbit_period_endp;
 output rxbit_period, rxbit_period_endp;
 output rxisfhs, dec_crcgood;
+output ms_RXslot_endp;
+output py_endp;
 
 //
 wire py_period, daten, dec_py_period;
@@ -186,6 +190,7 @@ wire [7:0] rxpyadr;
 wire pktype_data;
 wire [12:0] pylenbit;
 wire [2:0] occpuy_slots;
+wire sendnewpy, sendoldpy, send0py;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -287,7 +292,7 @@ pktydecode pktydecode_u(
 .is_ACL           (is_ACL           ),
 .pk_type          (pk_type          ),
 .regi_payloadlen  (pylenB           ),
-.conns_1stslot    (conns_1stslot    ),
+.conns_tx1stslot    (conns_tx1stslot    ),
 .pk_encode_1stslot(pk_encode_1stslot),
 //             (//             )
 .pylenbit_f       (pylenbit         ),
@@ -300,7 +305,10 @@ pktydecode pktydecode_u(
 .BRss_f           (BRss             ),
 .existpyheader_f  (existpyheader    ),
 .allowedeSCOtype  (allowedeSCOtype  ),
-.extendslot       (extendslot       )
+.txextendslot       (txextendslot       ),
+.rxextendslot     (rxextendslot     ),
+.ms_TXslot_endp   (ms_TXslot_endp   ), 
+.ms_RXslot_endp   (ms_RXslot_endp   )
 );
 
 //
@@ -437,6 +445,7 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.sendnewpy       (sendnewpy       ),
 .regi_txdatready (regi_txdatready ),
 .hec_endp        (hec_endp        ), 
 .tx_packet_st_p  (tx_packet_st_p  ),
@@ -489,6 +498,9 @@ wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.regi_txdatready    (regi_txdatready    ),
+.ms_TXslot_endp     (ms_TXslot_endp     ),
+.ms_RXslot_endp     (ms_RXslot_endp     ),
 .regi_chgbufcmd_p   (regi_chgbufcmd_p   ),
 .regi_isMaster      (regi_isMaster      ),
 .dec_py_endp        (dec_py_endp        ),
@@ -497,6 +509,7 @@ arqflowctrl arqflowctrl_u(
 .is_eSCO            (is_eSCO            ),
 .dec_hecgood        (dec_hecgood        ),
 .dec_micgood        (dec_micgood        ),
+.conns              (conns              ),
 .connsnewmaster     (connsnewmaster     ), 
 .connsnewslave      (connsnewslave      ),
 .ms_lt_addr         (ms_lt_addr         ),
@@ -522,11 +535,14 @@ arqflowctrl arqflowctrl_u(
 .txARQN             (txARQN             ),
 .txaclSEQN          (txaclSEQN          ),
 .srctxpktype        (srctxpktype        ),
-.s_acltxcmd_p       (s_acltxcmd_p       ),
+.ms_acltxcmd_p       (ms_acltxcmd_p       ),
 .srcFLOW            (srcFLOW            ),
 .rspFLOW            (rspFLOW            ),
 .pktype_data        (pktype_data        ),
-.SEQN_old           (SEQN_old           )
+.SEQN_old           (SEQN_old           ),
+.sendnewpy          (sendnewpy          ), 
+.sendoldpy          (sendoldpy          ), 
+.send0py            (send0py            )
 
 );
 
