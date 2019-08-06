@@ -76,7 +76,9 @@ txbit_period, txbit_period_endp,
 rxbit_period, rxbit_period_endp,
 rxisfhs, dec_crcgood,
 ms_RXslot_endp,
-py_endp
+py_endp,
+rxextendslot,
+regi_txs1a
 
 );
 
@@ -159,6 +161,8 @@ output rxbit_period, rxbit_period_endp;
 output rxisfhs, dec_crcgood;
 output ms_RXslot_endp;
 output py_endp;
+output rxextendslot;
+output regi_txs1a;
 
 //
 wire py_period, daten, dec_py_period;
@@ -191,6 +195,7 @@ wire pktype_data;
 wire [12:0] pylenbit;
 wire [2:0] occpuy_slots;
 wire sendnewpy, sendoldpy, send0py;
+wire [7:0] flow_stop_start;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -271,7 +276,9 @@ headerbitp headerbitp_u(
 .dec_seqn               (dec_seqn               ),
 .headpacket_endp        (headpacket_endp        ),
 .hec_endp               (hec_endp               ),
-.rxisfhs                (rxisfhs                )
+.rxisfhs                (rxisfhs                ),
+.ckheader_endp          (ckheader_endp          ),
+.flow_stop_start        (flow_stop_start        )
 
 );
 
@@ -305,10 +312,11 @@ pktydecode pktydecode_u(
 .BRss_f           (BRss             ),
 .existpyheader_f  (existpyheader    ),
 .allowedeSCOtype  (allowedeSCOtype  ),
-.txextendslot       (txextendslot       ),
+.txextendslot     (txextendslot     ),
 .rxextendslot     (rxextendslot     ),
 .ms_TXslot_endp   (ms_TXslot_endp   ), 
 .ms_RXslot_endp   (ms_RXslot_endp   )
+
 );
 
 //
@@ -489,7 +497,8 @@ bufctrl bufctrl_u(
 //
 .lnctrl_txpybitin(lnctrl_txpybitin),
 .bsm_dout        (bsm_dout        ),
-.regi_aclrxbufempty(regi_aclrxbufempty)
+.regi_aclrxbufempty(regi_aclrxbufempty),
+.regi_txs1a      (regi_txs1a      )
 );
 
 wire dec_micgood = 1'b1; //for tmp
@@ -498,6 +507,8 @@ wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.flow_stop_start    (flow_stop_start    ),
+.ckheader_endp      (ckheader_endp      ),
 .regi_txdatready    (regi_txdatready    ),
 .ms_TXslot_endp     (ms_TXslot_endp     ),
 .ms_RXslot_endp     (ms_RXslot_endp     ),

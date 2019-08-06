@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+rxextendslot,
 py_endp,
 ms_RXslot_endp,
 ms_acltxcmd_p,
@@ -80,6 +81,7 @@ regi_txdatready
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input rxextendslot;
 input py_endp;
 input ms_RXslot_endp;
 input ms_acltxcmd_p;
@@ -771,7 +773,8 @@ inquiry_ctrl inquiry_ctrl_u(
 //////////////////////
 //
 
-wire ConnsWindow = regi_isMaster ? m_conns_uncerWindow : s_conns_uncerWindow;  
+wire ConnsWindow_t = regi_isMaster ? m_conns_uncerWindow : s_conns_uncerWindow;  
+wire ConnsWindow = ConnsWindow_t & (!rxextendslot);
 wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DAC :
                        InquiryScanWindow | inquiry ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
                        conns ? regi_syncword_CAC : 64'b0 ;

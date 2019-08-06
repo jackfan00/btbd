@@ -70,7 +70,8 @@ txbit_period, txbit_period_endp,
 rxbit_period, rxbit_period_endp,
 nxtfk,
 fk_chg_p, fk_chg_p_ff,
-regi_s_slot_offset
+regi_s_slot_offset,
+regi_txs1a
 
 );
 
@@ -149,6 +150,7 @@ output rxbit_period, rxbit_period_endp;
 output [6:0] nxtfk;
 output fk_chg_p, fk_chg_p_ff;
 output [9:0] regi_s_slot_offset;
+output regi_txs1a;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -163,6 +165,7 @@ wire [23:0] fhs_CoD;
 wire [27:2] fhs_CLK;
 wire [2:0]  fhs_PSM;
 wire ms_acltxcmd_p;
+wire rxextendslot;
 
 wire [27:0] hop_BD_ADDR = 
                           is | giis | ir | inquiry ? {regi_GIAC_BD_ADDR_UAP[3:0], regi_GIAC_BD_ADDR_LAP}  :
@@ -394,6 +397,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.rxextendslot                (rxextendslot                ),
 .py_endp                     (py_endp                     ),
 .ms_RXslot_endp              (ms_RXslot_endp              ),
 .rxisfhs                     (rxisfhs                     ), 
@@ -677,7 +681,9 @@ allbitp allbitp_u(
 .rxisfhs                (rxisfhs                ), 
 .dec_crcgood            (dec_crcgood            ),
 .ms_RXslot_endp         (ms_RXslot_endp         ),
-.py_endp                (py_endp                )
+.py_endp                (py_endp                ),
+.rxextendslot           (rxextendslot           ),
+.regi_txs1a             (regi_txs1a             )
 
 );
 

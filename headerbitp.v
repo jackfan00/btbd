@@ -41,7 +41,9 @@ dec_hecgood,
 dec_seqn,
 headpacket_endp,
 hec_endp,
-rxisfhs
+rxisfhs,
+ckheader_endp,
+flow_stop_start
 
 );
 
@@ -89,8 +91,10 @@ output dec_seqn;
 output headpacket_endp;
 output hec_endp;
 output rxisfhs;
+output ckheader_endp;
+output [7:0] flow_stop_start;
 
-
+//
 wire headpacket_endp;
 reg header_packet_period;
 wire preamble_en, syncword_en, trailer_en, header_en, hec_en;
@@ -262,6 +266,16 @@ begin
      dec_hecgood <=  (hecrem==8'h0) ;
 end
 
+reg ckheader_endp;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     ckheader_endp <= 0;
+  else if (ckhec & p_1us & (!pk_encode))
+     ckheader_endp <=  1'b1 ;
+  else if (p_1us)
+     ckheader_endp <= 1'b0;
+end
 //
 
 
@@ -330,6 +344,20 @@ begin
       dec_arqn <= dec_arqn_t;
     end  
 end
+
+reg [7:0] dec_flow_d;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+      dec_flow_d <= 8'hff;
+    end  
+  else if (headvalid_p)
+    begin
+      dec_flow_d <= dec_flow;
+    end  
+end
+assign flow_stop_start = (~dec_flow_d) & dec_flow;
 
 always @(posedge clk_6M or negedge rstz)
 begin

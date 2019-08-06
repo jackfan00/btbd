@@ -29,7 +29,8 @@ rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs,
 //
 lnctrl_txpybitin,
 bsm_dout,
-regi_aclrxbufempty
+regi_aclrxbufempty,
+regi_txs1a
 );
 
 input clk_6M, rstz;
@@ -64,6 +65,7 @@ input rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs;
 output lnctrl_txpybitin;
 output [31:0] bsm_dout;
 output regi_aclrxbufempty;
+output regi_txs1a;
 
 wire [31:0] lncacl_dout, lncsco_dout;
 wire [31:0] bsmacl_dout, bsmsco_dout;
@@ -114,26 +116,33 @@ assign lnctrl_txpybitin = lnctrl_bufpacket[pybitcount[4:0]];
 ////////     cantxnxtpy[ms_lt_addr] <= 1'b0;  
 ////////end
 
-reg s1a;
+//
+// master: mcu issue tx cmd every time he want to tx
+//  in case of re-transmit (NAK), mcu check whether regi_txs1a change or not
+//  mcu continue issue tx cmd, because regi_txs1a not change, it send old data
+//  mcu should write new data to fifo after regi_txs1a change
+// slave : just simple follow master's tx slot, mcu dont need issue tx cmd 
+
+reg regi_txs1a;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     s1a <= 1'b0;
+     regi_txs1a <= 1'b0;
   else if (regi_chgbufcmd_p)  //switch condition is control by mcu for 1st packet 
-     s1a <= ~s1a;
+     regi_txs1a <= ~regi_txs1a;
 //after mcu write tx data to sram, mcu set ready flag, then BB_LC tx   
 //  else if (cantxnxtpy[ms_lt_addr] & regi_txdatready & tx_packet_st_p)
-  else if (sendnewpy & regi_txdatready & tx_packet_st_p)
-     s1a <= ~s1a;
+  else if (sendnewpy & tx_packet_st_p)  //& regi_txdatready
+     regi_txs1a <= ~regi_txs1a;
 //
 //  mcu must write next pyload before
 //  ack=1 and flow=1 then transmit next pyload 
   //else if (dec_arqn[ms_lt_addr] & dec_flow[ms_lt_addr] & & dec_hecgood & hec_endp & (!pk_encode))  
-  //   s1a <= ~s1a;
+  //   regi_txs1a <= ~regi_txs1a;
   // change back to previous packet, if previous flow is STOP
   // Vol2 PartB  4.5.3.2
   //else if ((dec_flow[ms_lt_addr] == 1'b0) & pk_encode & header_st_p)  
-  //   s1a <= ~s1a;
+  //   regi_txs1a <= ~regi_txs1a;
       
 end
 
@@ -146,7 +155,7 @@ pytxaclbufctrl pytxaclbufctrl_u(
 .bsm_we     (txbsmacl_we     ),
 .bsm_cs     (txbsmacl_cs     ), 
 .lnctrl_cs  (txlncacl_cs     ),
-.s1a        (s1a             ),
+.s1a        (regi_txs1a      ),
 //
 .lnctrl_dout(lncacl_dout     )
 );

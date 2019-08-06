@@ -3,6 +3,8 @@
 //
 module arqflowctrl(
 clk_6M, rstz,
+flow_stop_start,
+ckheader_endp,
 regi_txdatready,
 ms_TXslot_endp, ms_RXslot_endp,
 regi_chgbufcmd_p,
@@ -42,6 +44,8 @@ sendnewpy, sendoldpy, send0py
 );
 
 input clk_6M, rstz;
+input [7:0] flow_stop_start;
+input ckheader_endp;
 input regi_txdatready;
 input ms_TXslot_endp, ms_RXslot_endp;
 input regi_chgbufcmd_p;
@@ -93,7 +97,7 @@ wire dec_flow_device = dec_flow[dec_lt_addr];
 //source control
 //
 
-assign srctxpktype = dec_flow_device & regi_txdatready ? regi_packet_type : 4'b0 ;
+assign srctxpktype = dec_flow_device ? regi_packet_type : 4'b0 ;   //& regi_txdatready
 wire aclpacket = srctxpktype==4'h3 | srctxpktype==4'h4 | srctxpktype==4'h8 | srctxpktype==4'h9 | 
                  srctxpktype==4'ha | srctxpktype==4'hb | srctxpktype==4'he | srctxpktype==4'hf;
 wire srcFLOW_t = dec_flow_device | !prerx_trans | !dec_crcgood | !aclpacket;
@@ -139,8 +143,14 @@ begin
 end
 
 // Spec : Figure 7.15
-assign sendnewpy = conns & (!txpktype_data | (txpktype_data & dec_arqn[ms_lt_addr]));
-assign sendoldpy = conns &  txpktype_data & !dec_arqn[ms_lt_addr] & !flushcmd_flag;
+// Vol2 PartB 4.5.3.2 : in case flow stop then start, should re-transmit old pyload
+// 
+assign sendnewpy = conns & ( !txpktype_data | 
+                             (txpktype_data & dec_arqn[ms_lt_addr] & 
+                               (dec_flow[ms_lt_addr] & !flow_stop_start[ms_lt_addr])
+                             )
+                           );
+assign sendoldpy = conns &  txpktype_data & (!dec_arqn[ms_lt_addr] | !dec_flow[ms_lt_addr]) & !flushcmd_flag;
 assign send0py   = conns &  txpktype_data & !dec_arqn[ms_lt_addr] &  flushcmd_flag;  // 0 length continue ACL-U packet
 
 reg [7:0] txaclSEQN;
@@ -205,11 +215,17 @@ wire reject_eSCOpyload = condi_B & !rxeSCOvalid_pyload & !rxeSCOpacketOK;
 
 wire accept_aclpyload = condi_A & !esco_addressed & dec_pktype_data & dec_seqn!=SEQN_old[dec_lt_addr] & dec_crcgood & dec_micgood;
 wire ignore_aclpyload = condi_A & !esco_addressed & dec_pktype_data & dec_seqn==SEQN_old[dec_lt_addr];
-wire reject_aclpyload = condi_A & !esco_addressed & (
-                                                  (dec_seqn!=SEQN_old[dec_lt_addr] & (!dec_crcgood | !dec_micgood)) |
+wire reject_aclpyload_0 = condi_A & !esco_addressed & (
+                                                  (dec_seqn!=SEQN_old[dec_lt_addr] & (!dec_crcgood | !dec_micgood)) 
+                                                 // (dec_seqn!=SEQN_old[dec_lt_addr] & dec_pktype_kk            ) |
+                                                 // (!dec_pktype_data & !dec_pktype_kk             )  
+                                                 ) ;
+wire reject_aclpyload_1 = condi_A & !esco_addressed & (
+                                                  //(dec_seqn!=SEQN_old[dec_lt_addr] & (!dec_crcgood | !dec_micgood)) |
                                                   (dec_seqn!=SEQN_old[dec_lt_addr] & dec_pktype_kk            ) |
                                                   (!dec_pktype_data & !dec_pktype_kk             )  
                                                  ) ;
+
 //
 reg dec_py_endp_d1;
 always @(posedge clk_6M or negedge rstz)
@@ -257,12 +273,12 @@ begin
      txARQN[ms_lt_addr] <= 1'b0;
      
   // Spec Figure 7.12
-  else if ((fail1|fail2) & dec_py_endp_d1 & regi_isMaster)
+  else if ((fail1|fail2) & ckheader_endp & regi_isMaster)
      txARQN[ms_lt_addr] <= 1'b0;
-  else if (fail1 & dec_py_endp_d1 & !regi_isMaster)
+  else if (fail1 & ckheader_endp & !regi_isMaster)
      txARQN <= 8'b0;
 // keep previous ack value
-//  else if (fail2 & dec_py_endp_d1 & !regi_isMaster)
+//  else if (fail2 & ckheader_endp & !regi_isMaster)
 //     txARQN <= txARQN;
      
 // sco
@@ -270,10 +286,18 @@ begin
      txARQN[dec_lt_addr] <= 1'b1 ;
   else if (reject_eSCOpyload & eSCOwindow)
      txARQN[dec_lt_addr] <= 1'b0 ;
+
 // acl
-  else if ((accept_aclpyload | ignore_aclpyload) & dec_py_endp_d1)
+// if resp-packet is null, which no pyload and dont meet following condition
+// so keep old txARQN
+  else if ((accept_aclpyload) & dec_py_endp_d1) // consider crc/mic good
      txARQN[dec_lt_addr] <= 1'b1 ;
-  else if ((reject_aclpyload ) & dec_py_endp_d1)
+  else if ((ignore_aclpyload) & ckheader_endp)  // dont consider crc/mic good
+     txARQN[dec_lt_addr] <= 1'b1 ;
+//
+  else if ((reject_aclpyload_0 ) & dec_py_endp_d1)
+     txARQN[dec_lt_addr] <= 1'b0 ;
+  else if ((reject_aclpyload_1 ) & ckheader_endp)
      txARQN[dec_lt_addr] <= 1'b0 ;
 end
 
