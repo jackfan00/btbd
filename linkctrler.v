@@ -175,6 +175,7 @@ wire inqExt_tslotdly_endp, inqExt_tslot2dly_endp;
 reg m_txcmd, s_txcmd;
 reg m_conns_1stslot, s_conns_1stslot;
 wire conns_tx_pac_st_p;
+wire connsactive;
 
 parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_STATE=5'd3, PageScan_STATE=5'd4,
           CONNECTIONActive_STATE=5'd5, CONNECTIONHold_STATE=5'd6, CONNECTIONSniff_STATE=5'd7, CONNECTIONPark_STATE=5'd8,
@@ -875,6 +876,8 @@ assign connsnewslave = (cs==CONNECTIONnewslave_STATE) | (cs==CONNECTIONnewslave_
 
 assign conns = (cs==CONNECTIONActive_STATE) | connsnewslave | connsnewmaster;
 
+assign connsactive = (cs==CONNECTIONActive_STATE);
+
 assign pstxid = (cs==PageSlaveResp_txid_STATE);
 
 assign psackfhs = (cs==PageSlaveResp_ackfhs_STATE);
@@ -927,6 +930,7 @@ wire m_scotxcmd_p = 1'b0; //for tmp
 wire s_scotxcmd_p = 1'b0; //for tmp
 
 wire s_1st_resp_p = connsnewslave & s_corre & rxispoll & s_tslot_p & lt_addressed;
+wire s_resp_p     = connsactive & s_corre & s_tslot_p & lt_addressed;
 
 //assign m_txcmd_p = regi_txcmd_p ; //| m_scotxcmd_p;
 //assign s_txcmd_p = regi_txcmd_p ; //| s_scotxcmd_p;
@@ -983,9 +987,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      ms_conns_tx1stslot <= 0;
-  else if (ms_RXslot_endp | m_txcmd_p)  //ms_acltxcmd_p | m_txcmd_p)  //master mcu trigger first tx after page completed 
+  else if (m_txcmd_p)  //ms_RXslot_endp |   //master mcu trigger tx after page completed 
      ms_conns_tx1stslot <= 1'b1;
-  else if (s_1st_resp_p)  //slave response(tx) 1st packet 
+  else if (s_1st_resp_p | s_resp_p)  //slave response(tx) 1st packet 
      ms_conns_tx1stslot <= 1'b1;
   else if (ms_tslot_p)
      ms_conns_tx1stslot <= 1'b0;
@@ -1008,7 +1012,9 @@ end
 //assign conns_tx_pac_st_p = regi_isMaster ? (m_txcmd & m_tslot_p & CLK[1])    | m_acltx_p    | m_scotxcmd_p : 
 //                                           (s_txcmd & s_tslot_p & (!CLK[1])) | s_acltxcmd_p | s_scotxcmd_p ;
 
-assign conns_tx_pac_st_p = ms_acltxcmd_p | m_txcmd_p | s_1st_resp_p; // from arqflowctrl.v
+// for audio, ms_isoacl_p is automatically gen pulse
+wire ms_isoacl_p = 1'b0; //for tmp
+assign conns_tx_pac_st_p = ms_isoacl_p | m_txcmd_p | s_1st_resp_p | s_resp_p; // ms_acltxcmd_p from arqflowctrl.v
  
 assign conns_tx1stslot = conns & ms_conns_tx1stslot;//(regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
 assign pk_encode = pk_encode_1stslot | txextendslot;

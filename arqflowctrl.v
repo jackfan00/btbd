@@ -235,7 +235,7 @@ begin
 //     SEQN_old[ms_lt_addr] <= 1'b1;
 //  else if (connsnewslave)
 //     SEQN_old[ms_lt_addr] <= 1'b1;
-  else if (accept_aclpyload & ms_RXslot_endp) //dec_py_endp_d1)
+  else if (accept_aclpyload & dec_py_endp_d1)
      SEQN_old[dec_lt_addr] <= dec_seqn ;
 end
 
@@ -257,12 +257,12 @@ begin
      txARQN[ms_lt_addr] <= 1'b0;
      
   // Spec Figure 7.12
-  else if ((fail1|fail2) & ms_RXslot_endp & regi_isMaster)
+  else if ((fail1|fail2) & dec_py_endp_d1 & regi_isMaster)
      txARQN[ms_lt_addr] <= 1'b0;
-  else if (fail1 & ms_RXslot_endp & !regi_isMaster)
+  else if (fail1 & dec_py_endp_d1 & !regi_isMaster)
      txARQN <= 8'b0;
 // keep previous ack value
-//  else if (fail2 & ms_RXslot_endp & !regi_isMaster)
+//  else if (fail2 & dec_py_endp_d1 & !regi_isMaster)
 //     txARQN <= txARQN;
      
 // sco
@@ -271,9 +271,9 @@ begin
   else if (reject_eSCOpyload & eSCOwindow)
      txARQN[dec_lt_addr] <= 1'b0 ;
 // acl
-  else if ((accept_aclpyload | ignore_aclpyload) & ms_RXslot_endp) //dec_py_endp_d1)
+  else if ((accept_aclpyload | ignore_aclpyload) & dec_py_endp_d1)
      txARQN[dec_lt_addr] <= 1'b1 ;
-  else if ((reject_aclpyload ) & ms_RXslot_endp) //dec_py_endp_d1)
+  else if ((reject_aclpyload ) & dec_py_endp_d1)
      txARQN[dec_lt_addr] <= 1'b0 ;
 end
 
@@ -291,7 +291,7 @@ end
 
 //Spec : Figure 7.12, 7.13
 wire reserved_slot = 1'b0; //for tmp
-assign ms_acltxcmd_p = fail1 & (!reserved_slot) ? 1'b0 : 
+assign ms_acltxcmd_p = fail1 & (!regi_isMaster) & (!reserved_slot) ? 1'b0 : 
                        fail2 & (!regi_isMaster) ? 1'b0 : ms_RXslot_endp;  //s_acltxcmd & s_tslot_p;
                       
 
