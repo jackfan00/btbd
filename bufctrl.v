@@ -117,11 +117,25 @@ assign lnctrl_txpybitin = lnctrl_bufpacket[pybitcount[4:0]];
 ////////end
 
 //
+// 
 // master: mcu issue tx cmd every time he want to tx
-//  in case of re-transmit (NAK), mcu check whether regi_txs1a change or not
-//  mcu continue issue tx cmd, because regi_txs1a not change, it send old data
-//  mcu should write new data to fifo after regi_txs1a change
-// slave : just simple follow master's tx slot, mcu dont need issue tx cmd 
+//         case1: transmit new pyload, LC issue newpy_INT to mcu.
+//                mcu first parse received data after receive newpy_INT,  
+//                , prepare proper response data, write to txacl buffer.
+//                and issue tx cmd
+//         case2: re-transmit old pyload, LC not issue INT.
+//                mcu dont write data to acl buffer.
+//                mcu need issue tx cmd, LC then send old data
+//  
+// slave : case1: transmit new pyload, LC issue newpy_INT to mcu.
+//                mcu first parse received data after receive newpy_INT,  
+//                , prepare proper response data, write to txacl buffer.
+//                At slave tx timeslot, LC will automatically switch buffer and transmit
+//                the response data.
+//         case2: re-transmit old pyload, LC not issue INT. mcu do nothing.
+//                LC will take care re-transmit things
+//                LC will re-transmit(following master tx slot) old data until meet case1 condition
+//         
 
 reg regi_txs1a;
 always @(posedge clk_6M or negedge rstz)
@@ -130,8 +144,6 @@ begin
      regi_txs1a <= 1'b0;
   else if (regi_chgbufcmd_p)  //switch condition is control by mcu for 1st packet 
      regi_txs1a <= ~regi_txs1a;
-//after mcu write tx data to sram, mcu set ready flag, then BB_LC tx   
-//  else if (cantxnxtpy[ms_lt_addr] & regi_txdatready & tx_packet_st_p)
   else if (sendnewpy & tx_packet_st_p)  //& regi_txdatready
      regi_txs1a <= ~regi_txs1a;
 //

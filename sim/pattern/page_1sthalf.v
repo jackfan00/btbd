@@ -293,12 +293,18 @@ bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h05,8'h04});
 
 //
 // retransmit or not
-if (m_regi_srcFLOW[regi_LT_ADDR])
-  begin
+//if (m_regi_srcFLOW[regi_LT_ADDR])
+//  begin
     chgbuf(1);
     newdatready(1);
-  end  
+//  end  
 //
+m_txcmd;
+//
+//
+wait (bt_top_m.linkctrler_u.corre_trgp);  //
+wait (bt_top_m.rxbit_period_endp);
+m_regi_packet_type = 4'd0;  //null packet
 m_txcmd;
 //
 end
@@ -308,6 +314,12 @@ end
 reg [7:0] s_pyheader_l,s_pyheader_h;
 initial begin
 wait (bt_top_s.linkctrler_u.cs==5'd5);
+regi_mylt_address = 3'd3;
+s_regi_packet_type = 4'd0; //null
+wait (bt_top_s.linkctrler_u.corre_trgp);  //
+wait (bt_top_s.rxbit_period_endp);  //1st , respnse with null
+//@(negedge bt_top_s.rxbit_period_endp);  //2nd , response with data (master should send null)
+wait (bt_top_s.linkctrler_u.corre_trgp);  //
 //
 regi_mylt_address = 3'd3;
 s_regi_packet_type = 4'd3;
@@ -319,11 +331,11 @@ bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h03,8'h02,8'h01,s_pyheader_l});
 bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04});
 
 // retransmit or not
-if (s_regi_srcFLOW[regi_mylt_address])
-  begin
+//if (s_regi_srcFLOW[regi_mylt_address])
+//  begin
     chgbuf(0);
     newdatready(0);
-  end
+//  end
 //
 // slave auto reponse
 end

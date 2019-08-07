@@ -138,7 +138,8 @@ assign header_st_p = (all_bitcount==8'd71) & p_1us;
 assign guard_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd125) & p_1us;
 assign edrsync11_st_p = packet_BRmode ? 1'b0 : (all_bitcount==8'd130) & p_1us;
 
-assign py_st_p = !(srcFLOW[ms_lt_addr]) & pk_encode ? 1'b0 :   // flow=STOP, dont send payload
+assign py_st_p = //!(srcFLOW[ms_lt_addr]) & pk_encode ? 1'b0 :   // flow=STOP, dont send payload
+                 pylenbit==13'b0 ? 1'b0 :
                  packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
 
 //wire hec_endp = packet_BRmode ? (all_bitcount==8'd125) & p_1us : (all_bitcount==8'd141) & p_1us;
@@ -187,6 +188,8 @@ wire [3:0] txpktype = mpr | istxfhs ? 4'b0010 :   //fhs
                     conns ? srctxpktype : 4'b0; //regi_packet_type;
 
 // slave: should be response in next slot with current regi_mylt_address
+//        so mcu should parse received data, prepare response data
+//
 wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 
 wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
@@ -312,7 +315,7 @@ begin
 end
 
 reg [7:0] dec_flow_t, dec_arqn_t;
-reg [7:0] dec_flow, dec_arqn;
+reg [7:0] dec_flow, dec_arqn ;
 reg dec_seqn;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -330,7 +333,17 @@ begin
      dec_arqn_t[dec_lt_addr] <= {decodeout};
 end
 
+// seqn valid check in arqflowctrl.v
+//
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     dec_seqn <= 0;
+  else if (header_bitcount==5'd9 & fec31inc_p & header_en & (!pk_encode))
+     dec_seqn <= {decodeout};
+end
 
+//valid check then store value
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -359,13 +372,7 @@ begin
 end
 assign flow_stop_start = (~dec_flow_d) & dec_flow;
 
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     dec_seqn <= 0;
-  else if (header_bitcount==5'd9 & fec31inc_p & header_en & (!pk_encode))
-     dec_seqn <= {decodeout};
-end
+
 
 assign rxisnull = dec_pk_type==4'b0000;
 assign rxispoll = dec_pk_type==4'b0001;

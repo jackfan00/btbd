@@ -100,18 +100,18 @@ wire dec_flow_device = dec_flow[dec_lt_addr];
 assign srctxpktype = dec_flow_device ? regi_packet_type : 4'b0 ;   //& regi_txdatready
 wire aclpacket = srctxpktype==4'h3 | srctxpktype==4'h4 | srctxpktype==4'h8 | srctxpktype==4'h9 | 
                  srctxpktype==4'ha | srctxpktype==4'hb | srctxpktype==4'he | srctxpktype==4'hf;
-wire srcFLOW_t = dec_flow_device | !prerx_trans | !dec_crcgood | !aclpacket;
-
-reg [7:0] srcFLOW;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     srcFLOW <= 8'hff;
-  else if (connsnewmaster | connsnewslave)
-     srcFLOW <= 8'hff;
-  else if (ms_tslot_p & (!pk_encode))
-     srcFLOW[ms_lt_addr] <= srcFLOW_t ;
-end
+////////wire srcFLOW_t = dec_flow_device | !prerx_trans | !dec_crcgood | !aclpacket;
+////////
+////////reg [7:0] srcFLOW;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     srcFLOW <= 8'hff;
+////////  else if (connsnewmaster | connsnewslave)
+////////     srcFLOW <= 8'hff;
+////////  else if (ms_tslot_p & (!pk_encode))
+////////     srcFLOW[ms_lt_addr] <= srcFLOW_t ;
+////////end
 
 //
 // TX arq ctrl
@@ -145,7 +145,7 @@ end
 // Spec : Figure 7.15
 // Vol2 PartB 4.5.3.2 : in case flow stop then start, should re-transmit old pyload
 // 
-assign sendnewpy = conns & ( !txpktype_data | 
+assign sendnewpy = conns & ( //!txpktype_data | , sco case
                              (txpktype_data & dec_arqn[ms_lt_addr] & 
                                (dec_flow[ms_lt_addr] & !flow_stop_start[ms_lt_addr])
                              )
