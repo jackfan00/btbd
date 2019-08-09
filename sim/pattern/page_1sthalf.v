@@ -274,39 +274,74 @@ reg o_we, o_cs;
 
 reg [7:0] m_pyheader_l,m_pyheader_h;
 initial begin
-wait (bt_top_m.conns);
-wait (bt_top_m.linkctrler_u.cs==5'd5);
-//
 m_regi_txwhitening = 1'b0;
 m_regi_rxwhitening = 1'b0;
 s_regi_txwhitening = 1'b0;
 s_regi_rxwhitening = 1'b0;
-
+//
+wait (bt_top_m.conns);
+wait (bt_top_m.linkctrler_u.cs==5'd5);
+//
+# 1234;
+//
+// prepare data and header, then write to buffer (only data, header is register setting)
+// 
 regi_LT_ADDR = 3'd3;
 m_regi_packet_type = 4'd4;
 m_regi_payloadlen = 10'd5; //bytes
-//
 m_pyheader_l = {m_regi_payloadlen[4:0], 1'b1, 2'b10};
 m_pyheader_h = {3'b0,m_regi_payloadlen[9:5]};
+// mcu write to buffer
 bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 0, {8'h03,8'h02,8'h01,m_pyheader_l});
 bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h05,8'h04});
-
 //
-// retransmit or not
-//if (m_regi_srcFLOW[regi_LT_ADDR])
-//  begin
+//  for 1st packet, mcu need to switch buffer manually 
     chgbuf(1);
-    newdatready(1);
-//  end  
-//
-m_txcmd;
-//
-//
+//    newdatready(1);
+//  mcu issue tx cmd
+# 5678;
+    m_txcmd;
+
+
+// 2nd py
+// prepare new py
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 0, {8'h08,8'h07,8'h06,m_pyheader_l});
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h0a,8'h09});
+// send new py until ACK
 wait (bt_top_m.linkctrler_u.corre_trgp);  //
-wait (bt_top_m.rxbit_period_endp);
-m_regi_packet_type = 4'd0;  //null packet
-m_txcmd;
+wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
+//wait (bt_top_m.rxbit_period_endp);
+//m_regi_packet_type = 4'd0;  //null packet
+# 5678;
+    m_txcmd;
 //
+
+
+// after 3rd py
+// prepare new py
+@ (negedge bt_top_m.allbitp_u.bufctrl_u.regi_txs1a);  //
+//wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 0, {8'h0d,8'h0c,8'h0b,m_pyheader_l});
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h0f,8'h0e});
+// send new py until ACK
+//wait (bt_top_m.rxbit_period_endp);
+//m_regi_packet_type = 4'd0;  //null packet
+# 5678;
+    m_txcmd;
+//
+
+// prepare new py
+@ (posedge bt_top_m.allbitp_u.bufctrl_u.regi_txs1a);  //
+//wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 0, {8'h1d,8'h1c,8'h1b,m_pyheader_l});
+bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h1f,8'h1e});
+// send new py until ACK
+//wait (bt_top_m.rxbit_period_endp);
+//m_regi_packet_type = 4'd0;  //null packet
+# 5678;
+    m_txcmd;
+//
+
 end
 
 
@@ -315,11 +350,11 @@ reg [7:0] s_pyheader_l,s_pyheader_h;
 initial begin
 wait (bt_top_s.linkctrler_u.cs==5'd5);
 regi_mylt_address = 3'd3;
-s_regi_packet_type = 4'd0; //null
-wait (bt_top_s.linkctrler_u.corre_trgp);  //
-wait (bt_top_s.rxbit_period_endp);  //1st , respnse with null
+s_regi_packet_type = 4'd3;
+//wait (bt_top_s.linkctrler_u.corre_trgp);  //
+//wait (bt_top_s.rxbit_period_endp);  //1st , respnse with null
 //@(negedge bt_top_s.rxbit_period_endp);  //2nd , response with data (master should send null)
-wait (bt_top_s.linkctrler_u.corre_trgp);  //
+//wait (bt_top_s.linkctrler_u.corre_trgp);  //
 //
 regi_mylt_address = 3'd3;
 s_regi_packet_type = 4'd3;
@@ -330,12 +365,19 @@ s_pyheader_h = {3'b0,s_regi_payloadlen[9:5]};
 bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h03,8'h02,8'h01,s_pyheader_l});
 bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04});
 
-// retransmit or not
-//if (s_regi_srcFLOW[regi_mylt_address])
-//  begin
+// 1st reponse py
     chgbuf(0);
-    newdatready(0);
-//  end
-//
+//    newdatready(0);
+
+
+// 2nd response, after receive ACK
 // slave auto reponse
+// 
+wait (bt_top_s.linkctrler_u.corre_trgp);  //
+wait (bt_top_s.allbitp_u.headerbitp_u.dec_arqn[regi_mylt_address]);
+//wait (bt_top_s.linkctrler_u.corre_trgp);  //
+#1111;
+s_regi_packet_type = 4'd0; //null
+
+
 end

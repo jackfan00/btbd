@@ -78,7 +78,8 @@ rxisfhs, dec_crcgood,
 ms_RXslot_endp,
 py_endp,
 rxextendslot,
-regi_txs1a
+regi_txs1a,
+sendoldpy
 
 );
 
@@ -163,6 +164,7 @@ output ms_RXslot_endp;
 output py_endp;
 output rxextendslot;
 output regi_txs1a;
+output sendoldpy;
 
 //
 wire py_period, daten, dec_py_period;
@@ -196,6 +198,8 @@ wire [12:0] pylenbit;
 wire [2:0] occpuy_slots;
 wire sendnewpy, sendoldpy, send0py;
 wire [7:0] flow_stop_start;
+wire [2:0] txpk_lt_addr;
+wire [1:0] dec_py_endp_d1;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -278,7 +282,8 @@ headerbitp headerbitp_u(
 .hec_endp               (hec_endp               ),
 .rxisfhs                (rxisfhs                ),
 .ckheader_endp          (ckheader_endp          ),
-.flow_stop_start        (flow_stop_start        )
+.flow_stop_start        (flow_stop_start        ),
+.txpk_lt_addr           (txpk_lt_addr           )
 
 );
 
@@ -315,7 +320,8 @@ pktydecode pktydecode_u(
 .txextendslot     (txextendslot     ),
 .rxextendslot     (rxextendslot     ),
 .ms_TXslot_endp   (ms_TXslot_endp   ), 
-.ms_RXslot_endp   (ms_RXslot_endp   )
+.ms_RXslot_endp   (ms_RXslot_endp   ),
+.conns_rx1stslot  (conns_rx1stslot  )
 
 );
 
@@ -326,6 +332,7 @@ pybitp pybitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.dec_py_endp_d1         (dec_py_endp_d1         ),
 .packet_BRmode          (packet_BRmode          ), 
 .packet_DPSK            (packet_DPSK            ),
 .mpr                    (mpr                    ),
@@ -507,6 +514,9 @@ wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.conns_rx1stslot    (conns_rx1stslot    ),
+.corre_nottrg_p     (corre_nottrg_p     ),
+.txpk_lt_addr       (txpk_lt_addr       ),
 .flow_stop_start    (flow_stop_start    ),
 .ckheader_endp      (ckheader_endp      ),
 .regi_txdatready    (regi_txdatready    ),
@@ -553,7 +563,8 @@ arqflowctrl arqflowctrl_u(
 .SEQN_old           (SEQN_old           ),
 .sendnewpy          (sendnewpy          ), 
 .sendoldpy          (sendoldpy          ), 
-.send0py            (send0py            )
+.send0py            (send0py            ),
+.dec_py_endp_d1     (dec_py_endp_d1     )
 
 );
 

@@ -1,5 +1,6 @@
 module pybitp(
 clk_6M, rstz, p_1us, 
+dec_py_endp_d1,
 packet_BRmode, packet_DPSK,
 mpr, ir, spr, psrxfhs, inquiryrxfhs,
 py_st_p,
@@ -56,6 +57,7 @@ edrtailer_endp
 );
 
 input clk_6M, rstz, p_1us;
+input [1:0] dec_py_endp_d1;
 input packet_BRmode, packet_DPSK;
 input mpr, ir, spr, psrxfhs, inquiryrxfhs;
 input py_st_p;
@@ -283,6 +285,7 @@ pypro pypro_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.dec_py_endp_d1         (dec_py_endp_d1         ),
 .regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
 .regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),
 .regi_my_BD_ADDR_UAP    (regi_my_BD_ADDR_UAP    ),

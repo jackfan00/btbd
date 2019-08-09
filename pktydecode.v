@@ -15,7 +15,8 @@ BRss_f,
 existpyheader_f,
 allowedeSCOtype,
 txextendslot, rxextendslot,
-ms_TXslot_endp, ms_RXslot_endp
+ms_TXslot_endp, ms_RXslot_endp,
+conns_rx1stslot
 
 );
 input clk_6M, rstz;
@@ -35,6 +36,7 @@ output existpyheader_f;
 output allowedeSCOtype;
 output txextendslot, rxextendslot;
 output ms_TXslot_endp, ms_RXslot_endp;
+output conns_rx1stslot;
 //
 //
 wire BRss;

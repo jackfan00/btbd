@@ -166,6 +166,7 @@ wire [27:2] fhs_CLK;
 wire [2:0]  fhs_PSM;
 wire ms_acltxcmd_p;
 wire rxextendslot;
+wire sendoldpy;
 
 wire [27:0] hop_BD_ADDR = 
                           is | giis | ir | inquiry ? {regi_GIAC_BD_ADDR_UAP[3:0], regi_GIAC_BD_ADDR_LAP}  :
@@ -397,6 +398,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.sendoldpy                   (sendoldpy                   ),
 .rxextendslot                (rxextendslot                ),
 .py_endp                     (py_endp                     ),
 .ms_RXslot_endp              (ms_RXslot_endp              ),
@@ -683,7 +685,8 @@ allbitp allbitp_u(
 .ms_RXslot_endp         (ms_RXslot_endp         ),
 .py_endp                (py_endp                ),
 .rxextendslot           (rxextendslot           ),
-.regi_txs1a             (regi_txs1a             )
+.regi_txs1a             (regi_txs1a             ),
+.sendoldpy              (sendoldpy              )
 
 );
 

@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+sendoldpy,
 rxextendslot,
 py_endp,
 ms_RXslot_endp,
@@ -81,6 +82,7 @@ regi_txdatready
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input sendoldpy;
 input rxextendslot;
 input py_endp;
 input ms_RXslot_endp;
@@ -990,10 +992,12 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      ms_conns_tx1stslot <= 0;
-  else if (m_txcmd_p)  //ms_RXslot_endp |   //master mcu trigger tx after page completed 
+  else if (conns_tx_pac_st_p)
      ms_conns_tx1stslot <= 1'b1;
-  else if (s_1st_resp_p | s_resp_p)  //slave response(tx) 1st packet 
-     ms_conns_tx1stslot <= 1'b1;
+  //else if (m_txcmd_p)  //ms_RXslot_endp |   //master mcu trigger tx after page completed 
+  //   ms_conns_tx1stslot <= 1'b1;
+  //else if (s_1st_resp_p | s_resp_p)  //slave response(tx) 1st packet 
+  //   ms_conns_tx1stslot <= 1'b1;
   else if (ms_tslot_p)
      ms_conns_tx1stslot <= 1'b0;
 end
@@ -1017,7 +1021,10 @@ end
 
 // for audio, ms_isoacl_p is automatically gen pulse
 wire ms_isoacl_p = 1'b0; //for tmp
-assign conns_tx_pac_st_p = ms_isoacl_p | m_txcmd_p | s_1st_resp_p | s_resp_p; // ms_acltxcmd_p from arqflowctrl.v
+
+//master auto re-tx 
+wire m_re_tx_p = ms_RXslot_endp & sendoldpy & regi_isMaster;
+assign conns_tx_pac_st_p = ms_isoacl_p | m_txcmd_p | m_re_tx_p | s_1st_resp_p | s_resp_p; // ms_acltxcmd_p from arqflowctrl.v
  
 assign conns_tx1stslot = conns & ms_conns_tx1stslot;//(regi_isMaster ? m_conns_1stslot : s_conns_1stslot);
 assign pk_encode = pk_encode_1stslot | txextendslot;

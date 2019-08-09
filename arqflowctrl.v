@@ -3,6 +3,9 @@
 //
 module arqflowctrl(
 clk_6M, rstz,
+conns_rx1stslot,
+corre_nottrg_p,
+txpk_lt_addr,
 flow_stop_start,
 ckheader_endp,
 regi_txdatready,
@@ -39,11 +42,15 @@ srcFLOW,
 rspFLOW,
 pktype_data,
 SEQN_old,
-sendnewpy, sendoldpy, send0py
+sendnewpy, sendoldpy, send0py,
+dec_py_endp_d1
 
 );
 
 input clk_6M, rstz;
+input conns_rx1stslot;
+input corre_nottrg_p;
+input [2:0] txpk_lt_addr;
 input [7:0] flow_stop_start;
 input ckheader_endp;
 input regi_txdatready;
@@ -81,9 +88,11 @@ output rspFLOW;
 output pktype_data;
 output [7:0] SEQN_old;
 output sendnewpy, sendoldpy, send0py;
+output [1:0] dec_py_endp_d1;
 
 wire dec_pktype_data, txpktype_data;
 reg [7:0] SEQN_old;
+reg [1:0] dec_py_endp_d1;
 
 assign pktype_data = pk_encode ? txpktype_data : dec_pktype_data;
 //destination control
@@ -142,16 +151,16 @@ begin
      flushcmd_flag <= 1'b0 ;
 end
 
-// Spec : Figure 7.15
+// Spec : Figure 7.15, tx slot
 // Vol2 PartB 4.5.3.2 : in case flow stop then start, should re-transmit old pyload
 // 
 assign sendnewpy = conns & ( //!txpktype_data | , sco case
-                             (txpktype_data & dec_arqn[ms_lt_addr] & 
-                               (dec_flow[ms_lt_addr] & !flow_stop_start[ms_lt_addr])
+                             (txpktype_data & dec_arqn[txpk_lt_addr] & 
+                               (dec_flow[txpk_lt_addr] & !flow_stop_start[txpk_lt_addr])
                              )
                            );
-assign sendoldpy = conns &  txpktype_data & (!dec_arqn[ms_lt_addr] | !dec_flow[ms_lt_addr]) & !flushcmd_flag;
-assign send0py   = conns &  txpktype_data & !dec_arqn[ms_lt_addr] &  flushcmd_flag;  // 0 length continue ACL-U packet
+assign sendoldpy = conns &  txpktype_data & (!dec_arqn[txpk_lt_addr] | !dec_flow[txpk_lt_addr]) & !flushcmd_flag;
+assign send0py   = conns &  txpktype_data & !dec_arqn[txpk_lt_addr] &  flushcmd_flag;  // 0 length continue ACL-U packet
 
 reg [7:0] txaclSEQN;
 always @(posedge clk_6M or negedge rstz)
@@ -163,8 +172,8 @@ begin
 //  else if (regi_chgbufcmd_p)  // mcu check dec_arqn[ms_lt_addr] to determine switch buffer or not
 //     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
 // Spec : Figure 7.15
-  else if (pk_encode & txpktype_data & dec_arqn[ms_lt_addr] & header_st_p)
-     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
+  else if (pk_encode & txpktype_data & dec_arqn[txpk_lt_addr] & header_st_p)
+     txaclSEQN[txpk_lt_addr] <= ~txaclSEQN[txpk_lt_addr] ;
 end
 
 wire eSCOwindow_endp = 1'b0; //for tmp
@@ -214,6 +223,7 @@ wire reject_eSCOpyload = condi_B & !rxeSCOvalid_pyload & !rxeSCOpacketOK;
 
 
 wire accept_aclpyload = condi_A & !esco_addressed & dec_pktype_data & dec_seqn!=SEQN_old[dec_lt_addr] & dec_crcgood & dec_micgood;
+
 wire ignore_aclpyload = condi_A & !esco_addressed & dec_pktype_data & dec_seqn==SEQN_old[dec_lt_addr];
 wire reject_aclpyload_0 = condi_A & !esco_addressed & (
                                                   (dec_seqn!=SEQN_old[dec_lt_addr] & (!dec_crcgood | !dec_micgood)) 
@@ -227,13 +237,12 @@ wire reject_aclpyload_1 = condi_A & !esco_addressed & (
                                                  ) ;
 
 //
-reg dec_py_endp_d1;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_py_endp_d1 <= 0;
   else 
-     dec_py_endp_d1 <= dec_py_endp ;
+     dec_py_endp_d1 <= {dec_py_endp_d1[0],dec_py_endp} ;
 end
 
 wire reg_wr_sqen=1'b0; //for tmp
@@ -251,7 +260,7 @@ begin
 //     SEQN_old[ms_lt_addr] <= 1'b1;
 //  else if (connsnewslave)
 //     SEQN_old[ms_lt_addr] <= 1'b1;
-  else if (accept_aclpyload & dec_py_endp_d1)
+  else if (accept_aclpyload & dec_py_endp_d1[1])
      SEQN_old[dec_lt_addr] <= dec_seqn ;
 end
 
@@ -266,16 +275,24 @@ begin
   else if (reg_wr_arqn)
      txARQN <= reg_wdata;
   // master initial ARQN=NAK   
-  else if (connsnewmaster)
-     txARQN[ms_lt_addr] <= 1'b0;
+  else if (connsnewmaster & header_st_p)  // initial ARQN=NAK just before 1st tx
+     txARQN[txpk_lt_addr] <= 1'b0;
   // slave initial ARN=NAK   
-  else if (connsnewslave)
-     txARQN[ms_lt_addr] <= 1'b0;
+  else if (connsnewslave & header_st_p)   // initial ARQN=NAK just before 1st tx
+     txARQN[txpk_lt_addr] <= 1'b0;
      
   // Spec Figure 7.12
-  else if ((fail1|fail2) & ckheader_endp & regi_isMaster)
-     txARQN[ms_lt_addr] <= 1'b0;
-  else if (fail1 & ckheader_endp & !regi_isMaster)
+  // master: RX slot address should be same as TX slot address
+  else if (corre_nottrg_p & conns_rx1stslot & conns & regi_isMaster)  // not trigger
+     txARQN[txpk_lt_addr] <= 1'b0;
+  else if ((fail1|fail2) & conns & ckheader_endp & regi_isMaster)  // HEC error
+     txARQN[txpk_lt_addr] <= 1'b0;
+  //   
+  //slave : if not receive valid packet at any rx slot, all address set to NAK.
+  // because any address is possible miss   
+  else if (corre_nottrg_p & conns & !regi_isMaster) // not trigger, diff condition from master
+     txARQN <= 8'b0;
+  else if (!dec_hecgood & conns & ckheader_endp & !regi_isMaster) // HEC error
      txARQN <= 8'b0;
 // keep previous ack value
 //  else if (fail2 & ckheader_endp & !regi_isMaster)
@@ -287,17 +304,17 @@ begin
   else if (reject_eSCOpyload & eSCOwindow)
      txARQN[dec_lt_addr] <= 1'b0 ;
 
-// acl
+// acl : addressed case
 // if resp-packet is null, which no pyload and dont meet following condition
 // so keep old txARQN
-  else if ((accept_aclpyload) & dec_py_endp_d1) // consider crc/mic good
+  else if ((accept_aclpyload) & conns & dec_py_endp_d1[1]) // consider crc/mic good
      txARQN[dec_lt_addr] <= 1'b1 ;
-  else if ((ignore_aclpyload) & ckheader_endp)  // dont consider crc/mic good
+  else if ((ignore_aclpyload) & conns & ckheader_endp)  // dont consider crc/mic good
      txARQN[dec_lt_addr] <= 1'b1 ;
 //
-  else if ((reject_aclpyload_0 ) & dec_py_endp_d1)
+  else if ((reject_aclpyload_0 ) & conns & dec_py_endp_d1[1])
      txARQN[dec_lt_addr] <= 1'b0 ;
-  else if ((reject_aclpyload_1 ) & ckheader_endp)
+  else if ((reject_aclpyload_1 ) & conns & ckheader_endp)
      txARQN[dec_lt_addr] <= 1'b0 ;
 end
 

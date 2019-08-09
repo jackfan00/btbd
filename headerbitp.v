@@ -43,7 +43,8 @@ headpacket_endp,
 hec_endp,
 rxisfhs,
 ckheader_endp,
-flow_stop_start
+flow_stop_start,
+txpk_lt_addr
 
 );
 
@@ -93,6 +94,7 @@ output hec_endp;
 output rxisfhs;
 output ckheader_endp;
 output [7:0] flow_stop_start;
+output [2:0] txpk_lt_addr;
 
 //
 wire headpacket_endp;
@@ -300,10 +302,10 @@ begin
   else if (ms_tslot_p | pk_encode)
      lt_addressed <= 0;
   else if (ckhec & p_1us)
-     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==ms_lt_addr) ;  //header good and match lt_address
+     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==txpk_lt_addr) ;  //header good and match lt_address
 end
 
-wire headvalid_p = ckhec & p_1us & (hecrem==8'h0) & (dec_lt_addr==ms_lt_addr);
+wire headvalid_p = ckhec & p_1us & (hecrem==8'h0) & (dec_lt_addr==txpk_lt_addr);
 
 reg [3:0] dec_pk_type;
 always @(posedge clk_6M or negedge rstz)
@@ -350,6 +352,12 @@ begin
     begin
       dec_flow <= 8'hff;
       dec_arqn <= 0;
+    end  
+  // set NAK after tx, 
+  // in case other side dont receive, it will not response  
+  else if (ms_tslot_p & pk_encode)  
+    begin
+      dec_arqn[txpk_lt_addr] <= 1'b0;
     end  
   else if (headvalid_p)
     begin

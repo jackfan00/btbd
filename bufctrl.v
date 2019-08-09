@@ -117,13 +117,25 @@ assign lnctrl_txpybitin = lnctrl_bufpacket[pybitcount[4:0]];
 ////////end
 
 //
+// Vol2 PartB 4.5.1.1
+// master need to tx every TX slot except no data and no link info transfer.
+// so in some timeslot master is idle (no tx/rx)
+// master RX slot : only at following TX slot, need to check ARQ.
 // 
+// Q1: master LC take care of re-tx (prefer) ? or mcu take care ?
 // master: mcu issue tx cmd every time he want to tx
+//         mcu issue tx cmd, then wail until finished.
+//            finished condition:
+//                  1: successful tx ( include re-tx), 
+//                  2: fail tx (flush timeout expire, 
+//                              if flush timeout is infinite which is default, it hang)
+//         
 //         case1: transmit new pyload, LC issue newpy_INT to mcu.
 //                mcu first parse received data after receive newpy_INT,  
 //                , prepare proper response data, write to txacl buffer.
 //                and issue tx cmd
 //         case2: re-transmit old pyload, LC not issue INT.
+//                
 //                mcu dont write data to acl buffer.
 //                mcu need issue tx cmd, LC then send old data
 //  
