@@ -1,5 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+m_2active_p, s_2active_p,
 regi_txdatready,
 fk_pstxid,
 corre_nottrg_p,
@@ -85,6 +86,7 @@ sendoldpy
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input m_2active_p, s_2active_p;
 input regi_txdatready;
 input fk_pstxid;
 input corre_nottrg_p;
@@ -514,6 +516,8 @@ wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.m_2active_p        (m_2active_p        ), 
+.s_2active_p        (s_2active_p        ),
 .conns_rx1stslot    (conns_rx1stslot    ),
 .corre_nottrg_p     (corre_nottrg_p     ),
 .txpk_lt_addr       (txpk_lt_addr       ),

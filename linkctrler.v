@@ -77,7 +77,9 @@ corre_threshold,
 scancase,
 fk_page,
 ps_pagerespTO,
-regi_txdatready
+regi_txdatready,
+m_2active_p, s_2active_p,
+m_fail2active_p, s_fail2active_p
 
 );
 
@@ -156,6 +158,8 @@ output scancase;
 output fk_page;
 output ps_pagerespTO;
 output regi_txdatready;
+output m_2active_p, s_2active_p;
+output m_fail2active_p, s_fail2active_p;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -878,6 +882,11 @@ assign istxfhs = (cs==InquiryScantxFHS_STATE);
 
 assign connsnewmaster = (cs==CONNECTIONnewmaster_STATE);
 assign connsnewslave = (cs==CONNECTIONnewslave_STATE) | (cs==CONNECTIONnewslave_ackpoll_STATE);
+
+assign s_2active_p = (cs==CONNECTIONnewslave_ackpoll_STATE) & s_tslot_p;
+assign m_2active_p = (cs==CONNECTIONnewmaster_STATE) & m_corre & m_tslot_p;
+assign s_fail2active_p = (cs==CONNECTIONnewslave_STATE) & newconnectionTO;
+assign m_fail2active_p = (cs==CONNECTIONnewmaster_STATE) & newconnectionTO;
 
 assign conns = (cs==CONNECTIONActive_STATE) | connsnewslave | connsnewmaster;
 

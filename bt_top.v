@@ -515,7 +515,10 @@ linkctrler linkctrler_u(
 .scancase                  (scancase                  ),
 .fk_page                   (fk_page                   ),
 .ps_pagerespTO             (ps_pagerespTO             ),
-.regi_txdatready           (regi_txdatready           )
+.regi_txdatready           (regi_txdatready           ),
+.m_2active_p               (m_2active_p               ), 
+.s_2active_p               (s_2active_p               )
+
 
 );
 
@@ -563,6 +566,8 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.m_2active_p            (m_2active_p            ), 
+.s_2active_p            (s_2active_p            ),
 .regi_txdatready        (regi_txdatready        ),
 .fk_pstxid              (fk_pstxid              ),
 .corre_nottrg_p         (corre_nottrg_p         ),

@@ -3,6 +3,7 @@
 //
 module arqflowctrl(
 clk_6M, rstz,
+m_2active_p, s_2active_p,
 conns_rx1stslot,
 corre_nottrg_p,
 txpk_lt_addr,
@@ -48,6 +49,7 @@ dec_py_endp_d1
 );
 
 input clk_6M, rstz;
+input m_2active_p, s_2active_p;
 input conns_rx1stslot;
 input corre_nottrg_p;
 input [2:0] txpk_lt_addr;
@@ -167,7 +169,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      txaclSEQN <= 8'hff;
-  else if (connsnewmaster | connsnewslave)
+  else if (s_2active_p | m_2active_p) //connsnewmaster | connsnewslave)
      txaclSEQN <= 8'hff;
 //  else if (regi_chgbufcmd_p)  // mcu check dec_arqn[ms_lt_addr] to determine switch buffer or not
 //     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
@@ -184,7 +186,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      txscoSEQN <= 1'b1;
-  else if (connsnewmaster | connsnewslave)
+  else if (s_2active_p | m_2active_p) //connsnewmaster | connsnewslave)
      txscoSEQN <= 1'b1;
   else if (eSCOwindow_endp)
      txscoSEQN <= ~txscoSEQN ;
@@ -275,10 +277,10 @@ begin
   else if (reg_wr_arqn)
      txARQN <= reg_wdata;
   // master initial ARQN=NAK   
-  else if (connsnewmaster & header_st_p)  // initial ARQN=NAK just before 1st tx
+  else if (m_2active_p) //connsnewmaster & header_st_p)  // initial ARQN=NAK just before 1st tx
      txARQN[txpk_lt_addr] <= 1'b0;
   // slave initial ARN=NAK   
-  else if (connsnewslave & header_st_p)   // initial ARQN=NAK just before 1st tx
+  else if (s_2active_p) //connsnewslave & header_st_p)   // initial ARQN=NAK just before 1st tx
      txARQN[txpk_lt_addr] <= 1'b0;
      
   // Spec Figure 7.12
