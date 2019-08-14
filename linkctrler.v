@@ -190,6 +190,7 @@ reg m_txcmd, s_txcmd;
 reg m_conns_1stslot, s_conns_1stslot;
 wire conns_tx_pac_st_p;
 wire connsactive;
+wire singleslot;
 
 parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_STATE=5'd3, PageScan_STATE=5'd4,
           CONNECTIONActive_STATE=5'd5, CONNECTIONHold_STATE=5'd6, CONNECTIONSniff_STATE=5'd7, CONNECTIONPark_STATE=5'd8,
@@ -952,12 +953,34 @@ wire m_scotxcmd_p = 1'b0; //for tmp
 wire s_scotxcmd_p = 1'b0; //for tmp
 
 wire s_1st_resp_p = connsnewslave & s_corre & rxispoll & s_tslot_p & lt_addressed;
-wire s_resp_p     = connsactive & s_corre & s_tslot_p & lt_addressed;
+wire s1_resp_p     = connsactive & s_corre & s_tslot_p & lt_addressed;
+reg [2:0] s_slotcnt;
+reg ms_enable;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     ms_enable <= 0;
+  else if (s1_resp_p & !singleslot)
+     ms_enable <= 1'b1;
+  else if (s_slotcnt==occpuy_slots & s_tslot_p)
+     ms_enable <= 1'b0;
+end
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     s_slotcnt <= 0;
+  else if (s1_resp_p & !singleslot)
+     s_slotcnt <= 3'd2;
+  else if (s_tslot_p & ms_enable)
+     s_slotcnt <= s_slotcnt+1'b1;
+end
+wire sm_resp_p = s_slotcnt==occpuy_slots & s_tslot_p & ms_enable;
+wire s_resp_p = singleslot ? s1_resp_p : sm_resp_p;
 
 //assign m_txcmd_p = regi_txcmd_p ; //| m_scotxcmd_p;
 //assign s_txcmd_p = regi_txcmd_p ; //| s_scotxcmd_p;
 
-wire singleslot = occpuy_slots==3'd1;
+assign singleslot = occpuy_slots==3'd1;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)

@@ -405,8 +405,17 @@ pybitp pybitp_u(
 );
 
 
-assign txbit = header_packet_period & pk_encode ? txheaderbit :
+wire txbit_t = header_packet_period & pk_encode ? txheaderbit :
                py_period & pk_encode     ? txpybit     : 1'b0;
+
+reg txbit;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     txbit <= 0;
+  else if (py_datvalid_p)
+     txbit <= txbit_t;
+end
 
 
 assign txbit_period_endp = page | spr | inquiry ? headpacket_endp :      //ID
@@ -414,15 +423,24 @@ assign txbit_period_endp = page | spr | inquiry ? headpacket_endp :      //ID
                                            (pylenbit!=0 ? edrtailer_endp : hec_endp);          //EDR
 
 //assign txbit_period = (header_packet_period | py_period) & pk_encode;
+reg txbit_period_t;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     txbit_period_t <= 0;
+  else if (tx_packet_st_p)
+     txbit_period_t <= 1'b1;
+  else if (txbit_period_endp)
+     txbit_period_t <= 1'b0;
+end
+
 reg txbit_period;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      txbit_period <= 0;
-  else if (tx_packet_st_p)
-     txbit_period <= 1'b1;
-  else if (txbit_period_endp)
-     txbit_period <= 1'b0;
+  else if (py_datvalid_p)
+     txbit_period <= txbit_period_t;
 end
 
 

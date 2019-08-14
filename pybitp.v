@@ -327,7 +327,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      pydecdatout_d <= 0;
-  else if (py_datvalid_p)
+  else if (py_datvalid_p & daten)
      pydecdatout_d <= {pydecdatout_d[7:0],pydecdatout};
 end
 reg [1:0] dec_LLID;
