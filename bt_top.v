@@ -71,7 +71,11 @@ rxbit_period, rxbit_period_endp,
 nxtfk,
 fk_chg_p, fk_chg_p_ff,
 regi_s_slot_offset,
-regi_txs1a
+regi_txs1a,
+connsactive,
+regi_lc_cs,
+CLK,
+p_1us
 
 );
 
@@ -151,6 +155,10 @@ output [6:0] nxtfk;
 output fk_chg_p, fk_chg_p_ff;
 output [9:0] regi_s_slot_offset;
 output regi_txs1a;
+output connsactive;
+output [4:0] regi_lc_cs;
+output [27:0] CLK;
+output p_1us;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -167,6 +175,7 @@ wire [2:0]  fhs_PSM;
 wire ms_acltxcmd_p;
 wire rxextendslot;
 wire sendoldpy;
+wire [2:0] occpuy_slots;
 
 wire [27:0] hop_BD_ADDR = 
                           is | giis | ir | inquiry ? {regi_GIAC_BD_ADDR_UAP[3:0], regi_GIAC_BD_ADDR_LAP}  :
@@ -398,6 +407,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.occpuy_slots                (occpuy_slots                ),
 .sendoldpy                   (sendoldpy                   ),
 .rxextendslot                (rxextendslot                ),
 .py_endp                     (py_endp                     ),
@@ -517,7 +527,9 @@ linkctrler linkctrler_u(
 .ps_pagerespTO             (ps_pagerespTO             ),
 .regi_txdatready           (regi_txdatready           ),
 .m_2active_p               (m_2active_p               ), 
-.s_2active_p               (s_2active_p               )
+.s_2active_p               (s_2active_p               ),
+.connsactive               (connsactive               ),
+.regi_lc_cs                (regi_lc_cs                )
 
 
 );
@@ -691,7 +703,8 @@ allbitp allbitp_u(
 .py_endp                (py_endp                ),
 .rxextendslot           (rxextendslot           ),
 .regi_txs1a             (regi_txs1a             ),
-.sendoldpy              (sendoldpy              )
+.sendoldpy              (sendoldpy              ),
+.occpuy_slots           (occpuy_slots           )
 
 );
 

@@ -161,8 +161,8 @@ assign sendnewpy = conns & ( //!txpktype_data | , sco case
                                (dec_flow[txpk_lt_addr] & !flow_stop_start[txpk_lt_addr])
                              )
                            );
-assign sendoldpy = conns &  txpktype_data & (!dec_arqn[txpk_lt_addr] | !dec_flow[txpk_lt_addr]) & !flushcmd_flag;
-assign send0py   = conns &  txpktype_data & !dec_arqn[txpk_lt_addr] &  flushcmd_flag;  // 0 length continue ACL-U packet
+assign sendoldpy = !sendnewpy & !flushcmd_flag; //conns &  txpktype_data & (!dec_arqn[txpk_lt_addr] | !dec_flow[txpk_lt_addr]) & !flushcmd_flag;
+assign send0py   = !sendnewpy & flushcmd_flag; //conns &  txpktype_data & !dec_arqn[txpk_lt_addr] &  flushcmd_flag;  // 0 length continue ACL-U packet
 
 reg [7:0] txaclSEQN;
 always @(posedge clk_6M or negedge rstz)

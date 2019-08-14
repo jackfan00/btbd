@@ -40,10 +40,11 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      syndrome <= 0;
-  else if (loadini_p)
+  else if (!shift_in & loadini_p)
      syndrome <= 0;
   else if (shift_in & loadini_p) // & (!pk_encode))
-     syndrome <= {fec32remout_fb^fec32rem[3], fec32rem[2], fec32remout_fb^fec32rem[1], fec32rem[0], fec32remout_fb};
+     syndrome <= {fec32remout_fb, fec32rem[0], fec32remout_fb^fec32rem[1], fec32rem[2], fec32remout_fb^fec32rem[3] };
+//     syndrome <= {fec32remout_fb^fec32rem[3], fec32rem[2], fec32remout_fb^fec32rem[1], fec32rem[0], fec32remout_fb};
 end
 
 endmodule

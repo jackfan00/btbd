@@ -80,7 +80,8 @@ ms_RXslot_endp,
 py_endp,
 rxextendslot,
 regi_txs1a,
-sendoldpy
+sendoldpy,
+occpuy_slots
 
 );
 
@@ -167,6 +168,7 @@ output py_endp;
 output rxextendslot;
 output regi_txs1a;
 output sendoldpy;
+output [2:0] occpuy_slots;
 
 //
 wire py_period, daten, dec_py_period;

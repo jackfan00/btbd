@@ -220,7 +220,7 @@ begin
      dec_bitcnt <= 4'd9;
   else if (fec32bk_endp)
      dec_bitcnt <= 4'd9;
-  else if (dec_py_period & daten & py_datvalid_p)
+  else if (dec_py_period & daten & py_datvalid_p & dec_bitcnt!=4'b0)
      dec_bitcnt <= dec_bitcnt-1'b1;
 end
 

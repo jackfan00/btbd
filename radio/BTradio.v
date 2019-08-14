@@ -6,7 +6,8 @@
 // 
 
 module BTradio(
-clk_6M, rstz,
+clk_6M, rstz, p_1us,
+connsactive, CLK,
 txbitin, rxbitin,
 txen, rxen,
 lc_fk, rxfk,
@@ -17,7 +18,9 @@ txfk
 
 );
 
-input clk_6M, rstz;
+input clk_6M, rstz, p_1us;
+input connsactive;
+input [27:0] CLK;
 input txbitin, rxbitin;
 input txen, rxen;
 input [6:0] lc_fk, rxfk;
@@ -59,6 +62,24 @@ assign rxbitout = rxen & (rxfk==pll_fk) ? rxbitin : 1'b0;
 
 assign txfk = txen ? pll_fk : 7'hx;
 
-assign txbitout = txen ? txbitin : 1'b0;
+wire biterr;
+assign txbitout = txen ? txbitin^biterr : 1'b0;
+
+//
+// for test re-tx
+reg [10:0] bitcnt;
+always @(posedge clk_6M or negedge rstz)
+  begin
+    if (!rstz)
+      bitcnt <= 0;
+    else if (!txen)
+      bitcnt <= 0;
+    else if (txen & p_1us)
+      bitcnt <= bitcnt+1'b1;
+  end
+
+assign biterr = connsactive & bitcnt==11'd135 & CLK[2];
+
+
 
 endmodule

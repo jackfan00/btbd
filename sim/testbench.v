@@ -39,6 +39,9 @@ wire m_txbit, s_txbit;
 wire m_rxbit, s_rxbit;
 wire [6:0] m_fk, s_fk;
 wire [6:0] m_nxtfk, s_nxtfk;
+wire m_connsactive, s_connsactive;
+wire [4:0] m_regi_lc_cs, s_regi_lc_cs;
+wire [27:0] m_CLK, s_CLK;
 
 bt_top bt_top_m(
 .clk_6M                      (m_clk_6M               ), 
@@ -146,7 +149,11 @@ bt_top bt_top_m(
 .rxbit_period_endp           (m_rxbit_period_endp        ),
 .nxtfk                       (m_nxtfk                    ),
 .fk_chg_p                    (m_fk_chg_p                 ),
-.fk_chg_p_ff                 (m_fk_chg_p_ff              )
+.fk_chg_p_ff                 (m_fk_chg_p_ff              ),
+.connsactive                 (m_connsactive              ),
+.regi_lc_cs                  (m_regi_lc_cs               ),
+.CLK                         (m_CLK                      ),
+.p_1us                       (m_p_1us                    )
 
 );
 
@@ -158,6 +165,9 @@ wire [6:0] m_radio_txfk, s_radio_txfk;
 BTradio m_BTradio(
 .clk_6M     (m_clk_6M     ), 
 .rstz       (m_rstz       ),
+.p_1us      (m_p_1us        ),
+.connsactive(m_connsactive),
+.CLK        (m_CLK),
 .txbitin    (m_txbit    ), 
 .rxbitin    (s_radio_txbit    ),
 .txen       (m_txbit_period       ), 
@@ -287,7 +297,11 @@ bt_top bt_top_s(
 .rxbit_period_endp           (s_rxbit_period_endp        ),
 .nxtfk                       (s_nxtfk                    ),
 .fk_chg_p                    (s_fk_chg_p                 ),
-.fk_chg_p_ff                 (s_fk_chg_p_ff              )
+.fk_chg_p_ff                 (s_fk_chg_p_ff              ),
+.connsactive                 (s_connsactive              ),
+.regi_lc_cs                  (s_regi_lc_cs               ),
+.CLK                         (s_CLK                      ),
+.p_1us                       (s_p_1us                    )
 
 );
 
@@ -297,6 +311,9 @@ bt_top bt_top_s(
 BTradio s_BTradio(
 .clk_6M     (s_clk_6M     ), 
 .rstz       (s_rstz       ),
+.p_1us      (s_p_1us        ),
+.connsactive(s_connsactive),
+.CLK        (s_CLK),
 .txbitin    (s_txbit    ), 
 .rxbitin    (m_radio_txbit    ),
 .txen       (s_txbit_period       ), 

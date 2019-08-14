@@ -305,6 +305,7 @@ begin
      lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==txpk_lt_addr) ;  //header good and match lt_address
 end
 
+//hecgood and addressed
 wire headvalid_p = ckhec & p_1us & (hecrem==8'h0) & (dec_lt_addr==txpk_lt_addr);
 
 reg [3:0] dec_pk_type;
