@@ -3,6 +3,7 @@
 //
 module pyrxaclbufctrl (
 clk_6M, rstz,
+corre_trgp, connsactive, tx_packet_st_p,
 pktype_data,
 //m_tslot_p, s_tslot_p, 
 pk_encode, dec_hecgood, dec_crcgood,
@@ -20,6 +21,7 @@ regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
+input corre_trgp, connsactive, tx_packet_st_p;
 input pktype_data;
 //input m_tslot_p, s_tslot_p;
 input pk_encode, dec_hecgood, dec_crcgood;
@@ -96,10 +98,21 @@ sram256x32_1p sram256x32_1p_u1(
 );
 
 assign bsm_dout = s1a ? u1_bsm_dout : u0_bsm_dout;
-wire [9:0] rxlenByte = s1a ? u1_length : u0_length;
+wire [9:0] rxlenByte = !s1a ? u1_length : u0_length;
 wire [7:0] endaddr = (rxlenByte[1:0]==2'b0) ? rxlenByte[9:2]-1'b1 : rxlenByte[9:2];
 assign bsm_read_endp = (bsm_addr >= endaddr) & bsm_valid_p;
 //
+reg rxindicator;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     rxindicator <= 1'b0;
+  else if (corre_trgp & connsactive)
+     rxindicator <= 1'b1;
+  else if (tx_packet_st_p)  //ms_tslot_p
+     rxindicator <= 1'b0;
+end
+
 reg u0empty;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -107,7 +120,7 @@ begin
      u0empty <= 1'b1;
   else if (bsm_read_endp & !s1a)
      u0empty <= 1'b1;
-  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a)
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & rxindicator)  //ms_tslot_p
      u0empty <= 1'b0;
 end
 
@@ -118,12 +131,28 @@ begin
      u1empty <= 1'b1;
   else if (bsm_read_endp & s1a)
      u1empty <= 1'b1;
-  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a)
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & rxindicator)  //ms_tslot_p
      u1empty <= 1'b0;
 end
 
-
-assign regi_aclrxbufempty = u1empty | u0empty;
+//
+// destination flow control
+// regi_aclrxbufempty : 1: rxbuffer is empty which means can accept data-in, 
+//                         response FLOW=1 in next transmission
+//                      0: rxbuffer is not empty which means can not accept data-in, 
+//                         repsonse FLOW=0 in next transmission
+//
+reg regi_aclrxbufempty;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     regi_aclrxbufempty <= 1'b1;
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
+     regi_aclrxbufempty <= u0empty | s1a;
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
+     regi_aclrxbufempty <= u1empty | (!s1a);
+end
+//assign regi_aclrxbufempty = u1empty | u0empty;
 
 
 endmodule

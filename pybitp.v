@@ -285,6 +285,7 @@ pypro pypro_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.crcencode              (crcencode              ),
 .dec_py_endp_d1         (dec_py_endp_d1         ),
 .regi_paged_BD_ADDR_UAP (regi_paged_BD_ADDR_UAP ), 
 .regi_master_BD_ADDR_UAP(regi_master_BD_ADDR_UAP),
@@ -327,6 +328,8 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      pydecdatout_d <= 0;
+  else if (py_st_p)
+     pydecdatout_d <= 0;
   else if (py_datvalid_p & daten)
      pydecdatout_d <= {pydecdatout_d[7:0],pydecdatout};
 end
@@ -334,6 +337,8 @@ reg [1:0] dec_LLID;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
+     dec_LLID <= 0;
+  else if (py_st_p)
      dec_LLID <= 0;
   else if (bitcount==12'hb & py_datvalid_p & existpyheader)
      dec_LLID <= {pydecdatout,pydecdatout_d[0]};
@@ -351,6 +356,8 @@ reg [9:0] dec_pylenByte;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
+     dec_pylenByte <= 0;
+  else if (py_st_p)
      dec_pylenByte <= 0;
   else if (bitcount==12'h11 & py_datvalid_p & BRss & existpyheader)
      dec_pylenByte <= {5'b0,pydecdatout,pydecdatout_d[0],pydecdatout_d[1],pydecdatout_d[2],pydecdatout_d[3]};

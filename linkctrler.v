@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+mask_corre_win,
 occpuy_slots,
 sendoldpy,
 rxextendslot,
@@ -82,11 +83,13 @@ regi_txdatready,
 m_2active_p, s_2active_p,
 m_fail2active_p, s_fail2active_p,
 connsactive,
-regi_lc_cs
+regi_lc_cs,
+corre_trgp
 
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input mask_corre_win;
 input [2:0] occpuy_slots;
 input sendoldpy;
 input rxextendslot;
@@ -166,6 +169,7 @@ output m_2active_p, s_2active_p;
 output m_fail2active_p, s_fail2active_p;
 output connsactive;
 output [4:0] regi_lc_cs;
+output corre_trgp;
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -191,6 +195,8 @@ reg m_conns_1stslot, s_conns_1stslot;
 wire conns_tx_pac_st_p;
 wire connsactive;
 wire singleslot;
+reg ms_enable;
+
 
 parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_STATE=5'd3, PageScan_STATE=5'd4,
           CONNECTIONActive_STATE=5'd5, CONNECTIONHold_STATE=5'd6, CONNECTIONSniff_STATE=5'd7, CONNECTIONPark_STATE=5'd8,
@@ -789,7 +795,9 @@ inquiry_ctrl inquiry_ctrl_u(
 //
 
 wire ConnsWindow_t = regi_isMaster ? m_conns_uncerWindow : s_conns_uncerWindow;  
-wire ConnsWindow = ConnsWindow_t & (!rxextendslot);
+
+// mask multi-slot tx/rx period 
+wire ConnsWindow = ConnsWindow_t & (!ms_enable) & (!mask_corre_win); //(!rxextendslot);
 wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DAC :
                        InquiryScanWindow | inquiry ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
                        conns ? regi_syncword_CAC : 64'b0 ;
@@ -952,10 +960,13 @@ wire pk_encode_1stslot = page | mpr ? !CLKE[1] :
 wire m_scotxcmd_p = 1'b0; //for tmp
 wire s_scotxcmd_p = 1'b0; //for tmp
 
-wire s_1st_resp_p = connsnewslave & s_corre & rxispoll & s_tslot_p & lt_addressed;
-wire s1_resp_p     = connsactive & s_corre & s_tslot_p & lt_addressed;
+wire s_1st_resp_p_t = connsnewslave & s_corre & rxispoll & s_tslot_p & lt_addressed;
+wire s1_resp_p_t    = connsactive & s_corre & s_tslot_p & lt_addressed;
+
+wire s_1st_resp_p = s_1st_resp_p_t & (!regi_isMaster);
+wire s1_resp_p    = s1_resp_p_t    & (!regi_isMaster);
+
 reg [2:0] s_slotcnt;
-reg ms_enable;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -980,6 +991,20 @@ wire s_resp_p = singleslot ? s1_resp_p : sm_resp_p;
 //assign m_txcmd_p = regi_txcmd_p ; //| m_scotxcmd_p;
 //assign s_txcmd_p = regi_txcmd_p ; //| s_scotxcmd_p;
 
+wire m_txcmd_p;
+
+wire m_1st_resp_p_t =  connsnewmaster & m_corre & m_tslot_p;
+reg m_1stcmdperiod;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     m_1stcmdperiod <= 0;
+  else if (m_1st_resp_p_t)
+     m_1stcmdperiod <= 1'b1;
+  else if (m_txcmd_p)   
+     m_1stcmdperiod <= 1'b0;
+end
+
 assign singleslot = occpuy_slots==3'd1;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -987,12 +1012,14 @@ begin
      m_txcmd <= 0;
   else if (regi_txcmd_p)
      m_txcmd <= 1'b1;
+  else if (m_1stcmdperiod & m_tslot_p & CLK[1])
+     m_txcmd <= 1'b0;
   else if (m_tslot_p & CLK[1] & singleslot)   //ms_RXslot_endp) 
      m_txcmd <= 1'b0;
   else if (ms_RXslot_endp & !singleslot)   
      m_txcmd <= 1'b0;
 end
-assign m_txcmd_p = singleslot ? m_txcmd & m_tslot_p & CLK[1] : m_txcmd & ms_RXslot_endp;
+assign m_txcmd_p = singleslot | m_1stcmdperiod ? m_txcmd & m_tslot_p & CLK[1] : m_txcmd & ms_RXslot_endp;
 
 ////////// m_acltx_p : automatically send next pyload cmd
 ////////wire m_acltx_p;

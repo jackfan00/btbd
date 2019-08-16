@@ -1,5 +1,6 @@
 module pktydecode(
 clk_6M, rstz,
+ms_halftslot_p,
 pktype_data,
 ms_tslot_p,
 is_BRmode, is_eSCO, is_SCO, is_ACL,
@@ -16,10 +17,12 @@ existpyheader_f,
 allowedeSCOtype,
 txextendslot, rxextendslot,
 ms_TXslot_endp, ms_RXslot_endp,
-conns_rx1stslot
+conns_rx1stslot,
+mask_corre_win
 
 );
 input clk_6M, rstz;
+input ms_halftslot_p;
 input pktype_data;
 input ms_tslot_p;
 input is_BRmode, is_eSCO, is_SCO, is_ACL;
@@ -37,6 +40,8 @@ output allowedeSCOtype;
 output txextendslot, rxextendslot;
 output ms_TXslot_endp, ms_RXslot_endp;
 output conns_rx1stslot;
+output mask_corre_win;
+
 //
 //
 wire BRss;
@@ -128,6 +133,24 @@ begin
 end
 
 assign ms_TXslot_endp = (occpuy_slots>3'd1) ? ms_tslot_p & (occpuy_slots==txextendslotcnt) : conns_tx1stslot & ms_tslot_p;
+
+//
+reg mask_corre_win;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+    begin
+     mask_corre_win <= 0;
+    end 
+  else if (conns_tx1stslot & ms_halftslot_p & (occpuy_slots>3'd1))
+    begin
+     mask_corre_win <= 1'b1;
+    end 
+  else if (ms_halftslot_p & (occpuy_slots==txextendslotcnt))
+    begin
+     mask_corre_win <= 1'b0;
+    end 
+end
 
 //
 reg conns_rx1stslot;

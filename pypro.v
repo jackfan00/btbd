@@ -4,6 +4,7 @@
 
 module pypro(
 clk_6M, rstz, p_1us,
+crcencode,
 dec_py_endp_d1,
 regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP,
 mpr, ir, spr,
@@ -25,6 +26,7 @@ pydecdatout
 );
 
 input clk_6M, rstz, p_1us;
+input crcencode;
 input [1:0] dec_py_endp_d1;
 input [7:0] regi_paged_BD_ADDR_UAP, regi_master_BD_ADDR_UAP, regi_my_BD_ADDR_UAP;
 input mpr, ir, spr;
@@ -77,6 +79,8 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_crcgood <= 0;
+  else if (dec_py_endp_d1[0] & (!crcencode))
+     dec_crcgood <= 1'b1;
   else if (dec_py_endp_d1[0] & (!pk_encode))
      dec_crcgood <= (crc16rem==16'b0);
 end

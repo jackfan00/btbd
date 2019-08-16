@@ -299,7 +299,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      lt_addressed <= 0;
-  else if (ms_tslot_p | pk_encode)
+  else if (tx_packet_st_p | pk_encode)  //ms_tslot_p
      lt_addressed <= 0;
   else if (ckhec & p_1us)
      lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==txpk_lt_addr) ;  //header good and match lt_address

@@ -75,7 +75,8 @@ regi_txs1a,
 connsactive,
 regi_lc_cs,
 CLK,
-p_1us
+p_1us,
+corre_trgp
 
 );
 
@@ -159,6 +160,7 @@ output connsactive;
 output [4:0] regi_lc_cs;
 output [27:0] CLK;
 output p_1us;
+output corre_trgp;
 
 wire rxispoll;
 wire ps, gips, is, giis, page, inquiry, mpr, spr, ir, conns;
@@ -209,7 +211,10 @@ wire [5:0] counter_clkN1;
 wire [4:0] counter_clkE1;
 wire psackfhs, pagetmp, pagerxackfhs ;
 wire corre_threshold;
+wire mask_corre_win;
+wire m_half_tslot_p, s_half_tslot_p;
 
+wire ms_halftslot_p = regi_isMaster ? m_half_tslot_p : s_half_tslot_p;
 
 bluetoothclk bluetoothclk_u(
 .clk_6M                  (clk_6M                  ), 
@@ -407,6 +412,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.mask_corre_win              (mask_corre_win              ),
 .occpuy_slots                (occpuy_slots                ),
 .sendoldpy                   (sendoldpy                   ),
 .rxextendslot                (rxextendslot                ),
@@ -529,7 +535,8 @@ linkctrler linkctrler_u(
 .m_2active_p               (m_2active_p               ), 
 .s_2active_p               (s_2active_p               ),
 .connsactive               (connsactive               ),
-.regi_lc_cs                (regi_lc_cs                )
+.regi_lc_cs                (regi_lc_cs                ),
+.corre_trgp                (corre_trgp                )
 
 
 );
@@ -578,6 +585,9 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.corre_trgp             (corre_trgp             ), 
+.connsactive            (connsactive            ),
+.ms_halftslot_p         (ms_halftslot_p         ),
 .m_2active_p            (m_2active_p            ), 
 .s_2active_p            (s_2active_p            ),
 .regi_txdatready        (regi_txdatready        ),
@@ -704,7 +714,8 @@ allbitp allbitp_u(
 .rxextendslot           (rxextendslot           ),
 .regi_txs1a             (regi_txs1a             ),
 .sendoldpy              (sendoldpy              ),
-.occpuy_slots           (occpuy_slots           )
+.occpuy_slots           (occpuy_slots           ),
+.mask_corre_win         (mask_corre_win         )
 
 );
 

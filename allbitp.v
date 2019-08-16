@@ -1,5 +1,7 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+corre_trgp, connsactive,
+ms_halftslot_p,
 m_2active_p, s_2active_p,
 regi_txdatready,
 fk_pstxid,
@@ -81,12 +83,15 @@ py_endp,
 rxextendslot,
 regi_txs1a,
 sendoldpy,
-occpuy_slots
+occpuy_slots,
+mask_corre_win
 
 );
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input corre_trgp, connsactive;
+input ms_halftslot_p;
 input m_2active_p, s_2active_p;
 input regi_txdatready;
 input fk_pstxid;
@@ -169,6 +174,7 @@ output rxextendslot;
 output regi_txs1a;
 output sendoldpy;
 output [2:0] occpuy_slots;
+output mask_corre_win;
 
 //
 wire py_period, daten, dec_py_period;
@@ -204,6 +210,7 @@ wire sendnewpy, sendoldpy, send0py;
 wire [7:0] flow_stop_start;
 wire [2:0] txpk_lt_addr;
 wire [1:0] dec_py_endp_d1;
+wire rxextendslot, conns_rx1stslot;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -293,13 +300,27 @@ headerbitp headerbitp_u(
 
 //wire [3:0] txpk_type = mpr | istxfhs ? 4'h2 : regi_packet_type;
 
-wire [3:0] pk_type = pk_encode ? txpktype : dec_pk_type;
+reg notrececode;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     notrececode <= 1'b0;
+  else if (corre_nottrg_p & connsactive)
+     notrececode <= 1'b1;
+  else if (notrececode & ms_tslot_p)  //
+     notrececode <= 1'b0;
+end
 
-wire [9:0] pylenB = pk_encode_1stslot ? regi_payloadlen : dec_pylenByte;
+wire [3:0] pk_type = regi_isMaster ? (//notrececode ? 4'd0 :   //for generating tx_packet_st_p 
+                                      rxextendslot|conns_rx1stslot ? dec_pk_type : txpktype) :
+                                     (pk_encode ? txpktype : dec_pk_type);
+
+wire [9:0] pylenB = pk_encode ? regi_payloadlen : dec_pylenByte;  //_1stslot
 
 pktydecode pktydecode_u(
 .clk_6M           (clk_6M           ), 
 .rstz             (rstz             ), 
+.ms_halftslot_p   (ms_halftslot_p   ),
 .pktype_data      (pktype_data      ),
 .ms_tslot_p       (ms_tslot_p       ),
 .is_BRmode        (is_BRmode        ), 
@@ -325,7 +346,8 @@ pktydecode pktydecode_u(
 .rxextendslot     (rxextendslot     ),
 .ms_TXslot_endp   (ms_TXslot_endp   ), 
 .ms_RXslot_endp   (ms_RXslot_endp   ),
-.conns_rx1stslot  (conns_rx1stslot  )
+.conns_rx1stslot  (conns_rx1stslot  ),
+.mask_corre_win   (mask_corre_win   )
 
 );
 
@@ -482,6 +504,8 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.corre_trgp      (corre_trgp      ), 
+.connsactive     (connsactive     ),
 .sendnewpy       (sendnewpy       ),
 .regi_txdatready (regi_txdatready ),
 .hec_endp        (hec_endp        ), 
