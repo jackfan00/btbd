@@ -39,6 +39,7 @@ output regi_aclrxbufempty;
 
 wire bsm_read_endp;
 wire [31:0] u0_bsm_dout, u1_bsm_dout;
+wire stopwrZ;
 
 //wire ms_tslot_p = regi_isMaster ? m_tslot_p : s_tslot_p;
 reg s1a;
@@ -50,10 +51,10 @@ begin
      s1a <= ~s1a ;
 end
 
-wire [7:0]  u0_sram_a    = s1a ? lnctrl_addr : bsm_addr;
-wire [31:0] u0_sram_din  = s1a ? lnctrl_din  : 32'b0;
-wire        u0_sram_we   = s1a ? lnctrl_we   : 1'b0;
-wire        u0_sram_cs   = s1a ? lnctrl_we   : bsm_cs;   //lnctrl cs is the same as we 
+wire [7:0]  u0_sram_a    = s1a ? lnctrl_addr          : bsm_addr;
+wire [31:0] u0_sram_din  = s1a ? lnctrl_din           : 32'b0;
+wire        u0_sram_we   = s1a ? lnctrl_we & stopwrZ  : 1'b0;
+wire        u0_sram_cs   = s1a ? lnctrl_we & stopwrZ  : bsm_cs;   //lnctrl cs is the same as we 
 
 reg [9:0] u0_length;
 always @(posedge clk_6M or negedge rstz)
@@ -73,10 +74,10 @@ sram256x32_1p sram256x32_1p_u0(
 .DOUT(u0_bsm_dout   )
 );
 
-wire [7:0]  u1_sram_a    = !s1a ? lnctrl_addr : bsm_addr;
-wire [31:0] u1_sram_din  = !s1a ? lnctrl_din  : 32'b0;
-wire        u1_sram_we   = !s1a ? lnctrl_we   : 1'b0;
-wire        u1_sram_cs   = !s1a ? lnctrl_we   : bsm_cs;   //lnctrl cs is the same as we 
+wire [7:0]  u1_sram_a    = !s1a ? lnctrl_addr          : bsm_addr;
+wire [31:0] u1_sram_din  = !s1a ? lnctrl_din           : 32'b0;
+wire        u1_sram_we   = !s1a ? lnctrl_we & stopwrZ  : 1'b0;
+wire        u1_sram_cs   = !s1a ? lnctrl_we & stopwrZ  : bsm_cs;   //lnctrl cs is the same as we 
 
 reg [9:0] u1_length;
 always @(posedge clk_6M or negedge rstz)
@@ -120,7 +121,7 @@ begin
      u0empty <= 1'b1;
   else if (bsm_read_endp & !s1a)
      u0empty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & rxindicator)  //ms_tslot_p
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & rxindicator)  //ms_tslot_p
      u0empty <= 1'b0;
 end
 
@@ -131,7 +132,7 @@ begin
      u1empty <= 1'b1;
   else if (bsm_read_endp & s1a)
      u1empty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & rxindicator)  //ms_tslot_p
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & rxindicator)  //ms_tslot_p
      u1empty <= 1'b0;
 end
 
@@ -148,11 +149,12 @@ begin
   if (!rstz)
      regi_aclrxbufempty <= 1'b1;
   else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
-     regi_aclrxbufempty <= u0empty | s1a;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
-     regi_aclrxbufempty <= u1empty | (!s1a);
+     regi_aclrxbufempty <= (u1empty | s1a) & (u0empty | (!s1a));
+//  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
+//     regi_aclrxbufempty <= u0empty | (!s1a);
 end
 //assign regi_aclrxbufempty = u1empty | u0empty;
 
+assign stopwrZ = (u1empty | s1a) & (u0empty | (!s1a));
 
 endmodule

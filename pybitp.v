@@ -390,11 +390,12 @@ begin
      dec_pybitcnt <= 0;
   else if (dec_py_st_p)
      dec_pybitcnt <= 0;
-  else if ((daten & dec_py_period & py_datvalid_p) | dec_py_period_ext)
+  else if ((daten & dec_py_period & py_datvalid_p) | (dec_py_period_ext & py_datvalid_p) )
      dec_pybitcnt <= dec_pybitcnt + 1'b1 ;
 end
 
-//extend to make 32 bit
+//extend to make 32 bit, matching sram data-width 32bits
+//to write latest data
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)

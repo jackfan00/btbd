@@ -380,9 +380,16 @@ for (m_i=1;m_i<=m_regi_payloadlen[9:2];m_i=m_i+1)
 # 5678;
     m_txcmd;
 
+wait (bt_top_m.CLK[1]==1'b1);
+wait (bt_top_m.CLK[1]==1'b0);
+wait (bt_top_m.CLK[0]==1'b1);
+wait (bt_top_m.pk_encode==1'b0);
 
 // 2nd py
 // prepare new py
+m_regi_payloadlen = 10'd5; //bytes
+m_pyheader_l = {m_regi_payloadlen[4:0], 1'b1, 2'b10};
+m_pyheader_h = {3'b0,m_regi_payloadlen[9:5]};
 m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 0, {8'h07,8'h06,m_pyheader_h, m_pyheader_l});
 m_bsm_wdat(o_adr, o_din, o_we, o_cs, 1, 1, {8'h0a,8'h09,8'h08});
 // send new py until ACK
@@ -392,7 +399,6 @@ wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
 //m_regi_packet_type = 4'd0;  //null packet
 # 2678000;
 m_regi_packet_type = 4'h3;  //DM1
-m_regi_payloadlen = 10'd5; //bytes
     m_txcmd;
 //
 
@@ -475,7 +481,7 @@ integer s_ri;
 initial begin
 wait (bt_top_s.linkctrler_u.cs==5'd5);
 //
-wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u0empty==1'b0);
+wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u1empty==1'b0);
 //
 for (s_ri=0; s_ri<100; s_ri=s_ri+1)
   begin
