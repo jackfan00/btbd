@@ -3,6 +3,7 @@
 //
 module pyrxaclbufctrl (
 clk_6M, rstz,
+ckheader_endp, lt_addressed,
 corre_trgp, connsactive, tx_packet_st_p,
 pktype_data,
 //m_tslot_p, s_tslot_p, 
@@ -21,6 +22,7 @@ regi_aclrxbufempty
 );
 
 input clk_6M, rstz;
+input ckheader_endp, lt_addressed;
 input corre_trgp, connsactive, tx_packet_st_p;
 input pktype_data;
 //input m_tslot_p, s_tslot_p;
@@ -56,14 +58,14 @@ wire [31:0] u0_sram_din  = s1a ? lnctrl_din           : 32'b0;
 wire        u0_sram_we   = s1a ? lnctrl_we & stopwrZ  : 1'b0;
 wire        u0_sram_cs   = s1a ? lnctrl_we & stopwrZ  : bsm_cs;   //lnctrl cs is the same as we 
 
-reg [9:0] u0_length;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     u0_length <= 0;
-  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & s1a)
-     u0_length <= dec_pylenByte;
-end
+///////reg [9:0] u0_length;
+///////always @(posedge clk_6M or negedge rstz)
+///////begin
+///////  if (!rstz)
+///////     u0_length <= 0;
+///////  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & s1a)
+///////     u0_length <= dec_pylenByte;
+///////end
 sram256x32_1p sram256x32_1p_u0(
 .A   (u0_sram_a     ),
 .DIN (u0_sram_din   ),
@@ -79,14 +81,14 @@ wire [31:0] u1_sram_din  = !s1a ? lnctrl_din           : 32'b0;
 wire        u1_sram_we   = !s1a ? lnctrl_we & stopwrZ  : 1'b0;
 wire        u1_sram_cs   = !s1a ? lnctrl_we & stopwrZ  : bsm_cs;   //lnctrl cs is the same as we 
 
-reg [9:0] u1_length;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     u1_length <= 0;
-  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & !s1a)
-     u1_length <= dec_pylenByte;
-end
+//////reg [9:0] u1_length;
+//////always @(posedge clk_6M or negedge rstz)
+//////begin
+//////  if (!rstz)
+//////     u1_length <= 0;
+//////  else if (ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood & !s1a)
+//////     u1_length <= dec_pylenByte;
+//////end
 
 sram256x32_1p sram256x32_1p_u1(
 .A   (u1_sram_a     ),
@@ -99,9 +101,18 @@ sram256x32_1p sram256x32_1p_u1(
 );
 
 assign bsm_dout = s1a ? u1_bsm_dout : u0_bsm_dout;
-wire [9:0] rxlenByte = !s1a ? u1_length : u0_length;
+//wire [9:0] rxlenByte = !s1a ? u1_length : u0_length;
+reg [9:0] rxlenByte;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     rxlenByte <= 1'b0;
+  else if (stopwrZ & ms_tslot_p & !pk_encode & dec_hecgood & dec_crcgood)
+     rxlenByte <= dec_pylenByte;
+end
+
 wire [7:0] endaddr = (rxlenByte[1:0]==2'b0) ? rxlenByte[9:2]-1'b1 : rxlenByte[9:2];
-assign bsm_read_endp = (bsm_addr >= endaddr) & bsm_valid_p;
+assign bsm_read_endp = (bsm_addr >= endaddr) & bsm_valid_p & (!stopwrZ);
 //
 reg rxindicator;
 always @(posedge clk_6M or negedge rstz)
@@ -148,7 +159,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      regi_aclrxbufempty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
+//  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
+// decide after header, to avoid swicth in pyload middle
+  else if (ckheader_endp & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator & lt_addressed)  //ms_tslot_p
      regi_aclrxbufempty <= (u1empty | s1a) & (u0empty | (!s1a));
 //  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
 //     regi_aclrxbufempty <= u0empty | (!s1a);

@@ -1,5 +1,6 @@
 module bufctrl(
 clk_6M, rstz,
+ckheader_endp, lt_addressed,
 corre_trgp, connsactive,
 sendnewpy,
 regi_txdatready,
@@ -35,6 +36,7 @@ regi_txs1a
 );
 
 input clk_6M, rstz;
+input ckheader_endp, lt_addressed;
 input corre_trgp, connsactive;
 input sendnewpy;
 input regi_txdatready;
@@ -218,6 +220,8 @@ wire rxlnctrlsco_cs = dec_py_period & ((!dec_LMP_c_slot) & rx_reservedslot);
 pyrxaclbufctrl pyrxaclbufctrl_u(
 .clk_6M        (clk_6M          ), 
 .rstz          (rstz            ),
+.ckheader_endp (ckheader_endp   ), 
+.lt_addressed  (lt_addressed    ),
 .corre_trgp    (corre_trgp      ), 
 .connsactive   (connsactive     ), 
 .tx_packet_st_p(tx_packet_st_p  ),

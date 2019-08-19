@@ -1,5 +1,6 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
+s_2active_p, m_2active_p,
 pylenbit,
 ms_lt_addr,
 s_tslot_p, ms_tslot_p,
@@ -49,6 +50,7 @@ txpk_lt_addr
 );
 
 input clk_6M, rstz, p_1us;
+input s_2active_p, m_2active_p;
 input [12:0] pylenbit;
 input [2:0] ms_lt_addr;
 input s_tslot_p, ms_tslot_p;
@@ -352,7 +354,13 @@ begin
   if (!rstz)
     begin
       dec_flow <= 8'hff;
-      dec_arqn <= 0;
+      dec_arqn <= 8'hff;
+    end  
+  // at new connection  
+  else if (s_2active_p | m_2active_p)  
+    begin
+      dec_flow <= 8'hff;
+      dec_arqn <= 8'hff;
     end  
   // set NAK after tx, 
   // in case other side dont receive, it will not response  

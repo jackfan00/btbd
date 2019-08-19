@@ -1,5 +1,6 @@
 module pktydecode(
 clk_6M, rstz,
+corre_trgp, regi_isMaster,
 ms_halftslot_p,
 pktype_data,
 ms_tslot_p,
@@ -22,6 +23,7 @@ mask_corre_win
 
 );
 input clk_6M, rstz;
+input corre_trgp, regi_isMaster;
 input ms_halftslot_p;
 input pktype_data;
 input ms_tslot_p;
@@ -158,7 +160,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      conns_rx1stslot <= 0;
-  else if (ms_TXslot_endp)  
+  else if (ms_TXslot_endp & regi_isMaster)  
+     conns_rx1stslot <= 1'b1;
+  else if (corre_trgp & !regi_isMaster)  
      conns_rx1stslot <= 1'b1;
   else if (ms_tslot_p)
      conns_rx1stslot <= 1'b0;

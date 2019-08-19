@@ -374,7 +374,7 @@ for (m_i=1;m_i<=m_regi_payloadlen[9:2];m_i=m_i+1)
   end  
 //
 //  for 1st packet, mcu need to switch buffer manually 
-    chgbuf(1);
+//    chgbuf(1);
 //    newdatready(1);
 //  mcu issue tx cmd
 # 5678;
@@ -456,6 +456,7 @@ s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h02,8'h01,s_pyheader_h,s_pyheader_
 s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04,8'h03});
 
 // 1st reponse py
+// slave need to manual switch in 1st packet
     chgbuf(0);
 //    newdatready(0);
 #1234;
@@ -482,6 +483,14 @@ initial begin
 wait (bt_top_s.linkctrler_u.cs==5'd5);
 //
 wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u1empty==1'b0);
+//
+for (s_ri=0; s_ri<100; s_ri=s_ri+1)
+  begin
+    s_bsm_rdat(s_ri);
+  end  
+
+//
+wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u0empty==1'b0);
 //
 for (s_ri=0; s_ri<100; s_ri=s_ri+1)
   begin

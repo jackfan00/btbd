@@ -338,9 +338,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_LLID <= 0;
-  else if (py_st_p)
+  else if (py_st_p & !pk_encode)
      dec_LLID <= 0;
-  else if (bitcount==12'hb & py_datvalid_p & existpyheader)
+  else if (bitcount==12'hb & py_datvalid_p & existpyheader & !pk_encode)
      dec_LLID <= {pydecdatout,pydecdatout_d[0]};
 end
 reg dec_pyFLOW;
@@ -348,7 +348,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_pyFLOW <= 0;
-  else if (bitcount==12'hc & py_datvalid_p & existpyheader)
+  else if (bitcount==12'hc & py_datvalid_p & existpyheader & !pk_encode)
      dec_pyFLOW <= pydecdatout;
 end
 
@@ -357,11 +357,11 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      dec_pylenByte <= 0;
-  else if (py_st_p)
+  else if (py_st_p & !pk_encode)
      dec_pylenByte <= 0;
-  else if (bitcount==12'h11 & py_datvalid_p & BRss & existpyheader)
+  else if (bitcount==12'h11 & py_datvalid_p & BRss & existpyheader & !pk_encode)
      dec_pylenByte <= {5'b0,pydecdatout,pydecdatout_d[0],pydecdatout_d[1],pydecdatout_d[2],pydecdatout_d[3]};
-  else if (bitcount==12'h16 & py_datvalid_p & (!BRss) & existpyheader)
+  else if (bitcount==12'h16 & py_datvalid_p & (!BRss) & existpyheader & !pk_encode)
      dec_pylenByte <= {pydecdatout,pydecdatout_d[0],pydecdatout_d[1],pydecdatout_d[2],pydecdatout_d[3],
                        pydecdatout_d[4],pydecdatout_d[5],pydecdatout_d[6],pydecdatout_d[7],pydecdatout_d[8]};
 end

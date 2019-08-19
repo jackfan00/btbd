@@ -221,6 +221,8 @@ headerbitp headerbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.s_2active_p            (s_2active_p            ), 
+.m_2active_p            (m_2active_p            ),
 .pylenbit               (pylenbit               ),
 .ms_lt_addr             (ms_lt_addr             ),
 .s_tslot_p              (s_tslot_p              ),
@@ -320,6 +322,8 @@ wire [9:0] pylenB = pk_encode ? regi_payloadlen : dec_pylenByte;  //_1stslot
 pktydecode pktydecode_u(
 .clk_6M           (clk_6M           ), 
 .rstz             (rstz             ), 
+.corre_trgp       (corre_trgp       ), 
+.regi_isMaster    (regi_isMaster    ),
 .ms_halftslot_p   (ms_halftslot_p   ),
 .pktype_data      (pktype_data      ),
 .ms_tslot_p       (ms_tslot_p       ),
@@ -504,6 +508,8 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.ckheader_endp   (ckheader_endp   ), 
+.lt_addressed    (lt_addressed    ),
 .corre_trgp      (corre_trgp      ), 
 .connsactive     (connsactive     ),
 .sendnewpy       (sendnewpy       ),

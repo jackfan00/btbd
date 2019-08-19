@@ -168,8 +168,10 @@ reg [7:0] txaclSEQN;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     txaclSEQN <= 8'hff;
-  else if (s_2active_p | m_2active_p) //connsnewmaster | connsnewslave)
+     txaclSEQN <= 8'h0;
+  else if (m_2active_p) //connsnewmaster | connsnewslave)
+     txaclSEQN <= 8'h0;
+  else if (s_2active_p) //connsnewmaster | connsnewslave)
      txaclSEQN <= 8'hff;
 //  else if (regi_chgbufcmd_p)  // mcu check dec_arqn[ms_lt_addr] to determine switch buffer or not
 //     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
