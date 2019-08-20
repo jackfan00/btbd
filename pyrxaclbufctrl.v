@@ -125,6 +125,10 @@ begin
      rxindicator <= 1'b0;
 end
 
+
+// if regi_aclrxbufempty==0 means this receive slot is fail,
+// so u0/u1empty dont return to 0
+//
 reg u0empty;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -132,7 +136,8 @@ begin
      u0empty <= 1'b1;
   else if (bsm_read_endp & !s1a)
      u0empty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & rxindicator)  //ms_tslot_p
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & rxindicator & regi_aclrxbufempty)  //ms_tslot_p
+//  else if (ckheader_endp & !pk_encode & dec_hecgood & pktype_data & s1a & rxindicator & lt_addressed)  //ms_tslot_p
      u0empty <= 1'b0;
 end
 
@@ -143,7 +148,8 @@ begin
      u1empty <= 1'b1;
   else if (bsm_read_endp & s1a)
      u1empty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & rxindicator)  //ms_tslot_p
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & rxindicator & regi_aclrxbufempty)  //ms_tslot_p
+//  else if (ckheader_endp & !pk_encode & dec_hecgood & pktype_data & !s1a & rxindicator & lt_addressed)  //ms_tslot_p
      u1empty <= 1'b0;
 end
 
@@ -161,7 +167,7 @@ begin
      regi_aclrxbufempty <= 1'b1;
 //  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
 // decide after header, to avoid swicth in pyload middle
-  else if (ckheader_endp & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator & lt_addressed)  //ms_tslot_p
+  else if (ckheader_endp & !pk_encode & dec_hecgood & rxindicator & lt_addressed)  //ms_tslot_p
      regi_aclrxbufempty <= (u1empty | s1a) & (u0empty | (!s1a));
 //  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & rxindicator)  //ms_tslot_p
 //     regi_aclrxbufempty <= u0empty | (!s1a);

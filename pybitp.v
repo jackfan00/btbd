@@ -1,5 +1,8 @@
 module pybitp(
 clk_6M, rstz, p_1us, 
+connsactive,
+lnctrl_bufpacket,
+latchpyhead_p,
 dec_py_endp_d1,
 packet_BRmode, packet_DPSK,
 mpr, ir, spr, psrxfhs, inquiryrxfhs,
@@ -52,11 +55,15 @@ py_endp,
 dec_py_endp,
 py_datperiod,
 edrtailer,
-edrtailer_endp
+edrtailer_endp,
+tx_pylenByte
 
 );
 
 input clk_6M, rstz, p_1us;
+input connsactive;
+input [31:0] lnctrl_bufpacket;
+input latchpyhead_p;
 input [1:0] dec_py_endp_d1;
 input packet_BRmode, packet_DPSK;
 input mpr, ir, spr, psrxfhs, inquiryrxfhs;
@@ -110,6 +117,7 @@ output dec_py_endp;
 output py_datperiod;
 output edrtailer;
 output edrtailer_endp;
+output [9:0] tx_pylenByte;
 
 //
 reg py_period;
@@ -364,6 +372,17 @@ begin
   else if (bitcount==12'h16 & py_datvalid_p & (!BRss) & existpyheader & !pk_encode)
      dec_pylenByte <= {pydecdatout,pydecdatout_d[0],pydecdatout_d[1],pydecdatout_d[2],pydecdatout_d[3],
                        pydecdatout_d[4],pydecdatout_d[5],pydecdatout_d[6],pydecdatout_d[7],pydecdatout_d[8]};
+end
+
+reg [9:0] tx_pylenByte;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     tx_pylenByte <= 0;
+  else if (BRss & existpyheader & pk_encode & latchpyhead_p & connsactive)
+     tx_pylenByte <= {5'b0,lnctrl_bufpacket[7:3]};
+  else if ((!BRss) & existpyheader & pk_encode & latchpyhead_p & connsactive)
+     tx_pylenByte <= {lnctrl_bufpacket[12:3]};
 end
 
 //assign dec_LLID = py_header[1:0];

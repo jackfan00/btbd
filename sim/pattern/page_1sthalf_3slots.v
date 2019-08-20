@@ -347,7 +347,7 @@ reg [31:0] o_din;
 reg o_we, o_cs;
 
 reg [7:0] m_pyheader_l,m_pyheader_h;
-integer m_i;
+integer m_i, m_ri;
 initial begin
 m_regi_txwhitening = 1'b0;
 m_regi_rxwhitening = 1'b0;
@@ -418,6 +418,13 @@ wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
     m_txcmd;
 //
 
+//bsm read
+for (m_ri=0; m_ri<100; m_ri=m_ri+1)
+  begin
+    m_bsm_rdat(m_ri);
+  end  
+
+
 // prepare new py
 @ (posedge bt_top_m.allbitp_u.bufctrl_u.regi_txs1a);  //
 //wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
@@ -431,11 +438,43 @@ wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
 # 5678;
     m_txcmd;
 //
+//
+
+//
+
+wait (bt_top_m.pk_encode==1'b0);
+wait (bt_top_m.pk_encode==1'b1);
+# 5678000;
+m_regi_packet_type = 4'h1;
+regi_LT_ADDR = 3'd3;
+    m_txcmd;
+//
+wait (bt_top_m.pk_encode==1'b0);
+wait (bt_top_m.pk_encode==1'b1);
+# 5678000;
+m_regi_packet_type = 4'h3;
+regi_LT_ADDR = 3'd3;
+    m_txcmd;
+
+//bsm read
+for (m_ri=0; m_ri<100; m_ri=m_ri+1)
+  begin
+    m_bsm_rdat(m_ri);
+  end  
+
+//
+wait (bt_top_m.pk_encode==1'b0);
+wait (bt_top_m.pk_encode==1'b1);
+# 5678000;
+m_regi_packet_type = 4'h1;
+regi_LT_ADDR = 3'd4;
+    m_txcmd;
 
 end
 
 
 //
+integer s_i;
 reg [7:0] s_pyheader_l,s_pyheader_h;
 initial begin
 wait (bt_top_s.linkctrler_u.cs==5'd5);
@@ -448,18 +487,25 @@ wait (bt_top_s.linkctrler_u.cs==5'd5);
 //
 regi_mylt_address = 3'd3;
 s_regi_packet_type = 4'ha;
-s_regi_payloadlen = 10'd5; //bytes
+s_regi_payloadlen = 10'd55; //bytes
 //
 s_pyheader_l = {s_regi_payloadlen[4:0], 1'b1, 2'b10};
 s_pyheader_h = {3'b0,s_regi_payloadlen[9:5]};
 s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h02,8'h01,s_pyheader_h,s_pyheader_l});
-s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04,8'h03});
+//s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04,8'h03});
+for (s_i=1;s_i<=s_regi_payloadlen[9:2];s_i=s_i+1)
+  begin
+    s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, s_i, {s_i+3,s_i+2,s_i+1,s_i});
+  end  
 
 // 1st reponse py
 // slave need to manual switch in 1st packet
     chgbuf(0);
 //    newdatready(0);
 #1234;
+s_regi_payloadlen = 10'd5; //bytes
+s_pyheader_l = {s_regi_payloadlen[4:0], 1'b1, 2'b10};
+s_pyheader_h = {3'b0,s_regi_payloadlen[9:5]};
 s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h07,8'h06,s_pyheader_h,s_pyheader_l});
 s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h0a,8'h09,8'h08});
 
@@ -472,6 +518,9 @@ wait (bt_top_s.allbitp_u.headerbitp_u.dec_arqn[regi_mylt_address]);
 //wait (bt_top_s.linkctrler_u.corre_trgp);  //
 //s_regi_packet_type = 4'ha; //DM3 3slots
 @ (negedge bt_top_s.allbitp_u.bufctrl_u.regi_txs1a);  //
+s_regi_payloadlen = 10'd15; //bytes
+s_pyheader_l = {s_regi_payloadlen[4:0], 1'b1, 2'b10};
+s_pyheader_h = {3'b0,s_regi_payloadlen[9:5]};
 s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h0c,8'h0b,s_pyheader_h,s_pyheader_l});
 s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h0f,8'h0e,8'h0d});
 end
@@ -481,6 +530,36 @@ end
 integer s_ri;
 initial begin
 wait (bt_top_s.linkctrler_u.cs==5'd5);
+//
+wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u1empty==1'b0);
+//
+for (s_ri=0; s_ri<100; s_ri=s_ri+1)
+  begin
+    s_bsm_rdat(s_ri);
+  end  
+
+//
+wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u0empty==1'b0);
+//
+for (s_ri=0; s_ri<100; s_ri=s_ri+1)
+  begin
+    s_bsm_rdat(s_ri);
+  end  
+//
+wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u1empty==1'b0);
+//
+for (s_ri=0; s_ri<100; s_ri=s_ri+1)
+  begin
+    s_bsm_rdat(s_ri);
+  end  
+
+//
+wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u0empty==1'b0);
+//
+for (s_ri=0; s_ri<100; s_ri=s_ri+1)
+  begin
+    s_bsm_rdat(s_ri);
+  end  
 //
 wait (bt_top_s.allbitp_u.bufctrl_u.pyrxaclbufctrl_u.u1empty==1'b0);
 //

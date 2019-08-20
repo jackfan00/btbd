@@ -45,7 +45,8 @@ hec_endp,
 rxisfhs,
 ckheader_endp,
 flow_stop_start,
-txpk_lt_addr
+txpk_lt_addr,
+txpk_flow
 
 );
 
@@ -97,6 +98,7 @@ output rxisfhs;
 output ckheader_endp;
 output [7:0] flow_stop_start;
 output [2:0] txpk_lt_addr;
+output txpk_flow;
 
 //
 wire headpacket_endp;
@@ -196,9 +198,9 @@ wire [3:0] txpktype = mpr | istxfhs ? 4'b0010 :   //fhs
 //
 wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 
-wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
-wire txpk_arqn = conns ? txARQN[txpk_lt_addr] : 1'b0;
 wire txpk_flow = conns ? rspFLOW : 1'b1;
+wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
+wire txpk_arqn = conns ? txARQN[txpk_lt_addr] & txpk_flow : 1'b0;
 wire [9:0] txpacket_header = {txpk_seqn,txpk_arqn,txpk_flow,txpktype,txpk_lt_addr};
 
 

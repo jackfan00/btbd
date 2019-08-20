@@ -211,6 +211,8 @@ wire [7:0] flow_stop_start;
 wire [2:0] txpk_lt_addr;
 wire [1:0] dec_py_endp_d1;
 wire rxextendslot, conns_rx1stslot;
+wire [9:0] tx_pylenByte;
+wire [31:0] lnctrl_bufpacket;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -296,7 +298,8 @@ headerbitp headerbitp_u(
 .rxisfhs                (rxisfhs                ),
 .ckheader_endp          (ckheader_endp          ),
 .flow_stop_start        (flow_stop_start        ),
-.txpk_lt_addr           (txpk_lt_addr           )
+.txpk_lt_addr           (txpk_lt_addr           ),
+.txpk_flow              (txpk_flow              )
 
 );
 
@@ -317,7 +320,9 @@ wire [3:0] pk_type = regi_isMaster ? (//notrececode ? 4'd0 :   //for generating 
                                       rxextendslot|conns_rx1stslot ? dec_pk_type : txpktype) :
                                      (pk_encode ? txpktype : dec_pk_type);
 
-wire [9:0] pylenB = pk_encode ? regi_payloadlen : dec_pylenByte;  //_1stslot
+//wire [9:0] pylenB = pk_encode ? regi_payloadlen : dec_pylenByte;  //_1stslot
+// tx_pylenByte is store in pyload buffer
+wire [9:0] pylenB = pk_encode ? tx_pylenByte : dec_pylenByte;  //_1stslot
 
 pktydecode pktydecode_u(
 .clk_6M           (clk_6M           ), 
@@ -362,6 +367,9 @@ pybitp pybitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.connsactive            (connsactive            ),
+.lnctrl_bufpacket       (lnctrl_bufpacket       ),
+.latchpyhead_p          (latchpyhead_p          ),
 .dec_py_endp_d1         (dec_py_endp_d1         ),
 .packet_BRmode          (packet_BRmode          ), 
 .packet_DPSK            (packet_DPSK            ),
@@ -426,7 +434,8 @@ pybitp pybitp_u(
 .dec_py_endp            (dec_py_endp            ),
 .py_datperiod           (py_datperiod           ),
 .edrtailer              (edrtailer              ),
-.edrtailer_endp         (edrtailer_endp         )
+.edrtailer_endp         (edrtailer_endp         ),
+.tx_pylenByte           (tx_pylenByte           )
 
 );
 
@@ -557,7 +566,10 @@ bufctrl bufctrl_u(
 .lnctrl_txpybitin(lnctrl_txpybitin),
 .bsm_dout        (bsm_dout        ),
 .regi_aclrxbufempty(regi_aclrxbufempty),
-.regi_txs1a      (regi_txs1a      )
+.regi_txs1a      (regi_txs1a      ),
+.latchpyhead_p   (latchpyhead_p   ),
+.lnctrl_bufpacket(lnctrl_bufpacket)
+
 );
 
 wire dec_micgood = 1'b1; //for tmp
@@ -566,6 +578,7 @@ wire [2:0] esco_LT_ADDR = 3'h7; //for tmp
 arqflowctrl arqflowctrl_u(
 .clk_6M             (clk_6M             ), 
 .rstz               (rstz               ),
+.txpk_flow          (txpk_flow          ),
 .m_2active_p        (m_2active_p        ), 
 .s_2active_p        (s_2active_p        ),
 .conns_rx1stslot    (conns_rx1stslot    ),

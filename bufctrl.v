@@ -32,7 +32,10 @@ rxlnctrl_we, rxbsmacl_cs, rxbsmsco_cs,
 lnctrl_txpybitin,
 bsm_dout,
 regi_aclrxbufempty,
-regi_txs1a
+regi_txs1a,
+latchpyhead_p,
+lnctrl_bufpacket
+
 );
 
 input clk_6M, rstz;
@@ -70,6 +73,8 @@ output lnctrl_txpybitin;
 output [31:0] bsm_dout;
 output regi_aclrxbufempty;
 output regi_txs1a;
+output latchpyhead_p;
+output [31:0] lnctrl_bufpacket;
 
 wire [31:0] lncacl_dout, lncsco_dout;
 wire [31:0] bsmacl_dout, bsmsco_dout;
@@ -98,6 +103,7 @@ wire [31:0] bsmacl_dout, bsmsco_dout;
 //end
 
 wire [7:0] txlnctrl_addr = pybitcount[12:5];
+assign latchpyhead_p = (txlnctrl_addr==8'h0) & (pybitcount[4:0]==5'h04);
 wire txlncacl_cs = py_datperiod & (LMP_c_slot | (!tx_reservedslot));
 wire txlncsco_cs = py_datperiod & ((!LMP_c_slot) & tx_reservedslot);
 
