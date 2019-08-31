@@ -1,5 +1,6 @@
 module bt_top(
 clk_6M, rstz,
+regi_ptt,
 regi_pllsetuptime,
 regi_chgbufcmd_p,
 txbsmacl_addr, txbsmsco_addr,
@@ -50,9 +51,9 @@ regi_my_syncword,
 regi_txwhitening, regi_rxwhitening,
 regi_Ninquiry,
 regi_Inquiry_Length, regi_Extended_Inquiry_Length,
-rxbit,
+rxsymbol,
 //
-txbit,
+txsymbol,
 fk,
 regi_fhsslave_offset,
 bsm_dout,
@@ -82,6 +83,7 @@ corre_trgp
 
 
 input clk_6M, rstz;
+input regi_ptt;
 input [9:0] regi_pllsetuptime;
 input regi_chgbufcmd_p;
 input [7:0] txbsmacl_addr, txbsmsco_addr;
@@ -135,9 +137,9 @@ input [33:0] regi_my_syncword;
 input regi_txwhitening, regi_rxwhitening;
 input [9:0] regi_Ninquiry;
 input [15:0] regi_Inquiry_Length, regi_Extended_Inquiry_Length;
-input rxbit;
+input [2:0] rxsymbol;
 //
-output txbit;
+output [2:0] txsymbol;
 output [6:0] fk;
 output [27:2] regi_fhsslave_offset;
 output [31:0] bsm_dout ;
@@ -541,42 +543,53 @@ linkctrler linkctrler_u(
 
 );
 
-//for tmp
-wire txis_BRmode = 1'b1;
-wire txis_eSCO   = 1'b0;
-wire txis_SCO    = 1'b0;
-wire txis_ACL    = 1'b1;
-//for tmp
-wire rxis_BRmode = 1'b1;
-wire rxis_eSCO   = 1'b0;
-wire rxis_SCO    = 1'b0;
-wire rxis_ACL    = 1'b1;
+////////for tmp
+//////wire txis_BRmode = 1'b1;
+//////wire txis_eSCO   = 1'b0;
+//////wire txis_SCO    = 1'b0;
+//////wire txis_ACL    = 1'b1;
+////////for tmp
+//////wire rxis_BRmode = 1'b1;
+//////wire rxis_eSCO   = 1'b0;
+//////wire rxis_SCO    = 1'b0;
+//////wire rxis_ACL    = 1'b1;
 
-wire is_BRmode = pk_encode ? txis_BRmode : rxis_BRmode;
-wire is_eSCO   = pk_encode ? txis_eSCO   : rxis_eSCO;
-wire is_SCO    = pk_encode ? txis_SCO    : rxis_SCO;
-wire is_ACL    = pk_encode ? txis_ACL    : rxis_ACL;
+//////wire is_BRmode = pk_encode ? txis_BRmode : rxis_BRmode;
+//////wire is_eSCO   = pk_encode ? txis_eSCO   : rxis_eSCO;
+//////wire is_SCO    = pk_encode ? txis_SCO    : rxis_SCO;
+//////wire is_ACL    = pk_encode ? txis_ACL    : rxis_ACL;
 
-
+wire is_SCO_tslot = 1'b0;
+wire is_eSCO = 1'b0;
+wire is_eSCO_BRmode = 1'b1;
 
 
 
 // re-sync
-reg [1:0] rxbit_as;
-always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     rxbit_as <= 0;
-  else 
-     rxbit_as <= {rxbit_as[0], rxbit};
-end
+////////reg [1:0] rxbit_as;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     rxbit_as <= 0;
+////////  else 
+////////     rxbit_as <= {rxbit_as[0], rxbit};
+////////end
 reg rxbit_resync;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      rxbit_resync <= 0;
   else if (p_1us)
-     rxbit_resync <= rxbit_as[1];
+     rxbit_resync <= rxsymbol[0]; //rxbit_as[1];
+end
+
+reg [2:0] rxsymbol_d1;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     rxsymbol_d1 <= 0;
+  else if (p_1us)
+     rxsymbol_d1 <= rxsymbol; 
 end
 
 allbitp allbitp_u(
@@ -585,6 +598,7 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.rxsymbol_d1            (rxsymbol_d1            ),
 .corre_trgp             (corre_trgp             ), 
 .connsactive            (connsactive            ),
 .ms_halftslot_p         (ms_halftslot_p         ),
@@ -664,9 +678,10 @@ allbitp allbitp_u(
 .regi_EIR               (regi_EIR               ),
 .regi_my_BD_ADDR_LAP    (regi_my_BD_ADDR_LAP    ),
 .regi_my_syncword       (regi_my_syncword       ),
-.is_BRmode              (is_BRmode              ), 
+.regi_ptt               (regi_ptt               ), 
 .is_eSCO                (is_eSCO                ), 
-.is_SCO                 (is_SCO                 ), 
+.is_eSCO_BRmode         (is_eSCO_BRmode         ), 
+.is_SCO_tslot           (is_SCO_tslot           ), 
 .is_ACL                 (is_ACL                 ),
 .pk_encode              (pk_encode              ),
 .conns_tx1stslot          (conns_tx1stslot          ),
@@ -674,7 +689,7 @@ allbitp allbitp_u(
 //.bufpacketin            (bufpacketin            ),
 .rxbit                  (rxbit_resync           ),
 //                                              
-.txbit                  (txbit                  ), 
+.txsymbol               (txsymbol               ), 
 .rxispoll               (rxispoll               ),
 .lt_addressed           (lt_addressed           ),
 .fhs_Pbits              (fhs_Pbits              ),

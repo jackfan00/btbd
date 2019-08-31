@@ -1,5 +1,6 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+rxsymbol_d1,
 corre_trgp, connsactive,
 ms_halftslot_p,
 m_2active_p, s_2active_p,
@@ -43,13 +44,13 @@ regi_SR,
 regi_EIR,
 regi_my_BD_ADDR_LAP,
 regi_my_syncword,
-is_BRmode, is_eSCO, is_SCO, is_ACL,
+regi_ptt, is_eSCO, is_eSCO_BRmode, is_SCO_tslot, is_ACL,
 pk_encode, conns_tx1stslot, pk_encode_1stslot,
 //bufpacketin,
 rxbit,
 //
 pybitcount,
-txbit, txbit_period,
+txsymbol, txbit_period,
 rxispoll,
 lt_addressed,
 fhs_Pbits,
@@ -90,6 +91,7 @@ mask_corre_win
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input [2:0] rxsymbol_d1;
 input corre_trgp, connsactive;
 input ms_halftslot_p;
 input m_2active_p, s_2active_p;
@@ -133,13 +135,13 @@ input [1:0] regi_SR;
 input regi_EIR;
 input [23:0] regi_my_BD_ADDR_LAP;
 input [33:0] regi_my_syncword;
-input is_BRmode, is_eSCO, is_SCO, is_ACL;
+input regi_ptt, is_eSCO, is_eSCO_BRmode, is_SCO_tslot, is_ACL;
 input pk_encode, conns_tx1stslot, pk_encode_1stslot;
 //input bufpacketin;
 input rxbit;
 //
 output [12:0] pybitcount;
-output txbit;
+output [2:0] txsymbol;
 output rxispoll;
 output lt_addressed;
 output [33:0] fhs_Pbits;
@@ -332,9 +334,10 @@ pktydecode pktydecode_u(
 .ms_halftslot_p   (ms_halftslot_p   ),
 .pktype_data      (pktype_data      ),
 .ms_tslot_p       (ms_tslot_p       ),
-.is_BRmode        (is_BRmode        ), 
+.regi_ptt         (regi_ptt         ), 
 .is_eSCO          (is_eSCO          ), 
-.is_SCO           (is_SCO           ), 
+.is_eSCO_BRmode   (is_eSCO_BRmode   ),
+.is_SCO_tslot     (is_SCO_tslot     ), 
 .is_ACL           (is_ACL           ),
 .pk_type          (pk_type          ),
 .regi_payloadlen  (pylenB           ),
@@ -363,6 +366,26 @@ pktydecode pktydecode_u(
 //
 wire lnctrl_txpybitin;
 wire bufpacketin = lnctrl_txpybitin;
+
+reg [1:0] sbit_cnt;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     sbit_cnt <= 0;
+  else if (py_st_p)
+     sbit_cnt <= 0;
+  else if (sbit_cnt==2'd1 & py_datvalid_p & packet_DPSK)
+     sbit_cnt <= 0;
+  else if (sbit_cnt==2'd2 & py_datvalid_p & !packet_DPSK)
+     sbit_cnt <= 0;
+  else if (py_datvalid_p & (dec_py_period|py_period))
+     sbit_cnt <= sbit_cnt + 1'b1;
+end
+wire rxpybit = packet_BRmode ? rxbit :
+               packet_DPSK ? rxsymbol_d1[sbit_cnt[0]] :   //4-psk
+                             rxsymbol_d1[sbit_cnt[1:0]] ;   //8-psk
+
+
 pybitp pybitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
@@ -405,7 +428,7 @@ pybitp pybitp_u(
 .BRss                   (BRss                   ),
 .existpyheader          (existpyheader          ),
 .bufpacketin            (bufpacketin            ),
-.rxbit                  (rxbit                  ),
+.rxbit                  (rxpybit                  ),
 //                                              
 .pybitcount             (pybitcount             ),
 .txpybit                (txpybit                ), 
@@ -439,18 +462,47 @@ pybitp pybitp_u(
 
 );
 
-
-wire txbit_t = header_packet_period & pk_encode ? txheaderbit :
-               py_period & pk_encode     ? txpybit     : 1'b0;
-
-reg txbit;
+//
+// gen modulation symbol bits
+//
+reg [1:0] txpybit_d;
 always @(posedge clk_6M or negedge rstz)
-begin
-  if (!rstz)
-     txbit <= 0;
-  else if (py_datvalid_p)
-     txbit <= txbit_t;
-end
+  begin
+    if (!rstz)
+      txpybit_d <= 0;
+    else if (py_datvalid_p)
+      txpybit_d <= {txpybit_d[0], txpybit};
+  end
+
+reg [2:0] txsymbol;
+always @(posedge clk_6M or negedge rstz)
+  begin
+    if (!rstz)
+      txsymbol <= 0;
+    else if (header_packet_period & pk_encode & p_1us)
+      txsymbol <= {2'b0, txheaderbit};
+    else if (py_period & pk_encode & packet_BRmode & p_1us)
+      txsymbol <= {2'b0, txpybit};
+    else if (py_period & pk_encode & !packet_BRmode & packet_DPSK & p_1us)
+      txsymbol <= {1'b0, txpybit, txpybit_d[0]};
+    else if (py_period & pk_encode & !packet_BRmode & !packet_DPSK & p_1us)
+      txsymbol <= {txpybit, txpybit_d[0], txpybit_d[1]};             
+    else if (!py_period & p_1us)
+      txsymbol <= 0;             
+  end
+
+
+////////wire txbit_t = header_packet_period & pk_encode ? txheaderbit :
+////////               py_period & pk_encode     ? txpybit     : 1'b0;
+////////
+////////reg txbit;
+////////always @(posedge clk_6M or negedge rstz)
+////////begin
+////////  if (!rstz)
+////////     txbit <= 0;
+////////  else if (py_datvalid_p)
+////////     txbit <= txbit_t;
+////////end
 
 
 assign txbit_period_endp = page | spr | inquiry ? headpacket_endp :      //ID
@@ -474,7 +526,7 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      txbit_period <= 0;
-  else if (py_datvalid_p)
+  else if (p_1us) //py_datvalid_p)
      txbit_period <= txbit_period_t;
 end
 

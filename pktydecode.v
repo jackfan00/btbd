@@ -4,7 +4,7 @@ corre_trgp, regi_isMaster,
 ms_halftslot_p,
 pktype_data,
 ms_tslot_p,
-is_BRmode, is_eSCO, is_SCO, is_ACL,
+regi_ptt, is_eSCO, is_eSCO_BRmode, is_SCO_tslot, is_ACL,
 pk_type,
 regi_payloadlen,
 conns_tx1stslot,
@@ -27,7 +27,7 @@ input corre_trgp, regi_isMaster;
 input ms_halftslot_p;
 input pktype_data;
 input ms_tslot_p;
-input is_BRmode, is_eSCO, is_SCO, is_ACL;
+input regi_ptt, is_eSCO, is_eSCO_BRmode, is_SCO_tslot, is_ACL;
 input [3:0] pk_type;
 input [9:0] regi_payloadlen;
 input conns_tx1stslot;
@@ -243,7 +243,8 @@ begin
     4'h4:       //DH1/2-DH1
       begin
         fec32encode = 1'b0;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;
+        packet_BRmode = !regi_ptt ? 1'b1 : 1'b0;
+        packet_DPSK = 1'b1;
       end
     4'h5:       //HV1
       begin
@@ -254,13 +255,13 @@ begin
       end
     4'h6:       //HV2/2-EV3
       begin
-        if (is_eSCO)
+        if (is_eSCO)  //2-EV3
           begin
             packet_BRmode = 1'b0;
             fec32encode = 1'b0;
             existpyheader = 1'b0;
           end
-        else
+        else  // HV2
           begin  
             pylenbit = 13'd160;
             crcencode = 1'b0;
@@ -269,19 +270,19 @@ begin
       end
     4'h7:       //HV3/EV3/3-EV3
       begin
-        if (is_eSCO & is_BRmode)  //EV3
+        if (is_SCO_tslot)  //HV3
           begin
             fec32encode = 1'b0;
             existpyheader = 1'b0;
           end
-        else if (is_eSCO & (!is_BRmode))  //3-EV3
+        else if (is_eSCO & (!is_eSCO_BRmode))  //3-EV3
           begin
             crcencode = 1'b0;
             packet_BRmode = 1'b0;
             packet_DPSK = 1'b0;
             existpyheader = 1'b0;
           end
-        else //if (is_SCO)
+        else //if (is_eSCO & is_eSCO_BRmode) //EV3
           begin  
             fec32encode = 1'b0;
             crcencode = 1'b0;
@@ -291,7 +292,7 @@ begin
       end
     4'h8:       //DV/3-DH1
       begin
-        if (is_SCO)  //DV
+        if (is_SCO_tslot)  //DV
           begin
             pylenbit = 13'd80 + {regi_payloadlen+1'b1,3'b0};
           end
@@ -309,37 +310,37 @@ begin
     4'ha:       //DM3/2-DH3
       begin
         occpuy_slots = 3'd3;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;
+        packet_BRmode = !regi_ptt ? 1'b1 : 1'b0;
       end
     4'hb:       //DH3/3-DH3
       begin
         occpuy_slots = 3'd3;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;
-        packet_DPSK = is_BRmode ? 1'b1 : 1'b0;
+        packet_BRmode = !regi_ptt ? 1'b1 : 1'b0;
+        packet_DPSK =  1'b0;  //8-DPSK
       end
     4'hc:       //EV4/2-EV5
       begin
         existpyheader = 1'b0;
         occpuy_slots = 3'd3;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;        
+        packet_BRmode = is_eSCO_BRmode ? 1'b1 : 1'b0;        
       end
     4'hd:       //EV5/3-EV5
       begin
         existpyheader = 1'b0;
         occpuy_slots = 3'd3;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;
-        packet_DPSK = is_BRmode ? 1'b1 : 1'b0;      
+        packet_BRmode = is_eSCO_BRmode ? 1'b1 : 1'b0;
+        packet_DPSK =  1'b0;      
       end
     4'he:       //DM5/2-DH5
       begin
         occpuy_slots = 3'd5;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;                
+        packet_BRmode = !regi_ptt ? 1'b1 : 1'b0;                
       end
     4'hf:       //DH5/3-DH5
       begin
         occpuy_slots = 3'd5;
-        packet_BRmode = is_BRmode ? 1'b1 : 1'b0;
-        packet_DPSK = is_BRmode ? 1'b1 : 1'b0;      
+        packet_BRmode = !regi_ptt ? 1'b1 : 1'b0;
+        packet_DPSK =  1'b0;      //8-DPSK
       end
   endcase
 end

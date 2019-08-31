@@ -361,11 +361,13 @@ s_regi_rxwhitening = 1'b0;
 wait (bt_top_m.conns);
 wait (bt_top_m.linkctrler_u.cs==5'd5);
 //
-# 1234;
+// LMP negosiation time
+# 123400;
 //
 // prepare data and header, then write to buffer (only data, header is register setting)
 // 
 regi_LT_ADDR = 3'd3;
+m_regi_ptt = 1'b1;
 m_regi_packet_type = 4'ha;
 m_regi_payloadlen = 10'd121; //bytes
 m_pyheader_l = {m_regi_payloadlen[4:0], 1'b1, 2'b10};
@@ -474,6 +476,14 @@ m_regi_packet_type = 4'h1;
 regi_LT_ADDR = 3'd4;
     m_txcmd;
 
+//
+wait (bt_top_m.pk_encode==1'b0);
+wait (bt_top_m.pk_encode==1'b1);
+# 5678000;
+m_regi_packet_type = 4'h1;
+regi_LT_ADDR = 3'd3;
+    m_txcmd;
+
 end
 
 
@@ -481,6 +491,7 @@ end
 integer s_i;
 reg [7:0] s_pyheader_l,s_pyheader_h;
 initial begin
+regi_mylt_address = 3'd3;
 wait (bt_top_s.linkctrler_u.cs==5'd5);
 //regi_mylt_address = 3'd3;
 //s_regi_packet_type = 4'd3;
@@ -489,7 +500,9 @@ wait (bt_top_s.linkctrler_u.cs==5'd5);
 //@(negedge bt_top_s.rxbit_period_endp);  //2nd , response with data (master should send null)
 //wait (bt_top_s.linkctrler_u.corre_trgp);  //
 //
-regi_mylt_address = 3'd3;
+// LMP negosiation
+s_regi_ptt = 1'b1;
+//
 s_regi_packet_type = 4'ha;
 s_regi_payloadlen = 10'd55; //bytes
 //

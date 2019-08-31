@@ -8,12 +8,12 @@
 module BTradio(
 clk_6M, rstz, p_1us,
 connsactive, CLK,
-txbitin, rxbitin,
+txsymbolin, rxsymbolin,
 txen, rxen,
 lc_fk, rxfk,
 loadfreq_p,
 //
-txbitout, rxbitout,
+txsymbolout, rxsymbolout,
 txfk
 
 );
@@ -21,12 +21,12 @@ txfk
 input clk_6M, rstz, p_1us;
 input connsactive;
 input [27:0] CLK;
-input txbitin, rxbitin;
+input [2:0] txsymbolin, rxsymbolin;
 input txen, rxen;
 input [6:0] lc_fk, rxfk;
 input loadfreq_p;
 //
-output txbitout, rxbitout;
+output [2:0] txsymbolout, rxsymbolout;
 output [6:0] txfk;
 //
 parameter PLL_SetUp_Time = 600; // 100us
@@ -58,12 +58,12 @@ assign plllocking = pllcnt < PLL_SetUp_Time;
 
 assign pll_fk = plllocking ? pllload_fk ^ {pllcnt[6:1],1'b1} : pllload_fk;
 
-assign rxbitout = rxen & (rxfk==pll_fk) ? rxbitin : 1'b0;
+assign rxsymbolout = rxen & (rxfk==pll_fk) ? rxsymbolin : 3'b0;
 
 assign txfk = txen ? pll_fk : 7'hx;
 
 wire biterr;
-assign txbitout = txen ? txbitin^biterr : 1'b0;
+assign txsymbolout = txen ? txsymbolin^{2'b0,biterr} : 3'b0;
 
 //
 // for test re-tx

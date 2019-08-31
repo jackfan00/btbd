@@ -192,7 +192,7 @@ assign dec_py_endp = fec32encode ? (processlen >= (payloadlen_crc+4'd10)) & fec3
 
 wire edrtailer_endp;
 reg edrtailer;
-reg [2:0] edrtailer_cnt;
+reg [1:0] edrtailer_cnt;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
@@ -202,16 +202,17 @@ begin
   else if (edrtailer_endp)
      edrtailer <= 1'b0 ;
 end
+
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      edrtailer_cnt <= 0;
-  else if ((py_endp & !packet_BRmode) | py_period)
+  else if ((py_endp & !packet_BRmode))
      edrtailer_cnt <= 0;
-  else if (py_datvalid_p & edrtailer)
+  else if (p_1us & edrtailer)
      edrtailer_cnt <= edrtailer_cnt + 1'b1 ;
 end
-assign edrtailer_endp = packet_DPSK ? edrtailer_cnt==3'd3 : edrtailer_cnt==3'd5;
+assign edrtailer_endp = (edrtailer_cnt==2'd1) & p_1us & edrtailer;//packet_DPSK ? edrtailer_cnt==3'd3 : edrtailer_cnt==3'd5;
 
 reg [1:0] fec31count;
 always @(posedge clk_6M or negedge rstz)

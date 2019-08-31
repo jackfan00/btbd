@@ -35,8 +35,8 @@ regi_cal_scwd_p=1'b0;
 
 end
 
-wire m_txbit, s_txbit;
-wire m_rxbit, s_rxbit;
+wire [2:0] m_txsymbol, s_txsymbol;
+wire [2:0] m_rxsymbol, s_rxsymbol;
 wire [6:0] m_fk, s_fk;
 wire [6:0] m_nxtfk, s_nxtfk;
 wire m_connsactive, s_connsactive;
@@ -46,6 +46,7 @@ wire [27:0] m_CLK, s_CLK;
 bt_top bt_top_m(
 .clk_6M                      (m_clk_6M               ), 
 .rstz                        (m_rstz                 ),
+.regi_ptt                    (m_regi_ptt             ),
 .regi_pllsetuptime           (10'd150                ), // 150us
 .regi_chgbufcmd_p            (),
 .txbsmacl_addr               (), //o_adr), 
@@ -130,9 +131,9 @@ bt_top bt_top_m(
 .regi_my_syncword            (m_regi_my_syncword_c33c0),   //
 .regi_txwhitening            (m_regi_txwhitening),
 .regi_rxwhitening            (m_regi_rxwhitening),
-.rxbit                       (m_rxbit),
+.rxsymbol                       (m_rxsymbol),
 //
-.txbit                       (m_txbit),
+.txsymbol                    (m_txsymbol),
 .fk                          (m_fk),
 .regi_aclrxbufempty          (),
 .regi_srcFLOW                (m_regi_srcFLOW),
@@ -157,7 +158,7 @@ bt_top bt_top_m(
 
 );
 
-wire m_radio_txbit, s_radio_txbit;
+wire [2:0] m_radio_txsymbol, s_radio_txsymbol;
 wire [6:0] m_radio_txfk, s_radio_txfk;
 //wire m_loadfreq_p = (m_txbit_period_endp & m_txbit_period) |
 //                  (m_rxbit_period_endp & m_rxbit_period) ;
@@ -168,16 +169,16 @@ BTradio m_BTradio(
 .p_1us      (m_p_1us        ),
 .connsactive(m_connsactive),
 .CLK        (m_CLK),
-.txbitin    (m_txbit    ), 
-.rxbitin    (s_radio_txbit    ),
+.txsymbolin    (m_txsymbol    ), 
+.rxsymbolin    (s_radio_txsymbol    ),
 .txen       (m_txbit_period       ), 
 .rxen       (m_rxbit_period       ),
 .lc_fk      (m_nxtfk          ), 
 .rxfk       (s_radio_txfk        ),
 .loadfreq_p (m_fk_chg_p_ff ),
 //         (//         )
-.txbitout   (m_radio_txbit   ), 
-.rxbitout   (m_rxbit   ),
+.txsymbolout   (m_radio_txsymbol   ), 
+.rxsymbolout   (m_rxsymbol   ),
 .txfk       (m_radio_txfk   )
 
 );
@@ -191,6 +192,7 @@ wire [2:0] fhs_LT_ADDR;
 bt_top bt_top_s(
 .clk_6M                      (s_clk_6M               ), 
 .rstz                        (s_rstz                 ),
+.regi_ptt                    (s_regi_ptt             ),
 .regi_pllsetuptime           (10'd150                ), // 150us
 .regi_chgbufcmd_p            (),
 .txbsmacl_addr               (), 
@@ -274,9 +276,9 @@ bt_top bt_top_s(
 .regi_my_syncword            (s_my_syncword_c33c0),   //LAP=0
 .regi_txwhitening            (s_regi_txwhitening),
 .regi_rxwhitening            (s_regi_rxwhitening),
-.rxbit                       (s_rxbit),
+.rxsymbol                       (s_rxsymbol),
 //
-.txbit                       (s_txbit),
+.txsymbol                       (s_txsymbol),
 .fk                          (s_fk),
 .regi_fhsslave_offset        (regi_fhsslave_offset),
 .regi_aclrxbufempty          (),
@@ -314,21 +316,19 @@ BTradio s_BTradio(
 .p_1us      (s_p_1us        ),
 .connsactive(s_connsactive),
 .CLK        (s_CLK),
-.txbitin    (s_txbit    ), 
-.rxbitin    (m_radio_txbit    ),
+.txsymbolin    (s_txsymbol    ), 
+.rxsymbolin    (m_radio_txsymbol    ),
 .txen       (s_txbit_period       ), 
 .rxen       (s_rxbit_period       ),
 .lc_fk      (s_nxtfk          ), 
 .rxfk       (m_radio_txfk        ),
 .loadfreq_p (s_fk_chg_p_ff ),
 //         (//         )
-.txbitout   (s_radio_txbit   ), 
-.rxbitout   (s_rxbit   ),
+.txsymbolout   (s_radio_txsymbol   ), 
+.rxsymbolout   (s_rxsymbol   ),
 .txfk       (s_radio_txfk   )
 
 );
 
-//assign m_rxbit = m_fk==s_fk ? s_txbit : 1'bx;
-//assign s_rxbit = m_fk==s_fk ? m_txbit : 1'bx;
 
 endmodule

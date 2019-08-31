@@ -306,7 +306,8 @@ begin
   else if (tx_packet_st_p | pk_encode)  //ms_tslot_p
      lt_addressed <= 0;
   else if (ckhec & p_1us)
-     lt_addressed <=  (hecrem==8'h0) & (dec_lt_addr==txpk_lt_addr) ;  //header good and match lt_address
+     lt_addressed <=  (hecrem==8'h0) & ( (dec_lt_addr==txpk_lt_addr) |    // header good and match lt_address
+                                         (dec_lt_addr==3'b0        )  );  // broadcast
 end
 
 //hecgood and addressed
