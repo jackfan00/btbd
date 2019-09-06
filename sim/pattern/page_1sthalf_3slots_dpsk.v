@@ -237,6 +237,8 @@ reg s_regi_chgbufcmd_p;
 reg [7:0] s_regi_master_BD_ADDR_UAP;
 reg s_pscase;
 
+reg [63:0] fixed_syncword_GIAC;
+
 reg regi_InquiryEnable_oneshot, regi_PageEnable_oneshot, regi_ConnHold_oneshot, regi_ConnSniff_oneshot, regi_ConnPark_oneshot;
 reg regi_PageScanEnable_oneshot, regi_InquiryScanEnable_oneshot;
 
@@ -263,10 +265,12 @@ m_regi_my_BD_ADDR_UAP = 8'h47;
 m_regi_my_syncword_c33c0 =   34'h244ad1ae7; //LAP=ffffff,
 //m_paged_syncword_c0c33   =   34'h1f9c1078d; //LAP=0
 m_paged_syncword_c33c0   =   34'h2c7820e7e; //LAP=0
-m_regi_syncword_CAC =  {6'b010011,m_regi_my_BD_ADDR_UAP,m_regi_my_syncword_c33c0}; // 
+m_regi_syncword_CAC =  {6'b010011,m_regi_my_BD_ADDR_LAP,m_regi_my_syncword_c33c0}; // 
 m_regi_syncword_DAC =  {6'b101100,regi_paged_BD_ADDR_LAP,m_paged_syncword_c33c0};  //
 //m_regi_syncword_DIAC = 64'h28ed3c34cb345e72; //LAP=9E8B34
 m_regi_syncword_DIAC   = 64'h4e7a2cd32c3cb714; //LAP=9E8B34
+//m_regi_syncword_GIAC   = 64'h475c58cc73345e72;
+fixed_syncword_GIAC   =   64'h4e7a2cce331a3ae2;
 //
 m_regi_AFH_mode = 1'b0;  // each device have their own setting
 m_regi_AFH_N = 7'd79;

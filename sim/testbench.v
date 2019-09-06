@@ -103,7 +103,7 @@ bt_top bt_top_m(
 .regi_syncword_CAC           (m_regi_syncword_CAC),  //LAP=ffffff,      //(64'hec4c69b54c29a18d, LAP= 24'h61650c) 
 .regi_syncword_DAC           (m_regi_syncword_DAC),  //LAP=0,      //(64'hec4c69b54c29a18d, LAP= 24'h61650c) 
 .regi_syncword_DIAC          (m_regi_syncword_DIAC),  //LAP=9E8B34,      //(64'hec4c69b54c29a18d, LAP= 24'h61650c) 
-.regi_syncword_GIAC          (64'h475c58cc73345e72),
+.regi_syncword_GIAC          (fixed_syncword_GIAC), //64'h475c58cc73345e72),
 .regi_Npage                  (10'd127),
 .regi_slave_SRmode           (2'b01),
 .regi_scolink_num            (2'h0),
@@ -247,7 +247,7 @@ bt_top bt_top_s(
 .regi_syncword_CAC           (s_regi_syncword_CAC),  //LAP=ffffff,      //(64'hec4c69b54c29a18d, LAP= 24'h61650c) 
 .regi_syncword_DAC           (s_regi_syncword_DAC),  //LAP=0,      //(64'hec4c69b54c29a18d, LAP= 24'h61650c) 
 .regi_syncword_DIAC          (s_regi_syncword_DIAC),  //LAP=9E8B34,      //(64'hec4c69b54c29a18d, LAP= 24'h61650c) 
-.regi_syncword_GIAC          (64'h475c58cc73345e72),
+.regi_syncword_GIAC          (fixed_syncword_GIAC), //64'h475c58cc73345e72),
 .regi_Npage                  (10'd127),
 .regi_slave_SRmode           (2'b01),
 .regi_scolink_num            (2'h0),
