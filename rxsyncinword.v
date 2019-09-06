@@ -22,7 +22,8 @@ begin
   if (!rstz)
      syncinword <= 64'h0;
   else if (p_1us)
-     syncinword <= {syncinword[62:0],rxbit} ;
+     //syncinword <= {syncinword[62:0],rxbit} ;
+     syncinword <= {rxbit,syncinword[63:1]} ;  // LSB transmit first, MSB transmit last 
 end
 
 

@@ -79,6 +79,7 @@ wire fk_connsnewslave, fk_connsnewmaster;
 wire fk_conns = conns | fk_connsnewslave | fk_connsnewmaster;
 wire [27:0] fk_CLK = fk_conns ? CLK + 1'b1 : CLK;
 wire [27:0] fk_CLKE = CLKE + 1'b1;
+wire [27:0] fk_CLKN = CLKN + 1'b1;
 
 hopctrlwd hopctrlwd_u(
 .clk_6M               (clk_6M               ), 
@@ -113,7 +114,7 @@ hopctrlwd hopctrlwd_u(
 .prm_clock_frozen     (prm_clock_frozen     ),
 .CLK                  (fk_CLK                  ), 
 .CLKE                 (fk_CLKE                 ), 
-.CLKN                 (CLKN                 ), 
+.CLKN                 (fk_CLKN                 ), 
 .BD_ADDR              (BD_ADDR          ),
 .counter_isFHS        (counter_isFHS        ),
 //

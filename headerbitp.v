@@ -211,9 +211,9 @@ assign syncword = conns ? regi_syncword_CAC :
                   regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC;
 
 // syncword format is LSB leftmost
-assign txheaderbit = preamble_en ? (syncword[63] ? !all_bitcount[0] : all_bitcount[0]) :
-               syncword_en ? syncword[8'd63-all_bitcount+3'd4] :
-               trailer_en ?  (syncword[0] ? all_bitcount[0] : !all_bitcount[0]) :
+assign txheaderbit = preamble_en ? (syncword[0] ? !all_bitcount[0] : all_bitcount[0]) :
+               syncword_en ? syncword[all_bitcount-3'd4] :  //8'd63-all_bitcount+3'd4
+               trailer_en ?  (syncword[63] ? all_bitcount[0] : !all_bitcount[0]) :
                header_en|hec_en ? hecencodebit : 1'b0;
 
 
