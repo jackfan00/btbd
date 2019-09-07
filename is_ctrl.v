@@ -5,6 +5,7 @@
 
 module is_ctrl(
 clk_6M, rstz, tslot_p, p_1us,
+is_randwin,
 regi_Tsco,
 regi_scolink_num,
 regi_Tisinterval, regi_Tiswindow,
@@ -17,6 +18,7 @@ InquiryScanWindow_endp
 );
 
 input clk_6M, rstz, tslot_p, p_1us;
+input is_randwin;
 input [2:0] regi_Tsco;
 input [1:0] regi_scolink_num;
 input [15:0] regi_Tisinterval, regi_Tiswindow;
@@ -61,6 +63,8 @@ begin
      pswindow_counter_tslot <= 0;
   else if (!regi_InquiryScanEnable)
      pswindow_counter_tslot <= 0;
+  else if (is_randwin)
+     pswindow_counter_tslot <= regi_isinterlace ? {Tiswindow,1'b0} : Tiswindow;
   else if (pswindow_counter_tslot==Tisinterval)
      pswindow_counter_tslot <= 0;
   else if (tslot_p)
@@ -73,7 +77,7 @@ wire InterInquiryScanWindow = (pswindow_counter_tslot < {Tiswindow,1'b0}) ;
 
 assign InquiryScanWindow_raw =  regi_isinterlace & (Tisinterval >= {Tiswindow,1'b0}) ? InterInquiryScanWindow : NorInquiryScanWindow;
 
-assign InquiryScanWindow_t = InquiryScanWindow_raw & regi_InquiryScanEnable;  //(is | giis) ;
+assign InquiryScanWindow_t = InquiryScanWindow_raw & regi_InquiryScanEnable & !is_randwin;  //(is | giis) ;
 //
 
 reg InquiryScanWindow_d1;

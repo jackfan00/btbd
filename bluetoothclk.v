@@ -4,6 +4,7 @@
 //
 module bluetoothclk(
 clk_6M, rstz,
+inquiry,
 regi_isMaster,
 regi_pllsetuptime,
 page, mpr,
@@ -23,11 +24,13 @@ s_conns_uncerWindow,
 regi_fhsslave_offset,
 m_page_uncerWindow_endp,
 fkset_p,
-regi_s_slot_offset
+regi_s_slot_offset,
+m_inquiry_uncerWindow, m_inquiry_uncerWindow_endp
 
 );
 
 input clk_6M, rstz;
+input inquiry;
 input regi_isMaster;
 input [9:0] regi_pllsetuptime;
 input page, mpr;
@@ -49,6 +52,8 @@ output [27:2] regi_fhsslave_offset;
 output m_page_uncerWindow_endp;
 output fkset_p;
 output [9:0] regi_s_slot_offset;
+output m_inquiry_uncerWindow, m_inquiry_uncerWindow_endp;
+
 
 wire [27:0] CLKR_master, CLKR_slave;
 wire [9:0] m_counter_1us, s_counter_1us;
@@ -151,6 +156,28 @@ end
 
 assign m_page_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKE_master[1] & (page|mpr) & p_1us) |
                                  (m_counter_1us == 10'd390 && CLKE_master[1] & page & p_1us) ;
+
+//
+reg m_inquiry_uncerWindow;
+always @(posedge clk_6M or negedge rstz)
+begin
+  if (!rstz)
+     m_inquiry_uncerWindow <= 0;
+//first ID
+  else if (m_counter_1us == 10'd615 && (!CLKN_master[1]) & (inquiry) & p_1us)   
+     m_inquiry_uncerWindow <= 1'b1;
+  else if (m_counter_1us == 10'd78 && CLKN_master[1] & (inquiry) & p_1us)
+     m_inquiry_uncerWindow <= 1'b0;
+//second ID
+  else if (m_counter_1us == 10'd302 && CLKN_master[1] & inquiry & p_1us)   
+     m_inquiry_uncerWindow <= 1'b1;
+  else if (m_counter_1us == 10'd390 && CLKN_master[1] & inquiry & p_1us)
+     m_inquiry_uncerWindow <= 1'b0;
+end
+
+assign m_inquiry_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKN_master[1] & (page|mpr) & p_1us) |
+                                 (m_counter_1us == 10'd390 && CLKN_master[1] & page & p_1us) ;
+
 
 always @(posedge clk_6M or negedge rstz)
 begin

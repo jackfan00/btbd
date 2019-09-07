@@ -4,6 +4,8 @@
 
 module fkctrl(
 clk_6M, rstz,
+regi_isMaster,
+ir,
 psrxfhs_succ_p,
 fk_page,
 page,
@@ -33,6 +35,8 @@ fk_chg_p, fk_chg_p_ff
 );
 
 input clk_6M, rstz;
+input regi_isMaster;
+input ir;
 input psrxfhs_succ_p;
 input fk_page;
 input page;
@@ -63,8 +67,8 @@ assign fk_spr = fk_pstxid | fk_psrxfhs | fk_psackfhs;
 
 assign fk_mpr = fk_pagetxfhs | fk_pagerxackfhs;
 
-
-wire fk_chg_p = ((!(txbit_period | rxbit_period)) & fkset_p); // | scancase_fk_chg_p;
+wire ir_fkset_p = regi_isMaster ? fkset_p & !ir : fkset_p;
+wire fk_chg_p = ((!(txbit_period | rxbit_period)) & ir_fkset_p); // | scancase_fk_chg_p;
 
 wire psrxfhs_fk_chg_p = fk_psrxfhs & fkset_p;
 

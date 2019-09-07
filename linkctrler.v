@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+m_inquiry_uncerWindow,
 mask_corre_win,
 occpuy_slots,
 sendoldpy,
@@ -84,11 +85,14 @@ m_2active_p, s_2active_p,
 m_fail2active_p, s_fail2active_p,
 connsactive,
 regi_lc_cs,
-corre_trgp
+corre_trgp,
+istxextFHS,
+extFHS_correwin
 
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input m_inquiry_uncerWindow;
 input mask_corre_win;
 input [2:0] occpuy_slots;
 input sendoldpy;
@@ -170,6 +174,9 @@ output m_fail2active_p, s_fail2active_p;
 output connsactive;
 output [4:0] regi_lc_cs;
 output corre_trgp;
+output istxextFHS;
+output extFHS_correwin;
+
 
 wire is_randwin_endp;
 wire PageScanWindow, InquiryScanWindow;
@@ -205,7 +212,7 @@ parameter STANDBY_STATE=5'd0, Inquiry_STATE=5'd1, InquiryScan_STATE=5'd2, Page_S
           PageSlaveResp_rxfhs_STATE=5'd15, PageSlaveResp_ackfhs_STATE=5'd16, InquiryScanRand_STATE=5'd17,
           InquiryScantxFHS_STATE=5'd18, InquiryScantxExtIRP_STATE=5'd19, CONNECTIONnewslave_STATE=5'd20, CONNECTIONnewmaster_STATE=5'd21,
           InquiryEIR_STATE=5'd22, Inquiryintern_STATE=5'd23, Pagetmp_STATE=5'd24, PageSlaveResp_rxfhsdone_STATE=5'd25,
-          CONNECTIONnewslave_ackpoll_STATE=5'd26, Inquiryrsp_STATE=5'd27;
+          CONNECTIONnewslave_ackpoll_STATE=5'd26, Inquiryrsp_STATE=5'd27, InquiryScanMatch_STATE=5'd28;
 
 reg [4:0] cs, ns, pre_state_ff, pre_state;
 
@@ -367,7 +374,12 @@ begin
       begin
         if (!InquiryScanWindow)
           ns = pre_state_ff;
-        else if (is_corre_threshold & corr_tslotdly_endp)  // back to, wait for rand timeslot, to avoid collision issue
+        else if (corre_trgp) //is_corre_threshold & corr_tslotdly_endp)  // back to, wait for rand timeslot, to avoid collision issue
+          ns = InquiryScanMatch_STATE; //InquiryScantxFHS_STATE;
+      end  
+    InquiryScanMatch_STATE:    
+      begin
+        if (is_corre_threshold & corr_tslotdly_endp)  // wait for 625us
           ns = InquiryScantxFHS_STATE;
       end  
     InquiryScanRand_STATE:    
@@ -380,12 +392,12 @@ begin
         if (regi_extendedInquiryResponse & istxfhs_tslot2dly_endp)
           ns = InquiryScantxExtIRP_STATE;
         else if (!regi_extendedInquiryResponse & istxfhs_tslotdly_endp)
-          ns = InquiryScanRand_STATE;
+          ns = pre_state_ff; //InquiryScanRand_STATE;
       end  
     InquiryScantxExtIRP_STATE:    
       begin
         if (isextfhs_tslotdly_endp)
-          ns = InquiryScanRand_STATE;
+          ns = pre_state_ff; //InquiryScanRand_STATE;
       end  
     Inquiry_STATE:
       begin
@@ -420,10 +432,12 @@ begin
 end
 
 //
-reg [10:0] is_counter_1us;
+reg [11:0] is_counter_1us;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
+     is_counter_1us <= 0;
+  else if (cs==InquiryScan_STATE)
      is_counter_1us <= 0;
 // InquiryEIR_STATE delay count
   else if (cs==Inquiryrsp_STATE & dec_iscanEIR & corr_tslotdly_endp)
@@ -438,11 +452,19 @@ begin
   else if (p_1us & (cs==InquiryScantxFHS_STATE || cs==InquiryScantxExtIRP_STATE))
      is_counter_1us <= is_counter_1us + 1'b1;
 end
-assign istxfhs_tslotdly_endp  = (is_counter_1us==11'd624)  & p_1us & (cs==InquiryScantxFHS_STATE);
-assign istxfhs_tslot2dly_endp = (is_counter_1us==11'd1249) & p_1us & (cs==InquiryScantxFHS_STATE);
-assign isextfhs_tslotdly_endp = (is_counter_1us==11'd624)  & p_1us & (cs==InquiryScantxExtIRP_STATE);
-assign inqExt_tslotdly_endp   = (is_counter_1us==11'd624)  & p_1us & (cs==InquiryEIR_STATE) ;
-assign inqExt_tslot2dly_endp  = (is_counter_1us==11'd1249) & p_1us & (cs==InquiryEIR_STATE) ;
+assign istxfhs_tslotdly_endp  = (is_counter_1us==12'd624)  & p_1us & (cs==InquiryScantxFHS_STATE);
+assign istxfhs_tslot2dly_endp = (is_counter_1us==12'd1249) & p_1us & (cs==InquiryScantxFHS_STATE);
+
+wire [11:0] extfhs_endcnt = occpuy_slots==3'd5 ? 12'd3124 :
+                     occpuy_slots==3'd3 ? 12'd1874 :
+                                          12'd624 ;
+assign isextfhs_tslotdly_endp =  (is_counter_1us==extfhs_endcnt)  & p_1us & (cs==InquiryScantxExtIRP_STATE);
+
+assign inqExt_tslotdly_endp   = (is_counter_1us==12'd624)  & p_1us & (cs==InquiryEIR_STATE) ;
+
+assign extFHS_correwin = (is_counter_1us>=12'd614) & (is_counter_1us<=12'd702) & (cs==InquiryEIR_STATE) ;
+
+assign inqExt_tslot2dly_endp  = (is_counter_1us==(extfhs_endcnt+12'd625)) & p_1us & (cs==InquiryEIR_STATE) ;
 //
 reg PageScanEnable;
 always @(posedge clk_6M or negedge rstz)
@@ -467,6 +489,8 @@ begin
 end
 
 
+wire enter_rand_p = ((cs==InquiryScantxFHS_STATE) & (!regi_extendedInquiryResponse & istxfhs_tslotdly_endp)) |
+                       ((cs==InquiryScantxExtIRP_STATE) & isextfhs_tslotdly_endp );
 reg is_randwin;
 always @(posedge clk_6M or negedge rstz)
 begin
@@ -474,7 +498,7 @@ begin
      is_randwin <= 1'b0;
   else if (is_randwin_endp)
      is_randwin <= 1'b0;
-  else if (cs==InquiryScanRand_STATE)
+  else if (enter_rand_p)  //cs==InquiryScanRand_STATE)
      is_randwin <=  1'b1;
 end
 
@@ -485,11 +509,11 @@ begin
      randcnt <= 10'b0;
   else if (!is_randwin)
      randcnt <=  10'b0;
-  else if (is_randwin & p_1us)
+  else if (is_randwin & ms_tslot_p)
      randcnt <= randcnt+1'b1;
 end
 
-assign is_randwin_endp = (randcnt == regi_isMaxRand) & p_1us & is_randwin;
+assign is_randwin_endp = (randcnt == regi_isMaxRand) & is_randwin & ms_tslot_p;
 
 reg [4:0] counter_isFHS;
 wire isFHS_en = regi_isMaster ? ( dec_iscanEIR ? (cs==InquiryEIR_STATE) & inqExt_tslot2dly_endp : 
@@ -695,6 +719,7 @@ is_ctrl is_ctrl_u(
 .rstz                  (rstz                  ), 
 .tslot_p               (s_tslot_p             ), 
 .p_1us                 (p_1us                 ),
+.is_randwin            (is_randwin            ),
 .regi_Tsco             (regi_Tsco             ),
 .regi_scolink_num      (regi_scolink_num      ),
 .regi_Tisinterval      (regi_Tisinterval      ), 
@@ -799,10 +824,12 @@ wire ConnsWindow_t = regi_isMaster ? m_conns_uncerWindow : s_conns_uncerWindow;
 // mask multi-slot tx/rx period 
 wire ConnsWindow = ConnsWindow_t & (!ms_enable) & (!mask_corre_win); //(!rxextendslot);
 wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DAC :
-                       InquiryScanWindow | inquiry ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
+                       InquiryScanWindow | inquiry | ir ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
                        conns ? regi_syncword_CAC : 64'b0 ;
                        
-wire correWindow = page | inquiry ? p_correWin :
+wire correWindow = inquiry ? m_inquiry_uncerWindow :
+                   ir ? extFHS_correwin :
+                   page    ? p_correWin :
                    ps ? PageScanWindow :
                    spr ? spr_correWin | psrxfhs_corwin :
                    mpr ? mpr_correWin :
@@ -866,7 +893,7 @@ begin
 end
 
 // exclude ID packet
-assign rx_trailer_st_p = raw_rx_trailer_st_p & (spr | conns | inquiry);
+assign rx_trailer_st_p = raw_rx_trailer_st_p & (spr | conns | inquiry | ir);
 //
 
 assign fk_page = (cs == Page_STATE);
@@ -887,7 +914,9 @@ assign mpr = (cs==PageMasterResp_txfhs_STATE) | (cs==PageMasterResp_rxackfhs_STA
 
 assign spr = (cs==PageSlaveResp_txid_STATE) | (cs==PageSlaveResp_rxfhs_STATE) | (cs==PageSlaveResp_rxfhsdone_STATE) | (cs==PageSlaveResp_ackfhs_STATE);
 
-assign ir = (cs==InquiryScantxFHS_STATE) | (cs==InquiryScantxExtIRP_STATE) | (cs==Inquiryrsp_STATE) | (cs==InquiryEIR_STATE);
+assign ir = (cs==InquiryScanMatch_STATE) | (cs==InquiryScantxFHS_STATE) | (cs==InquiryScantxExtIRP_STATE) | (cs==Inquiryrsp_STATE) | (cs==InquiryEIR_STATE);
+
+assign istxextFHS = (cs==InquiryScantxExtIRP_STATE);
 
 assign pagetmp = (cs==Pagetmp_STATE);
 
@@ -934,7 +963,7 @@ assign tx_packet_st_p =
                      
                      ps  ? ps_corre_threshold & corr_tslotdly_endp :  // slave page response, ID         
                      cs==PageSlaveResp_rxfhsdone_STATE ? s_tslot_p :   // slave page response, ID
-                     cs==InquiryScan_STATE ? is_corre_threshold & corr_tslotdly_endp :  // inquiryScan response, FHS
+                     cs==InquiryScanMatch_STATE ? is_corre_threshold & corr_tslotdly_endp :  // inquiryScan response, FHS
                      cs==InquiryScantxFHS_STATE ? regi_extendedInquiryResponse & istxfhs_tslot2dly_endp : //  inquiryScan extended response
                      cs==PageMasterResp_rxackfhs_STATE & m_corre    ?  CLKE[1] & m_tslot_p :  // master send first poll
                      cs==PageMasterResp_rxackfhs_STATE & (!m_corre) ?  CLKE[1] & m_tslot_p & (!regi_pagetruncated) :  // re-transmit FHS ,master page response, 

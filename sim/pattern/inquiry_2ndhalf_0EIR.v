@@ -163,7 +163,7 @@ regi_InquiryEnable_oneshot = 1'b1;
 regi_InquiryEnable_oneshot = 1'b0;
 
 //
-#20000000;
+#300000000;
 //#2000000000;
 //#2000000000;
 $finish;

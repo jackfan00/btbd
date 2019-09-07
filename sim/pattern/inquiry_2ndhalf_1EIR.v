@@ -106,7 +106,7 @@ m_regi_txwhitening = 1'b1;
 m_regi_rxwhitening = 1'b0;
 //
 //for slave
-s_regi_EIR = 1'b0;
+s_regi_EIR = 1'b1;
 s_regi_ptt = 1'b0;
 s_pscase = 1'b1;   // 1st or 2nd half
 s_regi_master_BD_ADDR_UAP = 8'h47;  //should match m_regi_my_BD_ADDR_UAP
@@ -115,7 +115,7 @@ s_regi_my_BD_ADDR_UAP = 8'h47;  //should match regi_paged_BD_ADDR_UAP
 //s_my_syncword_c0c33   =   34'h1f9c1078d; //should match s_regi_my_BD_ADDR_LAP
 s_my_syncword_c33c0   =   34'h2c7820e7e; //
 
-regi_extendedInquiryResponse = 1'b0; 
+regi_extendedInquiryResponse = s_regi_EIR; 
 s_regi_syncword_CAC =  m_regi_syncword_CAC; //LAP=ffffff, need match m_regi_my_BD_ADDR_LAP
 s_regi_syncword_DAC =  {6'b101100,s_regi_my_BD_ADDR_LAP,s_my_syncword_c33c0}; //
 //s_regi_syncword_DIAC = 64'h28ed3c34cb345e72; //LAP=9E8B34
@@ -163,8 +163,87 @@ regi_InquiryEnable_oneshot = 1'b1;
 regi_InquiryEnable_oneshot = 1'b0;
 
 //
-#20000000;
+#300000000;
 //#2000000000;
 //#2000000000;
 $finish;
 end
+
+
+//
+task s_bsm_wdat;
+output [7:0] to_adr;
+output [31:0] to_din;
+output to_we;
+output to_cs;
+input master;
+input [7:0] adr;
+input [31:0] din;
+
+begin
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.txbsmacl_we =1'b1;
+force bt_top_s.txbsmacl_cs =1'b1;
+force bt_top_s.txbsmacl_addr = adr;
+force bt_top_s.txbsmacl_din = din;
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.txbsmacl_we =1'b0;
+force bt_top_s.txbsmacl_cs =1'b0;
+end
+//
+endtask;
+task chgbuf;
+input master;
+//
+if (master)
+begin
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.regi_chgbufcmd_p=1'b1;
+//force bt_top_m.linkctrler_u.regw_txdatready_p=1'b1;
+@(posedge m_clk_6M);
+#10;
+force bt_top_m.regi_chgbufcmd_p=1'b0;
+//force bt_top_m.linkctrler_u.regw_txdatready_p=1'b0;
+end
+else
+begin
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.regi_chgbufcmd_p=1'b1;
+//force bt_top_s.linkctrler_u.regw_txdatready_p=1'b1;
+@(posedge s_clk_6M);
+#10;
+force bt_top_s.regi_chgbufcmd_p=1'b0;
+//force bt_top_s.linkctrler_u.regw_txdatready_p=1'b0;
+end
+//
+endtask;
+
+reg [7:0] o_adr;
+reg [31:0] o_din;
+reg o_we, o_cs;
+reg [8:0] s_pyheader_l, s_pyheader_h;
+integer s_i;
+initial begin
+wait (s_rstz==1'b1);
+#1000;
+s_regi_packet_type = 4'h3;
+s_regi_payloadlen = 10'd16; //bytes
+//
+s_pyheader_l = {s_regi_payloadlen[4:0], 1'b1, 2'b10};
+s_pyheader_h = {3'b0,s_regi_payloadlen[9:5]};
+s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 0, {8'h02,8'h01,s_pyheader_h,s_pyheader_l});
+//s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, 1, {8'h05,8'h04,8'h03});
+for (s_i=1;s_i<=s_regi_payloadlen[9:2];s_i=s_i+1)
+  begin
+    s_bsm_wdat(o_adr, o_din, o_we, o_cs, 0, s_i, {s_i+3,s_i+2,s_i+1,s_i});
+  end  
+
+// 1st reponse py
+// slave need to manual switch in 1st packet
+    chgbuf(0);
+    
+end    

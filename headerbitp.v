@@ -1,5 +1,6 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
+istxextFHS,
 s_2active_p, m_2active_p,
 pylenbit,
 ms_lt_addr,
@@ -51,6 +52,7 @@ txpk_flow
 );
 
 input clk_6M, rstz, p_1us;
+input istxextFHS;
 input s_2active_p, m_2active_p;
 input [12:0] pylenbit;
 input [2:0] ms_lt_addr;
@@ -191,7 +193,7 @@ assign fec31inc_p = fec31count==2'd2 & p_1us;
 wire [3:0] txpktype = mpr | istxfhs ? 4'b0010 :   //fhs
                     connsnewmaster ? 4'b0001 :    //poll
                     connsnewslave ? 4'b0000 :    //null
-                    conns ? srctxpktype : 4'b0; //regi_packet_type;
+                    conns | ir ? srctxpktype : 4'b0; //regi_packet_type;
 
 // slave: should be response in next slot with current regi_mylt_address
 //        so mcu should parse received data, prepare response data
@@ -201,7 +203,8 @@ wire [2:0] txpk_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire txpk_flow = conns ? rspFLOW : 1'b1;
 wire txpk_seqn = conns ? txaclSEQN[txpk_lt_addr] : 1'b1;
 wire txpk_arqn = conns ? txARQN[txpk_lt_addr] & txpk_flow : 1'b0;
-wire [9:0] txpacket_header = {txpk_seqn,txpk_arqn,txpk_flow,txpktype,txpk_lt_addr};
+wire [9:0] txpacket_header = istxextFHS ? {1'b0,1'b0,1'b0,txpktype,3'b0} :
+                             {txpk_seqn,txpk_arqn,txpk_flow,txpktype,txpk_lt_addr};
 
 
 assign pkheader_bitin = txpacket_header[header_bitcount];

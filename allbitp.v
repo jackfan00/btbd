@@ -1,5 +1,8 @@
 module allbitp (
 clk_6M, rstz, p_1us, p_05us, p_033us,
+extFHS_correwin,
+istxextFHS,
+m_inquiry_uncerWindow_endp,
 rxsymbol_d1,
 corre_trgp, connsactive,
 ms_halftslot_p,
@@ -91,6 +94,9 @@ mask_corre_win
 
 
 input clk_6M, rstz, p_1us, p_05us, p_033us;
+input extFHS_correwin;
+input istxextFHS;
+input m_inquiry_uncerWindow_endp;
 input [2:0] rxsymbol_d1;
 input corre_trgp, connsactive;
 input ms_halftslot_p;
@@ -225,6 +231,7 @@ headerbitp headerbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.istxextFHS             (istxextFHS             ),
 .s_2active_p            (s_2active_p            ), 
 .m_2active_p            (m_2active_p            ),
 .pylenbit               (pylenbit               ),
@@ -319,7 +326,7 @@ begin
 end
 
 wire [3:0] pk_type = regi_isMaster ? (//notrececode ? 4'd0 :   //for generating tx_packet_st_p 
-                                      rxextendslot|conns_rx1stslot ? dec_pk_type : txpktype) :
+                                      ir|rxextendslot|conns_rx1stslot ? dec_pk_type : txpktype) :
                                      (pk_encode ? txpktype : dec_pk_type);
 
 //wire [9:0] pylenB = pk_encode ? regi_payloadlen : dec_pylenByte;  //_1stslot
@@ -532,7 +539,8 @@ end
 
 
 assign rxbit_period_endp = //ps ? PageScanWindow_endp :   //
-                           page|inquiry|mpr ? p_correWin_endp :
+                           inquiry  ? m_inquiry_uncerWindow_endp :
+                           page|mpr ? p_correWin_endp :
                            //psrxfhs ? py_endp :
                            //is ? InquiryScanWindow_endp :      
                            packet_BRmode ? corre_nottrg_p | (pylenbit!=0 ? py_endp        : hec_endp):          //BR
@@ -543,6 +551,8 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      validdatwin <= 0;
+  else if ((inquiry & corre_trgp) | extFHS_correwin)  //inquiry response, receive FHS
+     validdatwin <= 1'b1;
   else if (page|inquiry|ps|is|mpr)
      validdatwin <= 1'b0;
   else if (correWindow)
@@ -553,7 +563,7 @@ begin
      validdatwin <= 1'b0;
 end
 
-assign rxbit_period = page|inquiry| (ps & (!fk_pstxid)) |is|mpr ? correWindow : validdatwin  ;
+assign rxbit_period = page|inquiry| (ps & (!fk_pstxid)) |is|mpr ? correWindow : validdatwin | extFHS_correwin  ;
 
 //
 wire [31:0] rxlnctrl_din = rxpydin;

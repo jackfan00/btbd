@@ -380,9 +380,9 @@ always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
      tx_pylenByte <= 0;
-  else if (BRss & existpyheader & pk_encode & latchpyhead_p & connsactive)
+  else if (BRss & existpyheader & pk_encode & latchpyhead_p & (ir|connsactive))
      tx_pylenByte <= {5'b0,lnctrl_bufpacket[7:3]};
-  else if ((!BRss) & existpyheader & pk_encode & latchpyhead_p & connsactive)
+  else if ((!BRss) & existpyheader & pk_encode & latchpyhead_p & (ir|connsactive))
      tx_pylenByte <= {lnctrl_bufpacket[12:3]};
 end
 

@@ -221,6 +221,7 @@ wire ms_halftslot_p = regi_isMaster ? m_half_tslot_p : s_half_tslot_p;
 bluetoothclk bluetoothclk_u(
 .clk_6M                  (clk_6M                  ), 
 .rstz                    (rstz                    ),
+.inquiry                 (inquiry                 ),
 .regi_isMaster           (regi_isMaster           ),
 .regi_pllsetuptime       (regi_pllsetuptime       ),
 .page                    (page                    ),
@@ -258,7 +259,9 @@ bluetoothclk bluetoothclk_u(
 .regi_fhsslave_offset    (regi_fhsslave_offset    ),
 .m_page_uncerWindow_endp (m_page_uncerWindow_endp ),
 .fkset_p                 (fkset_p                 ),
-.regi_s_slot_offset      (regi_s_slot_offset      )
+.regi_s_slot_offset      (regi_s_slot_offset      ),
+.m_inquiry_uncerWindow      (m_inquiry_uncerWindow      ),
+.m_inquiry_uncerWindow_endp (m_inquiry_uncerWindow_endp )
 
 );
 
@@ -282,6 +285,7 @@ hopselection hopselection_u(
 .clk_6M               (clk_6M               ), 
 .rstz                 (rstz                 ), 
 .p_033us              (p_033us              ),
+.regi_isMaster        (regi_isMaster        ),
 .ps_pagerespTO        (ps_pagerespTO        ),
 .fk_page              (fk_page              ),
 .scancase             (scancase             ),
@@ -414,6 +418,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.m_inquiry_uncerWindow       (m_inquiry_uncerWindow       ),
 .mask_corre_win              (mask_corre_win              ),
 .occpuy_slots                (occpuy_slots                ),
 .sendoldpy                   (sendoldpy                   ),
@@ -538,7 +543,9 @@ linkctrler linkctrler_u(
 .s_2active_p               (s_2active_p               ),
 .connsactive               (connsactive               ),
 .regi_lc_cs                (regi_lc_cs                ),
-.corre_trgp                (corre_trgp                )
+.corre_trgp                (corre_trgp                ),
+.istxextFHS                (istxextFHS                ),
+.extFHS_correwin           (extFHS_correwin           )
 
 
 );
@@ -598,6 +605,9 @@ allbitp allbitp_u(
 .p_1us                  (p_1us                  ),
 .p_05us                 (p_05us                 ),
 .p_033us                (p_033us                ),
+.extFHS_correwin        (extFHS_correwin        ),
+.istxextFHS             (istxextFHS             ),
+.m_inquiry_uncerWindow_endp (m_inquiry_uncerWindow_endp ),
 .rxsymbol_d1            (rxsymbol_d1            ),
 .corre_trgp             (corre_trgp             ), 
 .connsactive            (connsactive            ),

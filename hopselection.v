@@ -1,5 +1,6 @@
 module hopselection(
 clk_6M, rstz, p_033us,
+regi_isMaster,
 ps_pagerespTO,
 fk_page,
 scancase,
@@ -32,6 +33,7 @@ fk_pstxid
 );
 
 input clk_6M, rstz, p_033us;
+input regi_isMaster;
 input ps_pagerespTO;
 input fk_page;
 input scancase;
@@ -157,6 +159,8 @@ hopkernal hopkernal_u(
 fkctrl fkctrl_u(
 .clk_6M         (clk_6M         ), 
 .rstz           (rstz           ),
+.regi_isMaster  (regi_isMaster  ),
+.ir             (ir             ),
 .psrxfhs_succ_p (psrxfhs_succ_p ),
 .fk_page        (fk_page        ),
 .page           (page           ),

@@ -237,7 +237,7 @@ bt_top bt_top_s(
 .regi_ConnPark_oneshot       (1'b0),
 .regi_Tpsinterval            (16'h0800),  //1.28s), 
 .regi_Tpswindow              (16'h0012),  //11.25ms),
-.regi_Tisinterval            (16'h1000),   //2.56s), 
+.regi_Tisinterval            (16'h00a0),  //00a0 for debug,           (16'h1000 -> 2.56s), 
 .regi_Tiswindow              (16'h0012),   //11.25ms),
 .regi_correthreshold         (6'd60),   // allow 4 bit error
 .regi_pagetruncated          (1'b0),
@@ -268,11 +268,11 @@ bt_top bt_top_s(
 //.regi_ARQN                   (1'b1          ), 
 //.regi_SEQN                   (1'b0          ),
 .regi_payloadlen             (s_regi_payloadlen),  //FHS: 144bits
-.regi_FHS_LT_ADDR            (3'd1     ),
+.regi_FHS_LT_ADDR            (3'd0     ),
 .regi_myClass                (24'd1    ),
 .regi_my_BD_ADDR_NAP         (16'd0    ),
 .regi_SR                     (2'd0     ),
-.regi_EIR                    (1'b1     ),
+.regi_EIR                    (s_regi_EIR     ),
 .regi_my_syncword            (s_my_syncword_c33c0),   //LAP=0
 .regi_txwhitening            (s_regi_txwhitening),
 .regi_rxwhitening            (s_regi_rxwhitening),
