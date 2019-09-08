@@ -1,5 +1,6 @@
 module headerbitp(
 clk_6M, rstz, p_1us,
+txpktype_data,
 istxextFHS,
 s_2active_p, m_2active_p,
 pylenbit,
@@ -47,11 +48,13 @@ rxisfhs,
 ckheader_endp,
 flow_stop_start,
 txpk_lt_addr,
-txpk_flow
+txpk_flow,
+txpk_seqn
 
 );
 
 input clk_6M, rstz, p_1us;
+input txpktype_data;
 input istxextFHS;
 input s_2active_p, m_2active_p;
 input [12:0] pylenbit;
@@ -101,6 +104,7 @@ output ckheader_endp;
 output [7:0] flow_stop_start;
 output [2:0] txpk_lt_addr;
 output txpk_flow;
+output txpk_seqn;
 
 //
 wire headpacket_endp;
@@ -278,17 +282,18 @@ begin
      dec_hecgood <=  (hecrem==8'h0) ;
 end
 
-reg ckheader_endp;
+reg ckheader_endp_t;
 always @(posedge clk_6M or negedge rstz)
 begin
   if (!rstz)
-     ckheader_endp <= 0;
+     ckheader_endp_t <= 0;
   else if (ckhec & p_1us & (!pk_encode))
-     ckheader_endp <=  1'b1 ;
+     ckheader_endp_t <=  1'b1 ;
   else if (p_1us)
-     ckheader_endp <= 1'b0;
+     ckheader_endp_t <= 1'b0;
 end
 //
+assign ckheader_endp = ckheader_endp_t & p_1us;
 
 
 always @(posedge clk_6M or negedge rstz)
@@ -368,9 +373,9 @@ begin
       dec_flow <= 8'hff;
       dec_arqn <= 8'hff;
     end  
-  // set NAK after tx, 
+  // set NAK after tx pyload data, 
   // in case other side dont receive, it will not response  
-  else if (ms_tslot_p & pk_encode)  
+  else if (ms_tslot_p & pk_encode & txpktype_data)  
     begin
       dec_arqn[txpk_lt_addr] <= 1'b0;
     end  

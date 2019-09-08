@@ -88,7 +88,8 @@ rxextendslot,
 regi_txs1a,
 sendoldpy,
 occpuy_slots,
-mask_corre_win
+mask_corre_win,
+conns_rx1stslot
 
 );
 
@@ -183,6 +184,7 @@ output regi_txs1a;
 output sendoldpy;
 output [2:0] occpuy_slots;
 output mask_corre_win;
+output conns_rx1stslot;
 
 //
 wire py_period, daten, dec_py_period;
@@ -221,6 +223,7 @@ wire [1:0] dec_py_endp_d1;
 wire rxextendslot, conns_rx1stslot;
 wire [9:0] tx_pylenByte;
 wire [31:0] lnctrl_bufpacket;
+wire txpktype_data;
 
 wire [2:0] ms_lt_addr = regi_isMaster ? regi_LT_ADDR : regi_mylt_address;
 wire py_datvalid_p = packet_BRmode ? p_1us :
@@ -231,6 +234,7 @@ headerbitp headerbitp_u(
 .clk_6M                 (clk_6M                 ), 
 .rstz                   (rstz                   ), 
 .p_1us                  (p_1us                  ),
+.txpktype_data          (txpktype_data          ),
 .istxextFHS             (istxextFHS             ),
 .s_2active_p            (s_2active_p            ), 
 .m_2active_p            (m_2active_p            ),
@@ -308,7 +312,8 @@ headerbitp headerbitp_u(
 .ckheader_endp          (ckheader_endp          ),
 .flow_stop_start        (flow_stop_start        ),
 .txpk_lt_addr           (txpk_lt_addr           ),
-.txpk_flow              (txpk_flow              )
+.txpk_flow              (txpk_flow              ),
+.txpk_seqn              (txpk_seqn              )
 
 );
 
@@ -579,6 +584,8 @@ wire rxtsco_p = 1'b0; //for tmp
 bufctrl bufctrl_u(
 .clk_6M          (clk_6M          ), 
 .rstz            (rstz            ),
+.txpktype_data   (txpktype_data   ),
+.txpk_seqn       (txpk_seqn       ),
 .ckheader_endp   (ckheader_endp   ), 
 .lt_addressed    (lt_addressed    ),
 .corre_trgp      (corre_trgp      ), 
@@ -693,7 +700,8 @@ arqflowctrl arqflowctrl_u(
 .sendnewpy          (sendnewpy          ), 
 .sendoldpy          (sendoldpy          ), 
 .send0py            (send0py            ),
-.dec_py_endp_d1     (dec_py_endp_d1     )
+.dec_py_endp_d1     (dec_py_endp_d1     ),
+.txpktype_data      (txpktype_data      )
 
 );
 

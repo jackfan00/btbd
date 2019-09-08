@@ -45,7 +45,8 @@ rspFLOW,
 pktype_data,
 SEQN_old,
 sendnewpy, sendoldpy, send0py,
-dec_py_endp_d1
+dec_py_endp_d1,
+txpktype_data
 
 );
 
@@ -93,6 +94,7 @@ output pktype_data;
 output [7:0] SEQN_old;
 output sendnewpy, sendoldpy, send0py;
 output [1:0] dec_py_endp_d1;
+output txpktype_data;
 
 wire dec_pktype_data, txpktype_data;
 reg [7:0] SEQN_old;
@@ -172,13 +174,16 @@ begin
   if (!rstz)
      txaclSEQN <= 8'h0;
   else if (m_2active_p) //connsnewmaster | connsnewslave)
-     txaclSEQN <= 8'h0;
+     txaclSEQN <= 8'hff;
   else if (s_2active_p) //connsnewmaster | connsnewslave)
      txaclSEQN <= 8'hff;
 //  else if (regi_chgbufcmd_p)  // mcu check dec_arqn[ms_lt_addr] to determine switch buffer or not
 //     txaclSEQN[ms_lt_addr] <= ~txaclSEQN[ms_lt_addr] ;
 // Spec : Figure 7.15
-  else if (pk_encode & txpktype_data & dec_arqn[txpk_lt_addr] & header_st_p)
+//  else if (pk_encode & txpktype_data & dec_arqn[txpk_lt_addr] & header_st_p)
+//     txaclSEQN[txpk_lt_addr] <= ~txaclSEQN[txpk_lt_addr] ;
+
+  else if (!pk_encode & txpktype_data & dec_arqn[txpk_lt_addr] & ckheader_endp & dec_hecgood)
      txaclSEQN[txpk_lt_addr] <= ~txaclSEQN[txpk_lt_addr] ;
 end
 

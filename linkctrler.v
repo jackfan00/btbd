@@ -4,6 +4,7 @@
 //
 module linkctrler(
 clk_6M, rstz, p_1us, s_tslot_p,
+conns_rx1stslot,
 m_inquiry_uncerWindow,
 mask_corre_win,
 occpuy_slots,
@@ -92,6 +93,7 @@ extFHS_correwin
 );
 
 input clk_6M, rstz, p_1us, s_tslot_p;
+input conns_rx1stslot;
 input m_inquiry_uncerWindow;
 input mask_corre_win;
 input [2:0] occpuy_slots;
@@ -822,7 +824,7 @@ inquiry_ctrl inquiry_ctrl_u(
 wire ConnsWindow_t = regi_isMaster ? m_conns_uncerWindow : s_conns_uncerWindow;  
 
 // mask multi-slot tx/rx period 
-wire ConnsWindow = ConnsWindow_t & (!ms_enable) & (!mask_corre_win); //(!rxextendslot);
+wire ConnsWindow = ConnsWindow_t & (!ms_enable) & (!mask_corre_win) & (!rxextendslot);
 wire [63:0] ref_sync = PageScanWindow | page | mpr | spr | ps ? regi_syncword_DAC :
                        InquiryScanWindow | inquiry | ir ? (regi_inquiryDIAC ? regi_syncword_DIAC : regi_syncword_GIAC) :
                        conns ? regi_syncword_CAC : 64'b0 ;
@@ -1045,10 +1047,13 @@ begin
      m_txcmd <= 1'b0;
   else if (m_tslot_p & CLK[1] & singleslot)   //ms_RXslot_endp) 
      m_txcmd <= 1'b0;
-  else if (ms_RXslot_endp & !singleslot)   
+  else if (ms_RXslot_endp) // & !singleslot)   
+     m_txcmd <= 1'b0;
+  else if (!conns_rx1stslot & m_tslot_p & CLK[1] & !singleslot)
      m_txcmd <= 1'b0;
 end
-assign m_txcmd_p = singleslot | m_1stcmdperiod ? m_txcmd & m_tslot_p & CLK[1] : m_txcmd & ms_RXslot_endp;
+assign m_txcmd_p = singleslot | m_1stcmdperiod ? m_txcmd & m_tslot_p & CLK[1] : 
+                                                 m_txcmd & (ms_RXslot_endp | (!conns_rx1stslot & m_tslot_p & CLK[1] & !singleslot));
 
 ////////// m_acltx_p : automatically send next pyload cmd
 ////////wire m_acltx_p;

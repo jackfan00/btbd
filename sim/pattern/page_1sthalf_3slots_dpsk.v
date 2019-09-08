@@ -394,6 +394,7 @@ wait (bt_top_m.CLK[1]==1'b1);
 wait (bt_top_m.CLK[1]==1'b0);
 wait (bt_top_m.CLK[0]==1'b1);
 wait (bt_top_m.pk_encode==1'b0);
+//wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
 
 // 2nd py
 // prepare new py
@@ -428,7 +429,9 @@ wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
     m_txcmd;
 //
 
+
 //bsm read
+#1234000;
 for (m_ri=0; m_ri<100; m_ri=m_ri+1)
   begin
     m_bsm_rdat(m_ri);
@@ -457,6 +460,7 @@ wait (bt_top_m.pk_encode==1'b1);
 # 5678000;
 m_regi_packet_type = 4'h1;
 regi_LT_ADDR = 3'd3;
+wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
     m_txcmd;
 //
 wait (bt_top_m.pk_encode==1'b0);
@@ -464,6 +468,7 @@ wait (bt_top_m.pk_encode==1'b1);
 # 5678000;
 m_regi_packet_type = 4'h3;
 regi_LT_ADDR = 3'd3;
+//wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
     m_txcmd;
 
 //bsm read
@@ -476,9 +481,10 @@ for (m_ri=0; m_ri<100; m_ri=m_ri+1)
 wait (bt_top_m.pk_encode==1'b0);
 wait (bt_top_m.pk_encode==1'b1);
 # 5678000;
-m_regi_packet_type = 4'h1;
+m_regi_packet_type = 4'he;   //5-slots
 regi_LT_ADDR = 3'd4;
     m_txcmd;
+wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
 
 //
 wait (bt_top_m.pk_encode==1'b0);
@@ -486,6 +492,7 @@ wait (bt_top_m.pk_encode==1'b1);
 # 5678000;
 m_regi_packet_type = 4'h1;
 regi_LT_ADDR = 3'd3;
+wait (bt_top_m.allbitp_u.headerbitp_u.dec_arqn[regi_LT_ADDR]);
     m_txcmd;
 
 end

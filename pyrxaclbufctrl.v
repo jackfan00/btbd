@@ -136,7 +136,8 @@ begin
      u0empty <= 1'b1;
   else if (bsm_read_endp & !s1a)
      u0empty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & rxindicator & regi_aclrxbufempty)  //ms_tslot_p
+  // check regi_aclrxbufempty to ensure write-in
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & s1a & lt_addressed & rxindicator & regi_aclrxbufempty)  //ms_tslot_p
 //  else if (ckheader_endp & !pk_encode & dec_hecgood & pktype_data & s1a & rxindicator & lt_addressed)  //ms_tslot_p
      u0empty <= 1'b0;
 end
@@ -148,7 +149,8 @@ begin
      u1empty <= 1'b1;
   else if (bsm_read_endp & s1a)
      u1empty <= 1'b1;
-  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & rxindicator & regi_aclrxbufempty)  //ms_tslot_p
+  // check regi_aclrxbufempty to ensure write-in
+  else if (tx_packet_st_p & !pk_encode & dec_hecgood & dec_crcgood & pktype_data & !s1a & lt_addressed & rxindicator & regi_aclrxbufempty)  //ms_tslot_p
 //  else if (ckheader_endp & !pk_encode & dec_hecgood & pktype_data & !s1a & rxindicator & lt_addressed)  //ms_tslot_p
      u1empty <= 1'b0;
 end

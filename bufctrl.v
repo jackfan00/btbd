@@ -1,5 +1,7 @@
 module bufctrl(
 clk_6M, rstz,
+txpktype_data,
+txpk_seqn,
 ckheader_endp, lt_addressed,
 corre_trgp, connsactive,
 sendnewpy,
@@ -39,6 +41,8 @@ lnctrl_bufpacket
 );
 
 input clk_6M, rstz;
+input txpktype_data;
+input txpk_seqn;
 input ckheader_endp, lt_addressed;
 input corre_trgp, connsactive;
 input sendnewpy;
@@ -166,8 +170,11 @@ begin
      regi_txs1a <= 1'b0;
   else if (regi_chgbufcmd_p)  //switch condition is control by mcu for 1st packet 
      regi_txs1a <= ~regi_txs1a;
-  else if (sendnewpy & tx_packet_st_p)  //& regi_txdatready
-     regi_txs1a <= ~regi_txs1a;
+//  else if (sendnewpy & tx_packet_st_p)  //& regi_txdatready
+//     regi_txs1a <= ~regi_txs1a;
+// sync with txpk_seqn
+  else if (tx_packet_st_p & txpktype_data)  
+     regi_txs1a <= txpk_seqn;
 //
 //  mcu must write next pyload before
 //  ack=1 and flow=1 then transmit next pyload 

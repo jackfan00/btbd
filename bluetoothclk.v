@@ -175,8 +175,8 @@ begin
      m_inquiry_uncerWindow <= 1'b0;
 end
 
-assign m_inquiry_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKN_master[1] & (page|mpr) & p_1us) |
-                                 (m_counter_1us == 10'd390 && CLKN_master[1] & page & p_1us) ;
+assign m_inquiry_uncerWindow_endp = (m_counter_1us == 10'd78 && CLKN_master[1] & (inquiry) & p_1us) |
+                                 (m_counter_1us == 10'd390 && CLKN_master[1] & inquiry & p_1us) ;
 
 
 always @(posedge clk_6M or negedge rstz)

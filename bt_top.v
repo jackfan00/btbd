@@ -418,6 +418,7 @@ linkctrler linkctrler_u(
 .clk_6M                      (clk_6M                      ), 
 .rstz                        (rstz                        ), 
 .p_1us                       (p_1us                       ), 
+.conns_rx1stslot             (conns_rx1stslot             ),
 .m_inquiry_uncerWindow       (m_inquiry_uncerWindow       ),
 .mask_corre_win              (mask_corre_win              ),
 .occpuy_slots                (occpuy_slots                ),
@@ -740,7 +741,8 @@ allbitp allbitp_u(
 .regi_txs1a             (regi_txs1a             ),
 .sendoldpy              (sendoldpy              ),
 .occpuy_slots           (occpuy_slots           ),
-.mask_corre_win         (mask_corre_win         )
+.mask_corre_win         (mask_corre_win         ),
+.conns_rx1stslot        (conns_rx1stslot        )
 
 );
 
